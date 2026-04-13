@@ -21,7 +21,7 @@ public class ServerApp {
             System.out.println("[O] Đã tải dữ liệu hệ thống.");
 
             // 3. (Tuần 7) Mở cổng Socket lắng nghe Client kết nối
-            //ServerSocket serverSocket = new ServerSocket(8080);
+            ServerSocket serverSocket = new ServerSocket(8080);
             System.out.println("[O] Server đã sẵn sàng và đang chạy!");
 
             // Vòng lặp vô tận để giữ Server luôn mở (chờ cập nhật ở các tuần sau)
