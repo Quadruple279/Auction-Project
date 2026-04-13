@@ -12,16 +12,16 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LoginController">
+<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.controller.LoginController">
    <children>
       <AnchorPane prefHeight="500.0" prefWidth="400.0" style="-fx-background-color: #2b2b2b;">
          <children>
-            <Label layoutX="148.0" layoutY="184.0" text="BidNow" textFill="#006aff">
+            <Label layoutX="150.0" layoutY="184.0" text="BidNow" textFill="#006aff">
                <font>
                   <Font size="30.0" />
                </font>
             </Label>
-            <Label layoutX="110.0" layoutY="230.0" text="Hệ thống đấu giá trực tuyến " textFill="WHITE">
+            <Label layoutX="111.0" layoutY="230.0" text="Hệ thống đấu giá trực tuyến " textFill="WHITE">
                <font>
                   <Font size="14.0" />
                </font>
@@ -31,20 +31,20 @@
                   <Font size="16.0" />
                </font>
             </TextField>
-            <Button layoutX="150.0" layoutY="392.0" mnemonicParsing="false" onAction="#handleLogin" prefHeight="26.0" prefWidth="98.0" text="Đăng nhập" />
-            <Label fx:id="messageLabel" layoutX="100.0" layoutY="374.0" prefHeight="18.0" prefWidth="222.0" />
+            <Button layoutX="150.0" layoutY="393.0" mnemonicParsing="false" onAction="#handleLogin" prefHeight="26.0" prefWidth="98.0" text="Đăng nhập" />
+            <Label fx:id="messageLabel" alignment="CENTER" layoutX="5.0" layoutY="367.0" prefHeight="18.0" prefWidth="400.0" textFill="RED" />
             <PasswordField fx:id="password" layoutX="100.0" layoutY="330.0" promptText="Nhập mật khẩu ">
                <font>
                   <Font size="16.0" />
                </font>
             </PasswordField>
-            <HBox layoutX="99.0" layoutY="436.0" prefHeight="100.0" prefWidth="200.0">
+            <HBox layoutX="102.0" layoutY="436.0" prefHeight="100.0" prefWidth="200.0">
                <children>
-                  <Text fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" text="Đăng nhập với tư cách " />
-                  <Label text="Quản trị viên " textFill="#009dff" />
+                  <Text fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" text="Nếu không có tài khoản? " />
+                  <Label onMouseClicked="#handleRegister" text="Đăng ký " textFill="#009dff" />
                </children>
             </HBox>
-            <Polygon fill="DODGERBLUE" layoutX="200.0" layoutY="115.0" stroke="BLACK" strokeType="INSIDE">
+            <Polygon fill="DODGERBLUE" layoutX="200.0" layoutY="117.0" stroke="BLACK" strokeType="INSIDE">
               <points>
                 <Double fx:value="-50.0" />
                 <Double fx:value="40.0" />
