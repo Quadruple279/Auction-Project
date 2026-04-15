@@ -13,11 +13,11 @@ public class ServerApp {
 
         try {
              // 1. Khởi tạo các thành phần cốt lõi (Ví dụ: AuctionManager do Minh phụ trách)
-             //AuctionManager manager = AuctionManager.getInstance();
+             AuctionManager manager = AuctionManager.getInstance();
              System.out.println("[O] Đã khởi tạo trình quản lý đấu giá.");
 
             // 2. Tải dữ liệu từ file lên (Ví dụ: FileStorage do Nam/Lâm phụ trách sau này)
-            //DataStorage.loadData();
+            DataStorage.loadData();
             System.out.println("[O] Đã tải dữ liệu hệ thống.");
 
             // 3. (Tuần 7) Mở cổng Socket lắng nghe Client kết nối
