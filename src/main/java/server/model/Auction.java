@@ -52,6 +52,9 @@ public class Auction {
     public double getCurrentPrice() { return currentPrice; }
     public String getLeadingBidder() { return leadingBidder; }
     public boolean isFinished() { return isFinished; }
+    public String getItemName() { return item.getName();}
+    public String getDescription() { return item.getDescription();}
+    public double getPrice() { return item.getBasePrice();}
     // get dsach dau gia
     public ArrayList<BidTransaction> getTransactionHistory() {
         return transactionHistory;

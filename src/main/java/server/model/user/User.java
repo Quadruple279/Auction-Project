@@ -10,4 +10,6 @@ public abstract class User {
     }
 
     public abstract void displayRole();
+
+    public String getName() {return name;}
 }
