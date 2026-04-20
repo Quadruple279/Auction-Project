@@ -1,7 +1,8 @@
 package server.model;
 
+import server.exception.AuctionClosedException;
+import server.exception.InvalidBidException;
 import server.model.item.Item;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -10,53 +11,70 @@ public class Auction {
     private String auctionId;
     private Item item;
     private double currentPrice;
-    private String leadingBidder;//nguoi tra gia cao nhat
+    private String leadingBidder;
     private boolean isFinished;
     private LocalDateTime endTime;
-    public Auction(String auId,Item item,LocalDateTime endTime){
-        this.auctionId=auId;
-        this.item=item;
+
+    public Auction(String auId, Item item, LocalDateTime endTime){
+        this.auctionId = auId;
+        this.item = item;
         this.currentPrice = item.getBasePrice();
-        this.leadingBidder = "None";
-        this.isFinished=false;
-        this.endTime=endTime;
+        this.leadingBidder = null;
+        this.isFinished = false;
+        this.endTime = endTime;
     }
-    //Xu li khi co nguoi dat gia moi
-    public boolean placeBid(String bidderName,double bidAmount){
+
+    public synchronized void placeBid(String bidderName, double bidAmount) throws AuctionClosedException, InvalidBidException {
         if (isFinished){
-            System.out.println("Phiên đấu giá đã kết thúc!");
-            return false;
+            throw new AuctionClosedException("[X] Phiên đấu giá đã kết thúc.");
         }
-        if(bidAmount > currentPrice){
-            this.currentPrice = bidAmount;
-            this.leadingBidder = bidderName;
-            BidTransaction bid = new BidTransaction(auctionId,bidderName,bidAmount);
-            transactionHistory.add(bid);
-            bid.displayTransaction();//in ra trang thai
-            return true;
+        if (bidAmount <= currentPrice){
+            throw new InvalidBidException("[X] Giá đặt hiện tại (" + bidAmount + ") thấp hơn giá đang được đấu (" + currentPrice + ")");
         }
-        else{
-            System.out.println("Giá đặt phải cao hơn giá hiện tại: "+currentPrice);
-            return false;
-        }
+
+        // Xóa if-else thay bằng if(!...) cho code trông gọn hơn.
+        this.currentPrice = bidAmount;
+        this.leadingBidder = bidderName;
+
+        BidTransaction bid = new BidTransaction(auctionId,bidderName,bidAmount);
+        transactionHistory.add(bid);
+
+        bid.displayTransaction();
     }
-    //ket thuc phien dau gia
-    public void finishAuction() {
+
+    public synchronized void finishAuction(){
         this.isFinished = true;
         System.out.println("--- PHIÊN ĐẤU GIÁ KẾT THÚC ---");
-        System.out.println("Người thắng cuộc: " + leadingBidder + " với mức giá: " + currentPrice);
+        System.out.println("Người thắng cuộc: " + leadingBidder);
+        System.out.println("Vật phẩm đấu giá: " + item);
+        System.out.println("Mức đấu giá: " + currentPrice);
     }
-    //method getter
-    public String getAuctionId() { return auctionId; }
-    public Item getItem() { return item; }
-    public double getCurrentPrice() { return currentPrice; }
-    public String getLeadingBidder() { return leadingBidder; }
-    public boolean isFinished() { return isFinished; }
-    public String getItemName() { return item.getName();}
-    public String getDescription() { return item.getDescription();}
-    public double getPrice() { return item.getBasePrice();}
-    // get dsach dau gia
-    public ArrayList<BidTransaction> getTransactionHistory() {
+
+    public String getAuctionId(){
+        return auctionId;
+    }
+    public Item getItem(){
+        return item;
+    }
+    public double getCurrentPrice(){
+        return currentPrice;
+    }
+    public String getLeadingBidder(){
+        return leadingBidder;
+    }
+    public boolean isFinished(){
+        return isFinished;
+    }
+    public String getItemName(){
+        return item.getName();
+    }
+    public String getDescription(){
+        return item.getDescription();
+    }
+    public double getPrice(){
+        return item.getBasePrice();
+    }
+    public ArrayList<BidTransaction> getTransactionHistory(){
         return transactionHistory;
     }
 }
