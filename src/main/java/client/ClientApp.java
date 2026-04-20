@@ -10,8 +10,8 @@ public class ClientApp extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         FXMLLoader loader = new FXMLLoader( getClass().getResource("/fxml/LoginView.fxml") );
-        Scene scene = new Scene(loader.load(), 400, 500);
-        stage.setTitle("BidNow - Đăng nhập");
+        Scene scene = new Scene(loader.load());
+        stage.setTitle("BidNow - Đấu giá trực tuyến");
         stage.setScene(scene);
         stage.show();
     }

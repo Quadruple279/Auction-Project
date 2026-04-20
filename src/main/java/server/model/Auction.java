@@ -1,5 +1,7 @@
 package server.model;
 
+import server.exception.AuctionClosedException;
+import server.exception.InvalidBidException;
 import server.model.item.Item;
 import server.model.item.ItemFactory;
 import server.model.observer.AuctionObserver;
@@ -17,7 +19,7 @@ public class Auction implements AuctionSubject {
     private String auctionId;
     private Item item;
     private double currentPrice;
-    private String leadingBidder;//nguoi tra gia cao nhat
+    private String leadingBidder;
     private boolean isFinished;
     private LocalDateTime endTime;
     //them dsach observer
@@ -73,6 +75,15 @@ public class Auction implements AuctionSubject {
             notifyObservers(event);
             return false;
         }
+
+        // Xóa if-else thay bằng if(!...) cho code trông gọn hơn.
+        this.currentPrice = bidAmount;
+        this.leadingBidder = bidderName;
+
+        BidTransaction bid = new BidTransaction(auctionId,bidderName,bidAmount);
+        transactionHistory.add(bid);
+
+        bid.displayTransaction();
     }
 
     //ket thuc phien dau gia

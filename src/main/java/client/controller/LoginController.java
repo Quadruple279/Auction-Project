@@ -1,17 +1,23 @@
 package client.controller;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
+
+import java.io.IOException;
 
 public class LoginController {
     @FXML
-    TextField userName;
+    private TextField userName;
     @FXML
-    PasswordField password;
+    private PasswordField password;
     @FXML
-    Label messageLabel;
+    private Label messageLabel;
 
     @FXML
     public void handleLogin() {
@@ -22,7 +28,7 @@ public class LoginController {
             return; // can co return neu khong chuong trinh loi van se chay tiep xuong duoi chu khong dung lai
         }
         if (tenDangNhap.equals("Sang") && matKhau.equals("1234a")) { // Kiem tra xem co dung tenDangNhap va matKhau cua tai khoan khong; tam thoi thi de v nao ket noi server sau
-            messageLabel.setText("Đăng nhập thành công.");
+            switchScene("/fxml/AuctionView.fxml");
         } else {
             messageLabel.setText("Tên đăng nhập hoặc Mật khẩu không trùng khớp.");
         }
@@ -30,6 +36,21 @@ public class LoginController {
 
     @FXML
     private void handleRegister() {
-        messageLabel.setText("Chuyển sang đăng kí.");
+        switchScene("/fxml/RegisterView.fxml");
+    }
+
+    private void switchScene(String fxmlPath) { // Được sử dụng để chuyển đổi màn hình
+        try {
+            FXMLLoader loader = new FXMLLoader( getClass().getResource(fxmlPath));
+            Parent root = loader.load();
+            Stage stage = (Stage)  messageLabel.getScene().getWindow();
+
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            messageLabel.setText("Loi: Khong the tai man hinh");
+        }
     }
 }
