@@ -3,10 +3,18 @@ package server.model;
 import server.exception.AuctionClosedException;
 import server.exception.InvalidBidException;
 import server.model.item.Item;
+import server.model.item.ItemFactory;
+import server.model.observer.AuctionObserver;
+import server.model.observer.AuctionSubject;
+import server.model.observer.subObservers.AuctionEndObserver;
+import server.model.observer.subObservers.BidLogObserver;
+import server.model.observer.subObservers.LeaderBoardObserver;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
-public class Auction {
+public class Auction implements AuctionSubject {
     private ArrayList<BidTransaction> transactionHistory = new ArrayList<>();
     private String auctionId;
     private Item item;
@@ -14,67 +22,101 @@ public class Auction {
     private String leadingBidder;
     private boolean isFinished;
     private LocalDateTime endTime;
+    //them dsach observer
+    private final List<AuctionObserver> observers = new ArrayList<>();
 
-    public Auction(String auId, Item item, LocalDateTime endTime){
+    public Auction(String auId, Item item, LocalDateTime endTime) {
         this.auctionId = auId;
         this.item = item;
         this.currentPrice = item.getBasePrice();
-        this.leadingBidder = null;
+        this.leadingBidder = "None";
         this.isFinished = false;
         this.endTime = endTime;
     }
 
-    public synchronized void placeBid(String bidderName, double bidAmount) throws AuctionClosedException, InvalidBidException {
-        if (isFinished){
-            throw new AuctionClosedException("[X] Phiên đấu giá đã kết thúc.");
+    @Override
+    public void attach(AuctionObserver observer) {
+        if (!observers.contains(observer)) {
+            observers.add(observer);
         }
-        if (bidAmount <= currentPrice){
-            throw new InvalidBidException("[X] Giá đặt hiện tại (" + bidAmount + ") thấp hơn giá đang được đấu (" + currentPrice + ")");
-        }
-
-        // Xóa if-else thay bằng if(!...) cho code trông gọn hơn.
-        this.currentPrice = bidAmount;
-        this.leadingBidder = bidderName;
-
-        BidTransaction bid = new BidTransaction(auctionId,bidderName,bidAmount);
-        transactionHistory.add(bid);
-
-        bid.displayTransaction();
     }
 
-    public synchronized void finishAuction(){
+    @Override
+    public void detach(AuctionObserver observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers(AuctionEvent event) {
+        for (AuctionObserver observer : observers) {
+            observer.onAuctionEvent(event);
+        }
+    }
+
+    public synchronized void placeBid(String bidderName, double bidAmount) throws AuctionClosedException, InvalidBidException{
+        if (isFinished) {
+            throw new AuctionClosedException("Lỗi: Phiên đấu giá cho " + item.getName() + " đã kết thúc!");
+        }
+        if (bidAmount > currentPrice) {
+            this.currentPrice = bidAmount;
+            this.leadingBidder = bidderName;
+            BidTransaction bid = new BidTransaction(auctionId, bidderName, bidAmount);
+            transactionHistory.add(bid);
+
+            AuctionEvent event = new AuctionEvent(AuctionEvent.Type.BID_PLACED, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
+            notifyObservers(event); // thay the cho displayTransaction (de dam bao Auction chi thuc hien 1 task la placeBid( SRP ))
+        } else {
+            AuctionEvent event = new AuctionEvent(AuctionEvent.Type.BID_REJECTED, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
+            notifyObservers(event);
+        }
+    }
+
+    public synchronized void finishAuction() {
         this.isFinished = true;
-        System.out.println("--- PHIÊN ĐẤU GIÁ KẾT THÚC ---");
-        System.out.println("Người thắng cuộc: " + leadingBidder);
-        System.out.println("Vật phẩm đấu giá: " + item);
-        System.out.println("Mức đấu giá: " + currentPrice);
+        AuctionEvent event = new AuctionEvent(AuctionEvent.Type.AUCTION_ENDED, auctionId, leadingBidder, leadingBidder, currentPrice, currentPrice);
+        notifyObservers(event);
     }
 
-    public String getAuctionId(){
+    public String getAuctionId() {
         return auctionId;
     }
-    public Item getItem(){
+
+    public Item getItem() {
         return item;
     }
-    public double getCurrentPrice(){
+
+    public double getCurrentPrice() {
         return currentPrice;
     }
-    public String getLeadingBidder(){
+
+    public String getLeadingBidder() {
         return leadingBidder;
     }
-    public boolean isFinished(){
+
+    public boolean isFinished() {
         return isFinished;
     }
-    public String getItemName(){
-        return item.getName();
-    }
-    public String getDescription(){
-        return item.getDescription();
-    }
-    public double getPrice(){
-        return item.getBasePrice();
-    }
-    public ArrayList<BidTransaction> getTransactionHistory(){
+
+    // get dsach dau gia
+    public ArrayList<BidTransaction> getTransactionHistory() {
         return transactionHistory;
     }
 }
+    //test main
+/*    public static void main(String[] args) {
+          Item vision = ItemFactory.creatItem("vehicle","HD-VS-01","vision-sportVersion",10_000_000,"2025","29AE-57650");
+          Auction auction = new Auction("AU001", vision, LocalDateTime.now().plusHours(2));
+          vision.displayDetails();
+          // Đăng ký các Observer thêm/bớt thoải mái mà không đụng Auction
+          auction.attach(new BidLogObserver());
+          auction.attach(new LeaderBoardObserver());
+          auction.attach(new AuctionEndObserver());
+          // cac luot dau gia
+          auction.placeBid("An",   16_000_000);
+          auction.placeBid("Bình", 14_000_000); // reject
+          auction.placeBid("Cúc",  18_500_000);
+          auction.placeBid("Đạt",  18_000_000); // reject
+          ket thuc phien
+          auction.finishAuction();
+      }*/
+
