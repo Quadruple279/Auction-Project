@@ -53,48 +53,30 @@ public class Auction implements AuctionSubject {
         }
     }
 
-    //Xu li khi co nguoi dat gia moi
-    public boolean placeBid(String bidderName, double bidAmount) {
+    public synchronized void placeBid(String bidderName, double bidAmount) throws AuctionClosedException, InvalidBidException{
         if (isFinished) {
-            System.out.println("Phiên đấu giá đã kết thúc!");
-            return false;
+            throw new AuctionClosedException("Lỗi: Phiên đấu giá cho " + item.getName() + " đã kết thúc!");
         }
         if (bidAmount > currentPrice) {
             this.currentPrice = bidAmount;
             this.leadingBidder = bidderName;
             BidTransaction bid = new BidTransaction(auctionId, bidderName, bidAmount);
             transactionHistory.add(bid);
-            //
-            AuctionEvent event = new AuctionEvent(AuctionEvent.Type.BID_PLACED, auctionId,
-                    bidderName, leadingBidder, bidAmount, currentPrice);
+
+            AuctionEvent event = new AuctionEvent(AuctionEvent.Type.BID_PLACED, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
             notifyObservers(event); // thay the cho displayTransaction (de dam bao Auction chi thuc hien 1 task la placeBid( SRP ))
-            return true;
         } else {
-            AuctionEvent event = new AuctionEvent(AuctionEvent.Type.BID_REJECTED, auctionId,
-                    bidderName, leadingBidder, bidAmount, currentPrice);
+            AuctionEvent event = new AuctionEvent(AuctionEvent.Type.BID_REJECTED, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
             notifyObservers(event);
-            return false;
         }
-
-        // Xóa if-else thay bằng if(!...) cho code trông gọn hơn.
-        this.currentPrice = bidAmount;
-        this.leadingBidder = bidderName;
-
-        BidTransaction bid = new BidTransaction(auctionId,bidderName,bidAmount);
-        transactionHistory.add(bid);
-
-        bid.displayTransaction();
     }
 
-    //ket thuc phien dau gia
-    public void finishAuction() {
+    public synchronized void finishAuction() {
         this.isFinished = true;
-        AuctionEvent event = new AuctionEvent(AuctionEvent.Type.AUCTION_ENDED, auctionId, leadingBidder,
-                leadingBidder, currentPrice, currentPrice);
+        AuctionEvent event = new AuctionEvent(AuctionEvent.Type.AUCTION_ENDED, auctionId, leadingBidder, leadingBidder, currentPrice, currentPrice);
         notifyObservers(event);
     }
 
-    //method getter
     public String getAuctionId() {
         return auctionId;
     }
