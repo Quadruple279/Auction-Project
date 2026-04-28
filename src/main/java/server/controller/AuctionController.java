@@ -2,6 +2,7 @@ package server.controller;
 
 import server.model.Auction;
 import server.model.user.User;
+import server.dao.DataStorage;
 
 public class AuctionController {
 
@@ -28,6 +29,8 @@ public class AuctionController {
         try {
             // 3. gọi Auction (TRUYỀN TÊN, không phải object)
             auction.placeBid(currentUser.getName(), amount);
+
+            DataStorage.saveData();
 
             System.out.println("Đặt giá thành công bởi: " + currentUser.getName());
 

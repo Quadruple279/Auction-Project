@@ -6,6 +6,7 @@ import java.net.ServerSocket;
 
 public class ServerApp {
     public static void main(String[] args){
+        DataStorage.loadData();
         System.out.println("=========================================");
         System.out.println("   HỆ THỐNG ĐẤU GIÁ TRỰC TUYẾN - SERVER  ");
         System.out.println("   Đang khởi động...                     ");

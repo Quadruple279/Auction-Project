@@ -1,0 +1,17 @@
+[ {
+  "transactionHistory" : [ {
+    "bidderName" : "Nam",
+    "bidAmount" : 6000000.0,
+    "bidTime" : [ 2026, 4, 28, 22, 35, 4, 493672600 ],
+    "auctionId" : "AU1"
+  } ],
+  "auctionId" : "AU1",
+  "item" : {
+    "name" : "Mona Lisa",
+    "basePrice" : 5000000.0,
+    "description" : "Painting"
+  },
+  "currentPrice" : 6000000.0,
+  "leadingBidder" : "Nam",
+  "finished" : false
+} ]

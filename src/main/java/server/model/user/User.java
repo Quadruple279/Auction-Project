@@ -17,6 +17,10 @@ public abstract class User {
 
     public String getName() {return name;}
 
+    public String getId() {
+        return id;
+    }
+
     public String getRole() {
         return role;
     }
