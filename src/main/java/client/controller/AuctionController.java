@@ -12,6 +12,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
+import server.controller.AuthenticationController;
 import server.model.Auction;
 import server.model.AuctionEvent;
 import server.model.item.ItemFactory;
@@ -46,10 +47,47 @@ public class AuctionController implements Initializable, AuctionObserver {
 
     private ObservableList<Auction> danhSach = FXCollections.observableArrayList();
 
+    private AuthenticationController authenticationController;
+    public void setAuthenticationController(AuthenticationController authenticationController ) {
+        this.authenticationController = authenticationController;
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setUpCotBang();
         loadDuLieu();
+        // Xử lý việc nhấn vào hàng thì sẽ chuyển màn hình sang phòng đấu giá
+        tableView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                Auction selected = tableView.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    openAuctionRoom(selected);
+                }
+            }
+        });
+    }
+
+    private void openAuctionRoom(Auction auction) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/AuctionRoomView.fxml")
+            );
+            Parent root = loader.load();
+
+            // Lấy controller của AuctionRoom
+            AuctionRoomController roomController = loader.getController();
+
+            // Truyền dữ liệu vào AuctionRoom
+            roomController.setAuction(auction, authenticationController);
+
+            Stage stage = (Stage) tableView.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            log("Lỗi: Không thể mở phòng đấu giá");
+        }
     }
 
     public void setUpCotBang() {

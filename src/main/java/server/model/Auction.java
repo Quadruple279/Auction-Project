@@ -97,6 +97,8 @@ public class Auction implements AuctionSubject {
         return isFinished;
     }
 
+    public LocalDateTime getEndTime() { return endTime;}
+
     // get dsach dau gia
     public ArrayList<BidTransaction> getTransactionHistory() {
         return transactionHistory;
