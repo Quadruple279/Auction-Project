@@ -1,5 +1,6 @@
 package server.model.observer.subObservers;
 
+import server.exception.InvalidBidException;
 import server.model.AuctionEvent;
 import server.model.observer.AuctionObserver;
 

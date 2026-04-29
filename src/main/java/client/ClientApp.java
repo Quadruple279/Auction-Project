@@ -12,6 +12,8 @@ public class ClientApp extends Application {
         FXMLLoader loader = new FXMLLoader( getClass().getResource("/fxml/LoginView.fxml") );
         Scene scene = new Scene(loader.load());
         stage.setTitle("BidNow - Đấu giá trực tuyến");
+        stage.setX(200);
+        stage.setY(50);
         stage.setScene(scene);
         stage.show();
     }

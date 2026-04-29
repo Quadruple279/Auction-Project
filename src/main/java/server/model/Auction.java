@@ -68,9 +68,9 @@ public class Auction implements AuctionSubject {
         } else {
             AuctionEvent event = new AuctionEvent(AuctionEvent.Type.BID_REJECTED, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
             notifyObservers(event);
+            throw new InvalidBidException("Giá đặt phải lớn hơn giá gốc là: " + currentPrice);
         }
     }
-
     public synchronized void finishAuction() {
         this.isFinished = true;
         AuctionEvent event = new AuctionEvent(AuctionEvent.Type.AUCTION_ENDED, auctionId, leadingBidder, leadingBidder, currentPrice, currentPrice);
@@ -96,6 +96,8 @@ public class Auction implements AuctionSubject {
     public boolean isFinished() {
         return isFinished;
     }
+
+    public LocalDateTime getEndTime() { return endTime;}
 
     // get dsach dau gia
     public ArrayList<BidTransaction> getTransactionHistory() {
