@@ -13,6 +13,7 @@ import server.model.observer.subObservers.LeaderBoardObserver;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observer;
 
 public class Auction implements AuctionSubject {
     private ArrayList<BidTransaction> transactionHistory = new ArrayList<>();
