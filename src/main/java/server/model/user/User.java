@@ -1,10 +1,17 @@
 package server.model.user;
 
-public abstract class User {
+import java.io.Serializable;
+
+public abstract class User implements Serializable {
+
     protected String id;
     protected String name;
     protected String password;
     protected String role;
+
+    // ✅ constructor mặc định (cho Jackson)
+    public User() {
+    }
 
     public User(String id, String name, String password, String role) {
         this.id = id;
@@ -15,7 +22,9 @@ public abstract class User {
 
     public abstract void displayRole();
 
-    public String getName() {return name;}
+    public String getName() {
+        return name;
+    }
 
     public String getId() {
         return id;
@@ -24,7 +33,8 @@ public abstract class User {
     public String getRole() {
         return role;
     }
-     public boolean checkPassword(String password) {
+
+    public boolean checkPassword(String password) {
         return this.password.equals(password);
-     }
+    }
 }
