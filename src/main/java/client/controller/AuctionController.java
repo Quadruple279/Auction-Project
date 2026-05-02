@@ -99,9 +99,26 @@ public class AuctionController implements Initializable, AuctionObserver {
         auction.setCellValueFactory(new PropertyValueFactory<>("auctionId"));
         itemName.setCellValueFactory(new PropertyValueFactory<>("itemName"));
         description.setCellValueFactory(new PropertyValueFactory<>("description"));
-        price.setCellValueFactory(new PropertyValueFactory<>("price"));
-        highestBid.setCellValueFactory(new PropertyValueFactory<>("currentPrice"));
         owner.setCellValueFactory(new PropertyValueFactory<>("leadingBidder"));
+        // Thêm format cho cột price và highestBid
+        price.setCellValueFactory(new PropertyValueFactory<>("price")); // ← lấy dữ liệu
+        price.setCellFactory(col -> new TableCell<Auction, Double>() {  // ← định dạng
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) setText(null);
+                else setText(String.format("%,.0f ₫", item));
+            }
+        });
+        highestBid.setCellValueFactory(new PropertyValueFactory<>("currentPrice")); // ← lấy dữ liệu
+        highestBid.setCellFactory(col -> new TableCell<Auction, Double>() {         // ← định dạng
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) setText(null);
+                else setText(String.format("%,.0f ₫", item));
+            }
+        });
 
         tableView.setItems(danhSach);
     }

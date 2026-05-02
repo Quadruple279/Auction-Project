@@ -100,6 +100,12 @@ public class Auction implements AuctionSubject {
 
     public LocalDateTime getEndTime() { return endTime;}
 
+    public String getItemName()    { return item.getName(); }
+
+    public String getDescription() { return item.getDescription(); }
+
+    public double getPrice()       { return item.getBasePrice(); }
+
     // get dsach dau gia
     public ArrayList<BidTransaction> getTransactionHistory() {
         return transactionHistory;
