@@ -1,5 +1,6 @@
 package client.controller;
 
+import client.ClientSocket;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -16,7 +17,6 @@ import javafx.stage.Stage;
 import javafx.scene.control.*;
 
 import server.controller.AuthenticationController;
-import server.controller.AuctionController;
 import server.model.Auction;
 import server.model.AuctionEvent;
 import server.model.BidTransaction;
@@ -99,7 +99,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     private Auction currentAuction;
 
     // Controller server
-    private AuctionController auctionController;
+    private server.controller.AuctionController auctionController;
     private AuthenticationController authenticationController;
 
     @Override
@@ -177,12 +177,15 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     public void setAuction(Auction auction, AuthenticationController auth) {
         this.currentAuction = auction;
         this.authenticationController = auth;
-        this.auctionController = new AuctionController(auth);
+        this.auctionController = new server.controller.AuctionController(auth);
 
         hienThiThongTin();
         loadLichSuDauGia();
         startCountdown();
         log("Đã vào phiên: "+ auction.getAuctionId());
+        // Đăng ký nhận thông báo realtime
+        ClientSocket.getInstance().addObserver(this);
+        ClientSocket.getInstance().subscribe(auction.getAuctionId());
     }
 
     private void hienThiThongTin() {
@@ -289,7 +292,27 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
         if (countdownTimer != null) {
             countdownTimer.stop();
         }
-        switchScene("/fxml/AuctionView.fxml");
+        // Hủy đăng ký khi thoát
+        ClientSocket.getInstance().removeObserver(this);
+        ClientSocket.getInstance().unsubscribe(currentAuction.getAuctionId());
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/AuctionView.fxml")
+            );
+            Parent root = loader.load();
+
+            // Lấy controller Dashboard và truyền auth lại
+            AuctionController dashboardController = loader.getController();
+            dashboardController.setAuthenticationController(authenticationController);
+
+            Stage stage = (Stage) buttonBack.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            log("Lỗi: Không thể quay về Dashboard");
+        }
     }
 
     private void log(String msg) {

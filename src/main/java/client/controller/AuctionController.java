@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 import server.controller.AuthenticationController;
 import server.model.Auction;
 import server.model.AuctionEvent;
+import server.model.AuctionManager;
 import server.model.item.ItemFactory;
 import server.model.observer.AuctionObserver;
 
@@ -50,12 +51,13 @@ public class AuctionController implements Initializable, AuctionObserver {
     private AuthenticationController authenticationController;
     public void setAuthenticationController(AuthenticationController authenticationController ) {
         this.authenticationController = authenticationController;
+        loadDuLieu();
     }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setUpCotBang();
-        loadDuLieu();
+
         // Xử lý việc nhấn vào hàng thì sẽ chuyển màn hình sang phòng đấu giá
         tableView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
@@ -68,16 +70,14 @@ public class AuctionController implements Initializable, AuctionObserver {
     }
 
     private void openAuctionRoom(Auction auction) {
+        System.out.println("[DEBUG] openAuctionRoom() được gọi: " + auction.getAuctionId());
         try {
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/fxml/AuctionRoomView.fxml")
             );
             Parent root = loader.load();
 
-            // Lấy controller của AuctionRoom
             AuctionRoomController roomController = loader.getController();
-
-            // Truyền dữ liệu vào AuctionRoom
             roomController.setAuction(auction, authenticationController);
 
             Stage stage = (Stage) tableView.getScene().getWindow();
@@ -86,7 +86,12 @@ public class AuctionController implements Initializable, AuctionObserver {
 
         } catch (IOException e) {
             e.printStackTrace();
-            log("Lỗi: Không thể mở phòng đấu giá");
+            log("Lỗi: Không thể mở phòng đấu giá: " + e.getMessage());
+        } catch (Exception e) {
+            // Bắt thêm exception khác
+            e.printStackTrace();
+            System.out.println("[DEBUG] Lỗi khác: " + e.getMessage());
+            log("Lỗi: " + e.getMessage());
         }
     }
 
@@ -94,15 +99,40 @@ public class AuctionController implements Initializable, AuctionObserver {
         auction.setCellValueFactory(new PropertyValueFactory<>("auctionId"));
         itemName.setCellValueFactory(new PropertyValueFactory<>("itemName"));
         description.setCellValueFactory(new PropertyValueFactory<>("description"));
-        price.setCellValueFactory(new PropertyValueFactory<>("price"));
-        highestBid.setCellValueFactory(new PropertyValueFactory<>("currentPrice"));
         owner.setCellValueFactory(new PropertyValueFactory<>("leadingBidder"));
+        // Thêm format cho cột price và highestBid
+        price.setCellValueFactory(new PropertyValueFactory<>("price")); // ← lấy dữ liệu
+        price.setCellFactory(col -> new TableCell<Auction, Double>() {  // ← định dạng
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) setText(null);
+                else setText(String.format("%,.0f ₫", item));
+            }
+        });
+        highestBid.setCellValueFactory(new PropertyValueFactory<>("currentPrice")); // ← lấy dữ liệu
+        highestBid.setCellFactory(col -> new TableCell<Auction, Double>() {         // ← định dạng
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) setText(null);
+                else setText(String.format("%,.0f ₫", item));
+            }
+        });
 
         tableView.setItems(danhSach);
     }
 
     public void loadDuLieu() {
         log("Đang tải dữ liệu phiên đấu giá...");
+        System.out.println("[DEBUG] loadDuLieu() được gọi");
+        System.out.println("[DEBUG] Số phiên trong AuctionManager: "
+                + AuctionManager.getInstance().getAuctionList().size());
+
+        danhSach.setAll(AuctionManager.getInstance().getAuctionList());
+
+        System.out.println("[DEBUG] Số phiên trong danhSach: " + danhSach.size());
+        log("Đã tải " + danhSach.size() + " phiên đấu giá.");
 
 
     }
