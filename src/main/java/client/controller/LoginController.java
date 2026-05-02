@@ -1,5 +1,7 @@
 package client.controller;
 
+import client.AuctionDataTest;
+import client.ClientSocket;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -40,8 +42,18 @@ public class LoginController {
             messageLabel.setText("Sai tài khoản hoặc mật khẩu.");
         } */
         if (tenDangNhap.equals("Sang") && matKhau.equals("1234a")) {
-            messageLabel.setText("Dang nhap thanh cong");
+            // TODO: Bỏ comment khi server có giao thức
+            // boolean connected = ClientSocket.getInstance().connect();
+            // if (!connected) {
+            //     messageLabel.setText("Không thể kết nối server!");
+            //     return;
+            // }
+            // ClientSocket.getInstance().sendLogin(tenDangNhap, matKhau);
+
+            messageLabel.setText("Đăng nhập thành công!");
             openDashboard();
+        } else {
+            messageLabel.setText("Sai tài khoản hoặc mật khẩu."); // ← thiếu dòng này
         }
     }
 
