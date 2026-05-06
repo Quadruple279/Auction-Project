@@ -25,6 +25,7 @@ import server.model.observer.AuctionObserver;
 import java.io.IOException;
 import java.net.URL;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 
@@ -104,7 +105,36 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        setupBidHistoryList(); // setup giao dien ListView
+        setupBidHistoryList();
+
+        bidAmountField.setTextFormatter(new javafx.scene.control.TextFormatter<>(change -> {
+            String newText = change.getControlNewText();
+
+            if (!newText.matches("[\\d,]*")) {
+                return null;
+            }
+
+            String digits = newText.replace(",", "");
+
+            if (digits.isEmpty()) return change;
+
+            try {
+                long value = Long.parseLong(digits);
+
+                // Thêm Locale.US để luôn dùng dấu phẩy
+                String formatted = String.format(Locale.US, "%,d", value);
+
+                change.setText(formatted);
+                change.setRange(0, change.getControlText().length());
+                change.setCaretPosition(formatted.length());
+                change.setAnchor(formatted.length());
+
+            } catch (NumberFormatException e) {
+                return null;
+            }
+
+            return change;
+        }));
     }
     private void setupBidHistoryList() {
         bidHistoryList.setCellFactory(listView -> new ListCell<String>() {
@@ -229,10 +259,10 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
             return;
         }
 
-        double soTien;
+        long soTien;
         try {
             // Xóa dấu phẩy nếu người dùng gõ vào
-            soTien = Double.parseDouble(input.replace(",", ""));
+            soTien = Long.parseLong(input.replace(",", ""));
         } catch (NumberFormatException e) {
             log("Số tiền không hợp lệ. Vui lòng nhập lại.");
             return;
