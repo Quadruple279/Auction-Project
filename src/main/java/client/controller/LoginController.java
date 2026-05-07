@@ -24,6 +24,10 @@ public class LoginController {
 
     private AuthenticationController authenticationController = new AuthenticationController();
 
+    {
+        authenticationController.register("Sang", "Nguyen Xuan Sang", "1234a", "BIDDER");
+    }
+
     @FXML
     public void handleLogin() {
         String tenDangNhap = userName.getText().trim();
@@ -32,7 +36,7 @@ public class LoginController {
             messageLabel.setText("Không được để trống Tên đăng nhập và Mật khẩu.");
             return; // can co return neu khong chuong trinh loi van se chay tiep xuong duoi chu khong dung lai
         }
-        /* try {
+        try {
             // Đăng nhập qua AuthenticationController
             authenticationController.login(tenDangNhap, matKhau);
             messageLabel.setText("Đăng nhập thành công.");
@@ -40,8 +44,8 @@ public class LoginController {
 
         } catch (Exception e) {
             messageLabel.setText("Sai tài khoản hoặc mật khẩu.");
-        } */
-        if (tenDangNhap.equals("Sang") && matKhau.equals("1234a")) {
+        }
+        /* if (tenDangNhap.equals("Sang") && matKhau.equals("1234a")) {
             // TODO: Bỏ comment khi server có giao thức
             // boolean connected = ClientSocket.getInstance().connect();
             // if (!connected) {
@@ -53,8 +57,8 @@ public class LoginController {
             messageLabel.setText("Đăng nhập thành công!");
             openDashboard();
         } else {
-            messageLabel.setText("Sai tài khoản hoặc mật khẩu."); // ← thiếu dòng này
-        }
+            messageLabel.setText("Sai tài khoản hoặc mật khẩu.");
+        } */
     }
 
     private void openDashboard() {
