@@ -67,7 +67,7 @@
       </AnchorPane>
       <AnchorPane layoutX="502.0" layoutY="56.0" prefHeight="100.0" prefWidth="480.0" style="-fx-background-color: #2b2b2b; -fx-background-radius: 8;">
          <children>
-            <TextField fx:id="bidAmountField" layoutX="16.0" layoutY="35.0" maxWidth="320.0" prefWidth="320.0" promptText="Nhập số tiền..." style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-border-radius: 6; -fx-background-radius: 6;">
+            <TextField fx:id="bidAmountField" layoutX="16.0" layoutY="35.0" maxWidth="320.0" prefWidth="320.0" promptText="Nhập số tiền..." style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-text-fill: #ffffff; -fx-border-radius: 6; -fx-background-radius: 6;">
                <font>
                   <Font size="14.0" />
                </font>

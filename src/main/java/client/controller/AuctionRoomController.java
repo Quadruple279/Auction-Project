@@ -25,6 +25,7 @@ import server.model.observer.AuctionObserver;
 import java.io.IOException;
 import java.net.URL;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 
@@ -104,7 +105,69 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        setupBidHistoryList(); // setup giao dien ListView
+        setupBidHistoryList();
+
+        bidAmountField.setTextFormatter(new javafx.scene.control.TextFormatter<>(change -> {
+            String newText = change.getControlNewText();
+
+            // Chỉ cho phép chữ số và dấu phẩy
+            if (!newText.matches("[\\d,]*")) {
+                return null;
+            }
+
+            // Lấy ra phần digits thuần (bỏ dấu phẩy)
+            String digits = newText.replace(",", "");
+
+            // Cho phép xóa hết về rỗng
+            if (digits.isEmpty()) {
+                change.setText("");
+                change.setRange(0, change.getControlText().length());
+                change.setCaretPosition(0);
+                change.setAnchor(0);
+                return change;
+            }
+
+            // Giới hạn độ dài tránh overflow (tùy chọn)
+            if (digits.length() > 15) return null;
+
+            try {
+                long value = Long.parseLong(digits);
+
+                // Format thành dạng 1,000,000
+                String formatted = String.format(Locale.US, "%,d", value);
+
+                // Tính lại vị trí caret sau khi format
+                int oldCaretPos = change.getControlNewText().length();
+                int digitsBeforeCaret = change.getControlNewText()
+                        .substring(0, Math.min(oldCaretPos, newText.length()))
+                        .replace(",", "")
+                        .length();
+
+                // Đếm lại vị trí caret tương ứng trong chuỗi đã format
+                int newCaretPos = 0;
+                int digitCount = 0;
+                for (int i = 0; i < formatted.length(); i++) {
+                    if (Character.isDigit(formatted.charAt(i))) {
+                        digitCount++;
+                    }
+                    if (digitCount == digitsBeforeCaret) {
+                        newCaretPos = i + 1;
+                        break;
+                    }
+                }
+                if (digitsBeforeCaret == 0) newCaretPos = 0;
+
+                change.setText(formatted);
+                change.setRange(0, change.getControlText().length());
+                change.setCaretPosition(newCaretPos);
+                change.setAnchor(newCaretPos);
+
+            } catch (NumberFormatException e) {
+                return null;
+            }
+
+            return change;
+        }));
     }
     private void setupBidHistoryList() {
         bidHistoryList.setCellFactory(listView -> new ListCell<String>() {
@@ -229,10 +292,10 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
             return;
         }
 
-        double soTien;
+        long soTien;
         try {
             // Xóa dấu phẩy nếu người dùng gõ vào
-            soTien = Double.parseDouble(input.replace(",", ""));
+            soTien = Long.parseLong(input.replace(",", ""));
         } catch (NumberFormatException e) {
             log("Số tiền không hợp lệ. Vui lòng nhập lại.");
             return;

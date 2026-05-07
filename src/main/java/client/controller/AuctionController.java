@@ -133,8 +133,6 @@ public class AuctionController implements Initializable, AuctionObserver {
 
         System.out.println("[DEBUG] Số phiên trong danhSach: " + danhSach.size());
         log("Đã tải " + danhSach.size() + " phiên đấu giá.");
-
-
     }
 
     public void log(String msg) {
