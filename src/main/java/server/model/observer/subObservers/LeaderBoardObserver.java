@@ -1,7 +1,7 @@
 package server.model.observer.subObservers;
 
-import server.model.AuctionEvent;
-import server.model.observer.AuctionObserver;
+import shared.protocol.AuctionEvent;
+import shared.protocol.AuctionObserver;
 
 public class LeaderBoardObserver implements AuctionObserver {
     @Override

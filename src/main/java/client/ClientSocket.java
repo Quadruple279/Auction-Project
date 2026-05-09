@@ -1,7 +1,9 @@
 package client;
 
-import server.model.AuctionEvent;
-import server.model.observer.AuctionObserver;
+import shared.protocol.AuctionEvent;
+import shared.protocol.AuctionObserver;
+import shared.protocol.Message;
+import shared.protocol.MessageType;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,121 +22,130 @@ public class ClientSocket {
     private PrintWriter out;
     private boolean running = false;
 
+    // Observer nhận AuctionEvent realtime
     private List<AuctionObserver> observers = new ArrayList<>();
 
+    // Listener nhận phản hồi một lần (LOGIN_SUCCESS, LOGIN_FAILED, ERROR, …)
+    private ResponseListener responseListener;
+
     private static ClientSocket instance;
+
+    /** Callback nhận phản hồi không phải AUCTION_UPDATE (login, register, lỗi…). */
+    public interface ResponseListener {
+        void onResponse(Message message);
+    }
 
     public static ClientSocket getInstance() {
         if (instance == null) {
             instance = new ClientSocket();
-        } return instance;
+        }
+        return instance;
     }
 
     private ClientSocket() {}
 
+    // ─── Kết nối ─────────────────────────────────────────────────────────────
 
-    // Method connect
     public boolean connect() {
         try {
             socket = new Socket(HOST, PORT);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            in  = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
             running = true;
-
             startListening();
-
-            System.out.println("[CLIENT] Ket noi toi server THANH CONG");
+            System.out.println("[CLIENT] Kết nối tới server THÀNH CÔNG");
             return true;
         } catch (IOException e) {
-            System.out.println("[CLIENT] Khong the ket noi toi server " + e.getMessage());
+            System.out.println("[CLIENT] Không thể kết nối tới server: " + e.getMessage());
             return false;
         }
     }
 
-    /* Tao backgroung Thread chay ngam lien tuc nhan du lieu tu server
-    Khi nhan duoc AuctionEvent thi thong bao cho Observer va tu dong cap nhat UI ma khong can refesh
-     */
+    /** Background thread lắng nghe liên tục, tự động cập nhật UI qua Observer. */
     private void startListening() {
-        Thread bgThread = new Thread(() ->{
-            System.out.println("[CLIENT] Background Thread dang lang nghe ");
+        Thread bgThread = new Thread(() -> {
+            System.out.println("[CLIENT] Background Thread đang lắng nghe");
             try {
                 String line;
-                // Doc lien tuc
                 while (running && (line = in.readLine()) != null) {
-                    System.out.println("[CLIENT] Nhan tu server:  " + line);
+                    System.out.println("[CLIENT] Nhận từ server: " + line);
                     handleMessage(line);
                 }
             } catch (IOException e) {
                 if (running) {
-                    System.out.println("[CLIENT] Mat ket noi: " + e.getMessage());
+                    System.out.println("[CLIENT] Mất kết nối: " + e.getMessage());
                 }
             }
         });
-
         bgThread.setDaemon(true);
         bgThread.setName("ClientSocket-Listener");
         bgThread.start();
     }
 
-    private void handleMessage(String msg) {
+    /** Phân loại Message nhận được: AUCTION_UPDATE → notifyObservers, còn lại → responseListener. */
+    private void handleMessage(String json) {
         try {
-            if (msg.startsWith("EVENT|")) {
-                String[] parts = msg.split("\\|");
-                // parts[0] = "EVENT"
-                // parts[1] = auctionId
-                // parts[2] = bidderName
-                // parts[3] = bidAmount
-                // parts[4] = currentPrice
-                // parts[5] = leadingBidder
-                // parts[6] = type (BID_PLACED/BID_REJECTED/AUCTION_ENDED)
+            Message msg = Message.fromJson(json);
 
-                String auctionId = parts[1];
-                String bidderName = parts[2];
-                double bidAmount = Double.parseDouble(parts[3]);
-                double currentPrice = Double.parseDouble(parts[4]);
-                String leadingBidder = parts[5];
-                AuctionEvent.Type type = AuctionEvent.Type.valueOf(parts[6]);
+            if (msg.getType() == MessageType.AUCTION_UPDATE) {
+                String auctionId     = msg.get("auctionId");
+                String eventType     = msg.get("eventType");
+                double currentPrice  = Double.parseDouble(msg.get("currentPrice"));
+                String leadingBidder = msg.get("leadingBidder");
+                String bidderName    = msg.getOrDefault("bidderName", "");
+                double bidAmount     = Double.parseDouble(msg.getOrDefault("bidAmount", "0"));
 
-                AuctionEvent event = new AuctionEvent(type, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
-
+                AuctionEvent.Type type = AuctionEvent.Type.valueOf(eventType);
+                AuctionEvent event = new AuctionEvent(
+                        type, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
                 notifyObservers(event);
-            } else if (msg.startsWith("OK|")) {
-                System.out.println("[CLIENT] Server xac nhan: " + msg);
-            } else if (msg.startsWith("FAIL|")) {
-                System.out.println("[CLIENT] Server tu choi: " + msg);
+
+            } else if (responseListener != null) {
+                responseListener.onResponse(msg);
             }
+
         } catch (Exception e) {
-            System.out.println("[CLIENT] Loi parse: " + e.getMessage());
+            System.out.println("[CLIENT] Lỗi parse: " + e.getMessage());
         }
     }
-    // Gui lenh dang nhap len server
-    public void sendLogin(String userName, String password) {
-        if (out != null) {
-            out.println("LOGIN|" + userName + "|" + password);
-            System.out.println("[CLIENT] Gui Login: " + userName);
-        }
+
+    // ─── API gửi lệnh ─────────────────────────────────────────────────────────
+
+    public void setResponseListener(ResponseListener listener) {
+        this.responseListener = listener;
     }
-    // Gui lenh dat gia len server
+
+    public void sendLogin(String username, String password) {
+        send(Message.of(MessageType.LOGIN)
+                .put("username", username)
+                .put("password", password));
+    }
+
+    public void sendRegister(String username, String password, String role) {
+        send(Message.of(MessageType.REGISTER)
+                .put("username", username)
+                .put("password", password)
+                .put("role", role));
+    }
+
     public void sendBid(String auctionId, double amount) {
-        if (out != null) {
-            out.println("BID|" + auctionId + "|" + amount);
-            System.out.println("[CLIENT] Gui Bid: " + auctionId + " - " + amount);
-        }
+        send(Message.of(MessageType.BID)
+                .put("auctionId", auctionId)
+                .put("amount", String.valueOf(amount)));
     }
-    // Dang ki nhan thong bao phien dau gia
+
     public void subscribe(String auctionId) {
-        if (out != null) {
-            out.println("SUBSCRIBE|" + auctionId);
-        }
+        send(Message.of(MessageType.SUBSCRIBE).put("auctionId", auctionId));
     }
-    // Huy dang ki nhan thong bao
+
     public void unsubscribe(String auctionId) {
-        if (out != null) {
-            out.println("UNSUBSCRIBE|" + auctionId);
-        }
+        send(Message.of(MessageType.UNSUBSCRIBE).put("auctionId", auctionId));
     }
-    // Ngat ket noi khi log out
+
     public void disconnect() {
+        if (out != null) {
+            send(Message.of(MessageType.LOGOUT));
+        }
         running = false;
         try {
             if (socket != null) socket.close();
@@ -142,7 +153,14 @@ public class ClientSocket {
         } catch (IOException ignored) {}
     }
 
+    private void send(Message msg) {
+        if (out != null) {
+            out.println(msg.toJson());
+            System.out.println("[CLIENT] Gửi: " + msg.getType());
+        }
+    }
 
+    // ─── Observer ─────────────────────────────────────────────────────────────
 
     public void addObserver(AuctionObserver observer) {
         observers.add(observer);

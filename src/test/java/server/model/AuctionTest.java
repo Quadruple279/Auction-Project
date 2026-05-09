@@ -5,7 +5,8 @@ import org.junit.jupiter.api.Test;
 import server.exception.InvalidBidException;
 import server.model.item.Item;
 import server.model.item.ItemFactory;
-import server.model.observer.AuctionObserver;
+import shared.protocol.AuctionEvent;
+import shared.protocol.AuctionObserver;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
