@@ -56,8 +56,8 @@ public class AuctionController {
         if (!currentUser.getRole().equals("SELLER")){
             throw new RuntimeException("Chỉ SELLER mới được tạo phiên đấu giá");
         }
-        Auction auction = new Auction(auctionId,item,endTime);
-        auctionManager.addItem(auction);
+        Auction auction = new Auction(auctionId,item,endTime,currentUser.getId());
+        auctionManager.addAuction(auction);
         try{
             auctionDAO.save(auction);
         }

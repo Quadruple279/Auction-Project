@@ -21,4 +21,13 @@ public abstract class Item{
     //tao ra 1 abs method de cac lop con buoc phai ghi de
     public abstract void displayDetails();
     public abstract String getType();
+    public void setName(String name) {
+        this.name = name;
+    }
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    public void setPrice(double price) {
+        this.basePrice = price;
+    }
 }

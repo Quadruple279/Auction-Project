@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="700.0" prefWidth="1100.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.controller.AdminController">
+    <HBox AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+
+        <!-- ==================== SIDEBAR ==================== -->
+        <VBox prefWidth="210" style="-fx-background-color: #0f1729; -fx-border-color: rgba(37,99,235,0.2); -fx-border-width: 0 1 0 0;">
+
+            <!-- Brand -->
+            <HBox style="-fx-padding: 18 16; -fx-alignment: center-left; -fx-spacing: 10;                          -fx-border-color: rgba(37,99,235,0.15); -fx-border-width: 0 0 1 0;">
+                <Pane prefHeight="32" prefWidth="32" style="-fx-background-color: #2563eb; -fx-background-radius: 8;">
+                    <Label layoutX="12.0" layoutY="6.0" prefWidth="1100.0" style="-fx-text-fill: white; -fx-font-size: 16;" text="⚡">
+                  <font>
+                     <Font size="36.0" />
+                  </font></Label>
+                </Pane>
+                <VBox style="-fx-spacing: 1;">
+                    <Label style="-fx-text-fill: #e8efff; -fx-font-size: 14; -fx-font-weight: bold;" text="BidNow" />
+                    <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 10;" text="Admin Panel" />
+                </VBox>
+            </HBox>
+
+            <!-- Nav -->
+            <VBox style="-fx-padding: 12 8; -fx-spacing: 2;" VBox.vgrow="ALWAYS">
+                <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 10; -fx-padding: 10 8 4 8; -fx-font-weight: bold;" text="MENU" />
+                <Button fx:id="navDashboard" maxWidth="Infinity" onAction="#showDashboard" style="-fx-background-color: rgba(37,99,235,0.15); -fx-text-fill: #60a5fa;                                -fx-alignment: center-left; -fx-padding: 8 10; -fx-background-radius: 7;                                -fx-border-color: #2563eb; -fx-border-width: 0 0 0 2; -fx-font-size: 12;                                -fx-cursor: hand;" text="Dashboard" />
+                <Button fx:id="navUsers" maxWidth="Infinity" onAction="#showUsers" style="-fx-background-color: transparent; -fx-text-fill: #5a6a8a;                                -fx-alignment: center-left; -fx-padding: 8 10; -fx-background-radius: 7;                                -fx-font-size: 12; -fx-cursor: hand;" text="Quản lý User" />
+                <Button fx:id="navAuctions" maxWidth="Infinity" onAction="#showAuctions" style="-fx-background-color: transparent; -fx-text-fill: #5a6a8a;                                -fx-alignment: center-left; -fx-padding: 8 10; -fx-background-radius: 7;                                -fx-font-size: 12; -fx-cursor: hand;" text="Quản lý Phiên" />
+                <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 10; -fx-padding: 10 8 4 8; -fx-font-weight: bold;" text="HỆ THỐNG" />
+                <Button fx:id="navStats" maxWidth="Infinity" onAction="#showStats" style="-fx-background-color: transparent; -fx-text-fill: #5a6a8a;                                -fx-alignment: center-left; -fx-padding: 8 10; -fx-background-radius: 7;                                -fx-font-size: 12; -fx-cursor: hand;" text="Thống kê" />
+            </VBox>
+
+            <!-- Footer: Admin info + Logout -->
+            <VBox style="-fx-padding: 14 16; -fx-spacing: 10;                          -fx-border-color: rgba(37,99,235,0.15); -fx-border-width: 1 0 0 0;">
+                <HBox style="-fx-spacing: 8; -fx-alignment: center-left;">
+                    <Pane prefHeight="28" prefWidth="28" style="-fx-background-color: #1e3a6e; -fx-background-radius: 14;                                  -fx-border-color: #2563eb; -fx-border-radius: 14; -fx-border-width: 1;">
+                        <Label layoutX="10.0" layoutY="9.0" style="-fx-text-fill: #60a5fa; -fx-font-size: 11; -fx-font-weight: bold;" text="A" />
+                    </Pane>
+                    <VBox style="-fx-spacing: 1;">
+                        <Label fx:id="adminNameLabel" style="-fx-text-fill: #e8efff; -fx-font-size: 12; -fx-font-weight: bold;" text="Admin" />
+                        <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 10;" text="Quản trị viên" />
+                    </VBox>
+                </HBox>
+                <Button maxWidth="Infinity" onAction="#handleLogout" style="-fx-background-color: rgba(239,68,68,0.08); -fx-text-fill: #f87171;                                -fx-border-color: rgba(239,68,68,0.25); -fx-border-radius: 6;                                -fx-background-radius: 6; -fx-font-size: 11; -fx-padding: 6;                                -fx-cursor: hand;" text="Đăng xuất" />
+            </VBox>
+        </VBox>
+
+        <!-- ==================== MAIN CONTENT ==================== -->
+        <VBox style="-fx-background-color: #080d18;" HBox.hgrow="ALWAYS">
+
+            <!-- Topbar -->
+            <HBox style="-fx-background-color: #0a0f1e; -fx-padding: 12 20;                          -fx-alignment: center-left; -fx-spacing: 0;                          -fx-border-color: rgba(37,99,235,0.12); -fx-border-width: 0 0 1 0;">
+                <Label fx:id="pageTitle" style="-fx-text-fill: #e8efff; -fx-font-size: 15; -fx-font-weight: bold;" text="Dashboard" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Label style="-fx-text-fill: #22c55e; -fx-font-size: 11;" text="● Hệ thống hoạt động bình thường" />
+            </HBox>
+
+            <!-- StackPane chứa các page -->
+            <StackPane VBox.vgrow="ALWAYS">
+
+                <!-- ========== PAGE: DASHBOARD ========== -->
+                <VBox fx:id="pageDashboard" managed="true" style="-fx-padding: 16 20; -fx-spacing: 14;" visible="true">
+
+                    <!-- 4 Stat Cards -->
+                    <HBox style="-fx-spacing: 10;">
+                        <!-- Card 1 -->
+                        <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                      -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;                                      -fx-padding: 14; -fx-spacing: 4;" HBox.hgrow="ALWAYS">
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 11;" text="Tổng User" />
+                            <Label fx:id="statTotalUsers" style="-fx-text-fill: #3b82f6; -fx-font-size: 24; -fx-font-weight: bold;" text="0" />
+                            <Label fx:id="statUserSub" style="-fx-text-fill: #5a6a8a; -fx-font-size: 10;" text="Bidder: 0 · Seller: 0" />
+                        </VBox>
+                        <!-- Card 2 -->
+                        <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                      -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;                                      -fx-padding: 14; -fx-spacing: 4;" HBox.hgrow="ALWAYS">
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 11;" text="Phiên đang chạy" />
+                            <Label fx:id="statRunning" style="-fx-text-fill: #22c55e; -fx-font-size: 24; -fx-font-weight: bold;" text="0" />
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 10;" text="Có bidder tham gia" />
+                        </VBox>
+                        <!-- Card 3 -->
+                        <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                      -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;                                      -fx-padding: 14; -fx-spacing: 4;" HBox.hgrow="ALWAYS">
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 11;" text="Phiên hoàn thành" />
+                            <Label fx:id="statFinished" style="-fx-text-fill: #f59e0b; -fx-font-size: 24; -fx-font-weight: bold;" text="0" />
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 10;" text="Từ đầu hệ thống" />
+                        </VBox>
+                        <!-- Card 4 -->
+                        <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                      -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;                                      -fx-padding: 14; -fx-spacing: 4;" HBox.hgrow="ALWAYS">
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 11;" text="Phiên đã hủy" />
+                            <Label fx:id="statCanceled" style="-fx-text-fill: #f87171; -fx-font-size: 24; -fx-font-weight: bold;" text="0" />
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 10;" text="Không có người đấu" />
+                        </VBox>
+                    </HBox>
+
+                    <!-- 2 preview tables -->
+                    <HBox style="-fx-spacing: 14;" VBox.vgrow="ALWAYS">
+                        <!-- User preview -->
+                        <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                      -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;" HBox.hgrow="ALWAYS">
+                            <HBox style="-fx-padding: 11 14; -fx-alignment: center-left;                                          -fx-border-color: rgba(37,99,235,0.1); -fx-border-width: 0 0 1 0;">
+                                <Label style="-fx-text-fill: #e8efff; -fx-font-size: 12; -fx-font-weight: bold;" text="User mới nhất" />
+                            </HBox>
+                            <TableView fx:id="dashUserTable" style="-fx-background-color: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="dashColUserName" prefWidth="150" text="Tên" />
+                                    <TableColumn fx:id="dashColUserRole" prefWidth="80" text="Role" />
+                                    <TableColumn fx:id="dashColUserId" prefWidth="100" text="ID" />
+                                </columns>
+                            </TableView>
+                        </VBox>
+                        <!-- Auction preview -->
+                        <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                      -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;" HBox.hgrow="ALWAYS">
+                            <HBox style="-fx-padding: 11 14; -fx-alignment: center-left;                                          -fx-border-color: rgba(37,99,235,0.1); -fx-border-width: 0 0 1 0;">
+                                <Label style="-fx-text-fill: #e8efff; -fx-font-size: 12; -fx-font-weight: bold;" text="Phiên đang chạy" />
+                            </HBox>
+                            <TableView fx:id="dashAuctionTable" style="-fx-background-color: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="dashColAuctionId" prefWidth="80" text="Mã" />
+                                    <TableColumn fx:id="dashColAuctionItem" prefWidth="160" text="Sản phẩm" />
+                                    <TableColumn fx:id="dashColAuctionStatus" prefWidth="100" text="Trạng thái" />
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </HBox>
+                </VBox>
+
+                <!-- ========== PAGE: USERS ========== -->
+                <VBox fx:id="pageUsers" managed="false" style="-fx-padding: 16 20; -fx-spacing: 12;" visible="false">
+                    <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                  -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;" VBox.vgrow="ALWAYS">
+                        <!-- Header -->
+                        <HBox style="-fx-padding: 11 14; -fx-alignment: center-left;                                      -fx-border-color: rgba(37,99,235,0.1); -fx-border-width: 0 0 1 0;">
+                            <Label style="-fx-text-fill: #e8efff; -fx-font-size: 12; -fx-font-weight: bold;" text="Danh sách User" />
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Label fx:id="userCountLabel" style="-fx-text-fill: #5a6a8a; -fx-font-size: 11;" text="(0 người)" />
+                        </HBox>
+                        <!-- Search + Filter -->
+                        <HBox style="-fx-padding: 10 14; -fx-spacing: 8; -fx-alignment: center-left;                                      -fx-border-color: rgba(37,99,235,0.08); -fx-border-width: 0 0 1 0;">
+                            <TextField fx:id="userSearchField" promptText="Tìm theo tên, ID..." style="-fx-background-color: #0a1220; -fx-text-fill: #e8efff;                                               -fx-prompt-text-fill: #374151; -fx-font-size: 11;                                               -fx-border-color: rgba(37,99,235,0.2); -fx-border-radius: 6;                                               -fx-background-radius: 6; -fx-padding: 6 10;" HBox.hgrow="ALWAYS" />
+                            <ComboBox fx:id="userRoleFilter" promptText="Lọc role" style="-fx-background-color: #0a1220; -fx-border-color: rgba(37,99,235,0.2);                                              -fx-border-radius: 6; -fx-background-radius: 6; -fx-font-size: 11;" />
+                        </HBox>
+                        <!-- Table -->
+                        <TableView fx:id="userTable" style="-fx-background-color: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colUserId" prefWidth="120" text="ID" />
+                                <TableColumn fx:id="colUserName" prefWidth="200" text="Tên" />
+                                <TableColumn fx:id="colUserRole" prefWidth="100" text="Role" />
+                                <TableColumn fx:id="colUserAction" prefWidth="120" text="Hành động" />
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+
+                <!-- ========== PAGE: AUCTIONS ========== -->
+                <VBox fx:id="pageAuctions" managed="false" style="-fx-padding: 16 20; -fx-spacing: 12;" visible="false">
+                    <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                  -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;" VBox.vgrow="ALWAYS">
+                        <!-- Header -->
+                        <HBox style="-fx-padding: 11 14; -fx-alignment: center-left;                                      -fx-border-color: rgba(37,99,235,0.1); -fx-border-width: 0 0 1 0;">
+                            <Label style="-fx-text-fill: #e8efff; -fx-font-size: 12; -fx-font-weight: bold;" text="Danh sách Phiên đấu giá" />
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Label fx:id="auctionCountLabel" style="-fx-text-fill: #5a6a8a; -fx-font-size: 11;" text="(0 phiên)" />
+                        </HBox>
+                        <!-- Search + Filter -->
+                        <HBox style="-fx-padding: 10 14; -fx-spacing: 8; -fx-alignment: center-left;                                      -fx-border-color: rgba(37,99,235,0.08); -fx-border-width: 0 0 1 0;">
+                            <TextField fx:id="auctionSearchField" promptText="Tìm theo mã phiên, tên sản phẩm..." style="-fx-background-color: #0a1220; -fx-text-fill: #e8efff;                                               -fx-prompt-text-fill: #374151; -fx-font-size: 11;                                               -fx-border-color: rgba(37,99,235,0.2); -fx-border-radius: 6;                                               -fx-background-radius: 6; -fx-padding: 6 10;" HBox.hgrow="ALWAYS" />
+                            <ComboBox fx:id="auctionStatusFilter" promptText="Lọc trạng thái" style="-fx-background-color: #0a1220; -fx-border-color: rgba(37,99,235,0.2);                                              -fx-border-radius: 6; -fx-background-radius: 6; -fx-font-size: 11;" />
+                        </HBox>
+                        <!-- Table -->
+                        <TableView fx:id="auctionTable" style="-fx-background-color: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colAuctionId" prefWidth="100" text="Mã phiên" />
+                                <TableColumn fx:id="colAuctionItem" prefWidth="180" text="Sản phẩm" />
+                                <TableColumn fx:id="colAuctionSeller" prefWidth="130" text="Seller" />
+                                <TableColumn fx:id="colAuctionPrice" prefWidth="130" text="Giá hiện tại" />
+                                <TableColumn fx:id="colAuctionStatus" prefWidth="110" text="Trạng thái" />
+                                <TableColumn fx:id="colAuctionAction" prefWidth="100" text="Hành động" />
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+
+                <!-- ========== PAGE: STATS ========== -->
+                <VBox fx:id="pageStats" managed="false" style="-fx-padding: 16 20; -fx-spacing: 14;" visible="false">
+                    <!-- Stat Cards hàng 2 -->
+                    <HBox style="-fx-spacing: 10;">
+                        <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                      -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;                                      -fx-padding: 14; -fx-spacing: 4;" HBox.hgrow="ALWAYS">
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 11;" text="Tổng Bidder" />
+                            <Label fx:id="statBidder" style="-fx-text-fill: #3b82f6; -fx-font-size: 24; -fx-font-weight: bold;" text="0" />
+                        </VBox>
+                        <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                      -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;                                      -fx-padding: 14; -fx-spacing: 4;" HBox.hgrow="ALWAYS">
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 11;" text="Tổng Seller" />
+                            <Label fx:id="statSeller" style="-fx-text-fill: #22c55e; -fx-font-size: 24; -fx-font-weight: bold;" text="0" />
+                        </VBox>
+                        <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                      -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;                                      -fx-padding: 14; -fx-spacing: 4;" HBox.hgrow="ALWAYS">
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 11;" text="Tổng phiên" />
+                            <Label fx:id="statTotalAuctions" style="-fx-text-fill: #f59e0b; -fx-font-size: 24; -fx-font-weight: bold;" text="0" />
+                        </VBox>
+                        <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                      -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;                                      -fx-padding: 14; -fx-spacing: 4;" HBox.hgrow="ALWAYS">
+                            <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 11;" text="Tỉ lệ thành công" />
+                            <Label fx:id="statSuccessRate" style="-fx-text-fill: #22c55e; -fx-font-size: 24; -fx-font-weight: bold;" text="0%" />
+                        </VBox>
+                    </HBox>
+
+                    <!-- Console / Log -->
+                    <VBox style="-fx-background-color: #0f1729; -fx-background-radius: 10;                                  -fx-border-color: rgba(37,99,235,0.15); -fx-border-radius: 10;" VBox.vgrow="ALWAYS">
+                        <HBox style="-fx-padding: 11 14; -fx-border-color: rgba(37,99,235,0.1); -fx-border-width: 0 0 1 0;">
+                            <Label style="-fx-text-fill: #e8efff; -fx-font-size: 12; -fx-font-weight: bold;" text="System Log" />
+                        </HBox>
+                        <TextArea fx:id="systemLog" editable="false" style="-fx-background-color: #080d18; -fx-text-fill: #60a5fa;                                          -fx-font-family: monospace; -fx-font-size: 11;                                          -fx-border-color: transparent; -fx-focus-color: transparent;" VBox.vgrow="ALWAYS" />
+                    </VBox>
+                </VBox>
+
+            </StackPane>
+        </VBox>
+    </HBox>
+
+</AnchorPane>

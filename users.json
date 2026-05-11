@@ -1,5 +1,6 @@
 [ {
   "id" : "Sang",
-  "name" : "Nguyen Xuan Sang",
+  "name" : "Sang",
+  "password" : "Sang123a",
   "role" : "BIDDER"
 } ]

@@ -32,12 +32,12 @@ public class AuctionDataTest {
                 "2020", "Toyota"
         );
 
-        manager.addItem(new Auction("AU001", iPhone,
-                LocalDateTime.now().plusMinutes(5)));
-        manager.addItem(new Auction("AU002", tranh,
-                LocalDateTime.now().plusMinutes(10)));
-        manager.addItem(new Auction("AU003", xe,
-                LocalDateTime.now().plusHours(1)));
+        manager.addAuction(new Auction("AU001", iPhone,
+                LocalDateTime.now().plusMinutes(5), "Tran Quang Lam"));
+        manager.addAuction(new Auction("AU002", tranh,
+                LocalDateTime.now().plusMinutes(10), "Tran Quang Lam"));
+        manager.addAuction(new Auction("AU003", xe,
+                LocalDateTime.now().plusHours(1), "Tran Quang Lam"));
 
         System.out.println("[TEST] Đã tạo "
                 + manager.getAuctionList().size() + " phiên đấu giá.");

@@ -13,6 +13,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
+import server.controller.AuthenticationController;
 import server.model.Auction;
 import server.model.AuctionManager;
 import shared.protocol.AuctionEvent;
@@ -34,6 +35,8 @@ public class AuctionController implements Initializable, AuctionObserver {
     @FXML private TextArea console;
     @FXML private MenuItem disconnect;
     @FXML private Button back;
+
+    private AuthenticationController authenticationController = new AuthenticationController();
 
     private ObservableList<Auction> danhSach = FXCollections.observableArrayList();
 
@@ -150,13 +153,13 @@ public class AuctionController implements Initializable, AuctionObserver {
         ClientSocket.getInstance().removeObserver(this);
         ClientSocket.getInstance().disconnect();
         log("Đã ngắt kết nối.");
-        switchScene("/fxml/LoginView.fxml");
+        switchScene("/fxml/LoginViewMoi.fxml");
     }
 
     @FXML
     public void back(ActionEvent actionEvent) {
         ClientSocket.getInstance().removeObserver(this);
-        switchScene("/fxml/LoginView.fxml");
+        switchScene("/fxml/LoginViewMoi.fxml");
     }
 
     // ─── Tiện ích ─────────────────────────────────────────────────────────────
@@ -165,6 +168,10 @@ public class AuctionController implements Initializable, AuctionObserver {
         if (console != null) {
             console.appendText(msg + "\n");
         }
+    }
+
+    public void setAuthenticationController(AuthenticationController auth) {
+        this.authenticationController = auth;
     }
 
     private void switchScene(String fxmlPath) {

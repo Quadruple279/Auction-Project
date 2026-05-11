@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="750.0" prefWidth="1000.0" style="-fx-background-color: #1d1d1d;;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.controller.SellerController">
+   <children>
+      <AnchorPane prefHeight="40.0" prefWidth="1000.0" style="-fx-background-color: #2b2b2b;">
+         <children>
+            <Button fx:id="buttonBack" layoutX="10.0" layoutY="8.0" mnemonicParsing="false" onAction="#handleBack" style="-fx-background-color: #3a3a3a; -fx-text-fill: #cccccc; -fx-border-color: #555555; -fx-background-radius: 6; -fx-border-radius: 6;" text="Back" />
+            <Label layoutX="90.0" layoutY="12.0" text="Seller Dashboard" textFill="WHITE">
+               <font>
+                  <Font size="15.0" />
+               </font>
+            </Label>
+            <Label layoutX="860.0" layoutY="11.0" text=" ● Đang hoạt động" textFill="#4caf50">
+               <font>
+                  <Font size="15.0" />
+               </font>
+            </Label>
+         </children>
+      </AnchorPane>
+      <AnchorPane layoutX="16.0" layoutY="56.0" prefHeight="560.0" prefWidth="470.0" style="-fx-background-color: #2b2b2b;; -fx-background-radius: 8;">
+         <children>
+            <Label layoutX="16.0" layoutY="12.0" text="ĐĂNG SẢN PHẨM MỚI" textFill="WHITE" />
+            <Label layoutX="16.0" layoutY="36.0" text="Loại sản phẩm" textFill="#aaaaaa" />
+            <ComboBox fx:id="typeComboBox" layoutX="16.0" layoutY="52.0" prefHeight="36.0" prefWidth="438.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6; -fx-border-color: #555555; -fx-border-radius: 6;" />
+            <Label layoutX="16.0" layoutY="100.0" text="Tên sản phẩm" textFill="#aaaaaa" />
+            <TextField fx:id="itemNameField" layoutX="16.0" layoutY="116.0" prefHeight="36.0" prefWidth="438.0" promptText="Nhập tên sản phẩm..." style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-background-radius: 6; -fx-border-radius: 6; -fx-text-fill: white; -fx-prompt-text-fill: #888888;" />
+            <TextArea fx:id="descriptionField" layoutX="16.0" layoutY="180.0" prefHeight="80.0" prefWidth="438.0" promptText="Nhập mô tả..." style="-fx-background-color: #1d1d1d; -fx-control-inner-background: #1d1d1d; -fx-text-fill: white; -fx-border-color: #555555; -fx-border-radius: 6; -fx-background-radius: 6; -fx-prompt-text-fill: #888888;" />
+            <Label layoutX="16.0" layoutY="164.0" text="Mô tả" textFill="#aaaaaa" />
+            <Label layoutX="16.0" layoutY="272.0" text="Giá khởi điểm (₫)" textFill="#aaaaaa" />
+            <Label layoutX="244.0" layoutY="272.0" text="Thời gian (phút)" textFill="#aaaaaa" />
+            <Label layoutX="16.0" layoutY="336.0" text="Thông tin thêm (Bảo hành / Nghệ sĩ / Năm SX)" textFill="#aaaaaa" />
+            <Label layoutX="16.0" layoutY="400.0" text="Thông tin thêm 2 (Hãng xe - chỉ dùng cho Vehicle)" textFill="#aaaaaa" />
+            <Label fx:id="messageLabel" alignment="CENTER" layoutX="16.0" layoutY="464.0" prefHeight="18.0" prefWidth="438.0" textFill="#ff4444" />
+            <TextField fx:id="basePriceField" layoutX="16.0" layoutY="288.0" prefHeight="36.0" prefWidth="210.0" promptText="VD: 5,000,000 " style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-background-radius: 6; -fx-border-radius: 6; -fx-text-fill: white; -fx-prompt-text-fill: #888888;" />
+            <TextField fx:id="extraInfo1Field" layoutX="16.0" layoutY="352.0" prefHeight="36.0" prefWidth="438.0" promptText="VD: 12 tháng bảo hành" style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-background-radius: 6; -fx-border-radius: 6; -fx-text-fill: white; -fx-prompt-text-fill: #888888;" />
+            <TextField fx:id="durationField" layoutX="244.0" layoutY="288.0" prefHeight="36.0" prefWidth="210.0" promptText="VD: 60" style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-background-radius: 6; -fx-border-radius: 6; -fx-text-fill: white; -fx-prompt-text-fill: #888888;" />
+            <TextField fx:id="extraInfo2Field" layoutX="16.0" layoutY="416.0" prefHeight="36.0" prefWidth="438.0" promptText="VD: Toyota" style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-background-radius: 6; -fx-border-radius: 6; -fx-text-fill: white; -fx-prompt-text-fill: #888888;" />
+            <Button layoutX="16.0" layoutY="490.0" mnemonicParsing="false" onAction="#handleAddItem" prefHeight="38.0" prefWidth="438.0" style="-fx-background-color: #006aff; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 6; -fx-cursor: hand;" text="Đăng sản phẩm">
+               <font>
+                  <Font size="18.0" />
+               </font></Button>
+         </children>
+      </AnchorPane>
+      <AnchorPane layoutX="502.0" layoutY="56.0" prefHeight="110.0" prefWidth="480.0" style="-fx-background-color: #2b2b2b; -fx-background-radius: 8;">
+         <children>
+            <Label layoutX="16.0" layoutY="12.0" text="THỐNG KÊ" textFill="WHITE" />
+            <AnchorPane layoutX="16.0" layoutY="30.0" prefHeight="60.0" prefWidth="136.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
+               <children>
+                  <Label alignment="CENTER" layoutY="10.0" prefWidth="136.0" text="Đang đấu giá" textFill="#888888" />
+                  <Label fx:id="activeCountLabel" alignment="CENTER" layoutY="28.0" prefWidth="136.0" text="0" textFill="#006aff">
+                     <font>
+                        <Font size="20.0" />
+                     </font>
+                  </Label>
+               </children>
+            </AnchorPane>
+            <AnchorPane layoutX="312.0" layoutY="30.0" prefHeight="60.0" prefWidth="136.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
+               <children>
+                  <Label alignment="CENTER" layoutY="10.0" prefWidth="136.0" text="Chờ duyệt" textFill="#888888" />
+                  <Label fx:id="pendingCountLabel" alignment="CENTER" layoutY="28.0" prefWidth="136.0" text="0" textFill="GOLD">
+                     <font>
+                        <Font size="20.0" />
+                     </font>
+                  </Label>
+               </children>
+            </AnchorPane>
+            <AnchorPane layoutX="164.0" layoutY="30.0" prefHeight="60.0" prefWidth="136.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
+               <children>
+                  <Label alignment="CENTER" layoutY="10.0" prefWidth="136.0" text="Đã bán" textFill="#888888" />
+                  <Label fx:id="soldCountLabel" alignment="CENTER" layoutY="28.0" prefWidth="136.0" text="0" textFill="#4caf50">
+                     <font>
+                        <Font size="20.0" />
+                     </font>
+                  </Label>
+               </children>
+            </AnchorPane>
+         </children>
+      </AnchorPane>
+      <AnchorPane layoutX="502.0" layoutY="178.0" prefHeight="435.0" prefWidth="480.0" style="-fx-background-color: #2b2b2b; -fx-background-radius: 8;">
+         <children>
+            <Label layoutX="16.0" layoutY="12.0" text="SẢN PHẨM ĐANG ĐẤU GIÁ" textFill="WHITE" />
+            <ListView fx:id="myAuctionList" layoutX="16.0" layoutY="35.0" prefHeight="385.0" prefWidth="448.0" style="-fx-background-color: #1d1d1d; -fx-border-color: transparent; -fx-background-radius: 6;" />
+         </children>
+      </AnchorPane>
+      <AnchorPane layoutX="16.0" layoutY="626.0" prefHeight="110.0" prefWidth="966.0" style="-fx-background-color: #2b2b2b; -fx-background-radius: 8;">
+         <children>
+            <Label layoutX="16.0" layoutY="12.0" text="NOTIFICATIONS" textFill="WHITE" />
+            <TextArea editable="false" layoutX="16.0" layoutY="30.0" prefHeight="68.0" prefWidth="934.0" style="-fx-background-color: #1d1d1d; -fx-control-inner-background: #1d1d1d; -fx-text-fill: #666666; -fx-border-color: transparent;" />
+         </children>
+      </AnchorPane>
+   </children>
+</AnchorPane>

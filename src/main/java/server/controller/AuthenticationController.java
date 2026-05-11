@@ -5,8 +5,11 @@ import server.dao.UserDAO;
 import server.model.user.*;
 import server.exception.AuthenticationException;
 
+import java.util.ArrayList;
+import java.sql.SQLException;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AuthenticationController {
@@ -24,7 +27,7 @@ public class AuthenticationController {
         }
     }
     private User currentUser;
-    // lưu vào DataBase
+
     public void register(String id, String name, String password, String role) {
         User newUser = null;
 
@@ -38,11 +41,8 @@ public class AuthenticationController {
 
         if (newUser != null) {
             users.put(id, newUser);              // lưu vào Map (runtime)
-            try {
-                userDAO.save(newUser);
-            } catch (SQLException e) {
-                System.out.println("Lỗi lưu user: " + e.getMessage());
-            }
+            DataStorage.users.add(newUser);      // lưu vào List (để ghi file)
+            DataStorage.saveData();              // 👈 LƯU FILE
         }
     }
 
@@ -59,5 +59,21 @@ public class AuthenticationController {
 
     public User getCurrentUser() {
         return currentUser;
+    }
+
+    public List<User> getAllUsers() {
+        return new ArrayList<>(users.values());
+    }
+
+    public void removeUser(User user) {
+        if (user != null) {
+            users.remove(user.getId());
+            server.dao.DataStorage.users.remove(user);
+            server.dao.DataStorage.saveData();
+        }
+    }
+
+    public void logout() {
+        this.currentUser = null;
     }
 }
