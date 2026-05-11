@@ -6,6 +6,8 @@ import server.exception.AuthenticationException;
 import server.model.Auction;
 import server.model.AuctionManager;
 import server.model.user.User;
+import shared.protocol.AuctionEvent;
+import shared.protocol.AuctionObserver;
 import shared.protocol.Message;
 import shared.protocol.MessageType;
 
@@ -15,7 +17,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ClientHandler implements Runnable {
+public class ClientHandler implements Runnable, AuctionObserver {
 
     private final Socket clientSocket;
     private BufferedReader in;
@@ -61,6 +63,29 @@ public class ClientHandler implements Runnable {
             System.out.println("[SERVER] Client ngắt kết nối: " + e.getMessage());
         } finally {
             cleanup();
+        }
+    }
+    // Tự động được gọi khi auction có sự kiện — thay thế broadcast() thủ công
+    @Override
+    public void onAuctionEvent(AuctionEvent event) {
+        switch (event.getType()) {
+            case BID_PLACED -> send(
+                    Message.of(MessageType.AUCTION_UPDATE)
+                            .put("auctionId",     event.getAuctionId())
+                            .put("currentPrice",  String.valueOf(event.getCurrentPrice()))
+                            .put("leadingBidder", event.getLeadingBidder())
+                            .put("eventType",     "BID_PLACED")
+                            .put("bidderName",    event.getBidderName())
+                            .put("bidAmount",     String.valueOf(event.getBidAmount()))
+            );
+            case AUCTION_ENDED -> send(
+                    Message.of(MessageType.AUCTION_UPDATE)
+                            .put("auctionId",     event.getAuctionId())
+                            .put("currentPrice",  String.valueOf(event.getCurrentPrice()))
+                            .put("leadingBidder", event.getLeadingBidder())
+                            .put("eventType",     "AUCTION_ENDED")
+            );
+            case BID_REJECTED -> {}  // bidder nhận ERROR trực tiếp từ handleBid()
         }
     }
 
@@ -119,79 +144,52 @@ public class ClientHandler implements Runnable {
             String auctionId = msg.get("auctionId");
             double amount    = Double.parseDouble(msg.get("amount"));
 
-            Auction auction = AuctionManager.getInstance().findById(auctionId);
-            if (auction == null) {
-                return Message.of(MessageType.ERROR)
-                        .put("reason", "Không tìm thấy phiên: " + auctionId);
-            }
+            // placeBid() → auction.placeBid() → notifyObservers()
+            // → onAuctionEvent() của mỗi ClientHandler tự gửi update
+            auctionController.placeBid(auctionId, amount);
 
-            // Đặt giá — AuctionController kiểm tra đăng nhập, quyền, rồi gọi auction.placeBid()
-            auctionController.placeBid(auction, amount);
-
-            User current = authController.getCurrentUser();
-            String bidderName = current != null ? current.getName() : "unknown";
-
-            Message update = Message.of(MessageType.AUCTION_UPDATE)
-                    .put("auctionId",     auctionId)
-                    .put("currentPrice",  String.valueOf(auction.getCurrentPrice()))
-                    .put("leadingBidder", auction.getLeadingBidder())
-                    .put("eventType",     "BID_PLACED")
-                    .put("bidderName",    bidderName)
-                    .put("bidAmount",     String.valueOf(amount));
-
-            // Broadcast tới tất cả client đang theo dõi phiên này (trừ người đặt giá)
-            broadcast(auctionId, update);
-
-            return update;
+            return null;  // update được gửi tự động qua onAuctionEvent()
 
         } catch (NumberFormatException e) {
             return Message.of(MessageType.ERROR).put("reason", "Số tiền không hợp lệ");
         } catch (RuntimeException e) {
-            // Bắt InvalidBidException, AuctionClosedException, chưa đăng nhập, sai quyền, v.v.
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
-
     private Message handleSubscribe(Message msg) {
         String auctionId = msg.get("auctionId");
-        subscriptions.add(auctionId);
-        subscriberMap
-                .computeIfAbsent(auctionId, k -> ConcurrentHashMap.newKeySet())
-                .add(this);
-        System.out.println("[SERVER] Client subscribe phiên: " + auctionId);
-        return null; // không cần phản hồi
-    }
+        Auction auction  = AuctionManager.getInstance().findById(auctionId);
 
-    private Message handleUnsubscribe(Message msg) {
-        String auctionId = msg.get("auctionId");
-        unsubscribeFrom(auctionId);
+        if (auction == null) {
+            return Message.of(MessageType.ERROR)
+                    .put("reason", "Không tìm thấy phiên: " + auctionId);
+        }
+
+        auction.attach(this);        // đăng ký làm observer của phiên
+        subscriptions.add(auctionId);
+        System.out.println("[SERVER] Client subscribe phiên: " + auctionId);
         return null;
     }
 
-    // Gửi/Broadcast
+
+    // Gửi
+    private Message handleUnsubscribe(Message msg) {
+        unsubscribeFrom(msg.get("auctionId"));
+        return null;
+    }
+
     public synchronized void send(Message msg) {
         if (out != null) {
             out.println(msg.toJson());
         }
     }
 
-    // Broadcast AUCTION_UPDATE tới các subscriber của phiên, trừ handler hiện tại
-    // (người đặt giá đã nhận response riêng rồi)
-    private void broadcast(String auctionId, Message msg) {
-        Set<ClientHandler> subs = subscriberMap.get(auctionId);
-        if (subs == null) return;
-        for (ClientHandler handler : subs) {
-            if (handler != this) {
-                handler.send(msg);
-            }
-        }
-    }
-
-    // Dọn dẹp
     private void unsubscribeFrom(String auctionId) {
         subscriptions.remove(auctionId);
-        Set<ClientHandler> set = subscriberMap.get(auctionId);
-        if (set != null) set.remove(this);
+        Auction auction = AuctionManager.getInstance().findById(auctionId);
+        if (auction != null) {
+            auction.detach(this);    // hủy đăng ký observer
+        }
     }
 
     private void cleanup() {

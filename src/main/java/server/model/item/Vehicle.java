@@ -5,8 +5,8 @@ import javax.xml.namespace.QName;
 public class Vehicle extends Item {
     private int carYear;
     private String bienSoXe;
-    public Vehicle(String id,String name,double basePrice,String description,int carYear,String bienSoXe){
-        super(id,name,basePrice,description);
+    public Vehicle(String id,String name,double basePrice,String description,String sellerId,int carYear,String bienSoXe){
+        super(id,name,basePrice,description,sellerId);
         this.carYear=carYear;
         this.bienSoXe=bienSoXe;
     }
@@ -14,4 +14,9 @@ public class Vehicle extends Item {
     public void displayDetails(){
         System.out.println("Chiếc xe "+name+" biến số: -"+bienSoXe+"- đời xe "+carYear);
     }
+    @Override
+    public String getType(){return "VEHICLE";}
+    //Getter
+    public int getCarYear(){return carYear;}
+    public String getBienSoXe(){return bienSoXe;}
 }

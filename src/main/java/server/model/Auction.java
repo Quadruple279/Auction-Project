@@ -30,6 +30,14 @@ public class Auction implements AuctionSubject {
         this.isFinished = false;
         this.endTime = endTime;
     }
+    public Auction(String auctionId,Item item,double currentPrice,String leadingBidder,boolean isFinished,LocalDateTime endTime){
+        this.auctionId=auctionId;
+        this.item=item;
+        this.currentPrice=currentPrice;
+        this.leadingBidder=leadingBidder;
+        this.isFinished=isFinished;
+        this.endTime=endTime;
+    }
 
     @Override
     public void attach(AuctionObserver observer) {

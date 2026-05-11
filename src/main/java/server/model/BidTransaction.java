@@ -14,6 +14,12 @@ public class BidTransaction {
         this.bidAmount = bidAmount;
         this.bidTime = LocalDateTime.now();//lấy thời điểm hiện tại
     }
+    public BidTransaction(String auctionId, String bidderName, double bidAmount, LocalDateTime bidTime) {
+        this.auctionId = auctionId;
+        this.bidderName = bidderName;
+        this.bidAmount = bidAmount;
+        this.bidTime = bidTime;   // Lay tu database
+    }
     //Getters Để sau này có thể thống kê hoặc hiển thị lên bảng lịch sử
     public String getBidderName() { return bidderName; }
     public double getBidAmount() { return bidAmount; }
