@@ -21,7 +21,7 @@ class AuctionTest {
     private Auction auction;
     @BeforeEach
     void setUp(){
-        item = ItemFactory.creatItem("vehicle","HD-VS-01","vision-sportVersion",10_000_000,"Xe rac","2025","29AE-57650");
+        item = ItemFactory.creatItem("vehicle","HD-VS-01","vision-sportVersion",10_000_000,"Xe rac","seller1","2025","29AE-57650");
         auction = new Auction("AU001", item, LocalDateTime.now().plusHours(2));
     }
     @Test

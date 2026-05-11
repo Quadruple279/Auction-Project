@@ -13,7 +13,7 @@ public class ConcurrencyTest {
     public static void main(String[] args) throws InterruptedException {
         System.out.println("----- CHUẨN BỊ MÔI TRƯỜNG TEST -----");
 
-        Auction auction = new Auction("Cz01", new Electronics("Ax001","iPhone 17", 34,"None", 36), LocalDateTime.now());
+        Auction auction = new Auction("Cz01", new Electronics("Ax001","iPhone 17", 34,"None","seller1", 36), LocalDateTime.now());
 
         int numberOfBidders = 100;
         ExecutorService executor = Executors.newFixedThreadPool(numberOfBidders);
