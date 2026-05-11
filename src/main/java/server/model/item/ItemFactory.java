@@ -3,7 +3,7 @@ package server.model.item;
 import java.util.Map;
 
 public class ItemFactory {
-    public static Item creatItem(String type, String id, String name, double basePrice,String description, String info1,String info2){
+    public static hgItem creatItem(String type, String id, String name, double basePrice,String description, String info1,String info2){
         if (type == null || type.isEmpty()){
             return null;
         }
@@ -19,6 +19,7 @@ public class ItemFactory {
                 catch (Exception e){
                     System.out.println("Loi: "+e.getMessage());
                 }
+                break;
             case "vehicle":
                 try{
                     int carYear = Integer.parseInt(info1);
@@ -27,6 +28,7 @@ public class ItemFactory {
                 catch (Exception e){
                     System.out.println("Loi: "+e.getMessage());
                 }
+                break;
             default:
                 throw new IllegalArgumentException("Loại vật phẩm '" + type + "' không có được đấu giá.");
         }

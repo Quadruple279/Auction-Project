@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import server.model.user.User;
 import server.model.Auction;
+import java.util.Collections;
 
 public class DataStorage {
 
@@ -21,8 +22,9 @@ public class DataStorage {
     private static final String AUCTION_FILE = "auctions.json";
 
     // dữ liệu trong RAM
-    public static List<User> users = new ArrayList<>();
-    public static List<Auction> auctions = new ArrayList<>();
+    public static List<User> users =  Collections.synchronizedList(new ArrayList<>());
+
+    public static List<Auction> auctions = Collections.synchronizedList(new ArrayList<>());
 
     // ===== LOAD =====
     public static void loadData() {

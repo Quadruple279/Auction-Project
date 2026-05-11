@@ -1,5 +1,5 @@
 package server.model.item;
-public abstract class Item{
+public abstract class hgItem{
     protected String id;
     protected String name;
     protected double basePrice;

@@ -1,6 +1,7 @@
 package server.model;
 
 import server.model.item.Item;
+import server.model.item.hgItem;
 
 import java.util.ArrayList;
 
@@ -19,7 +20,7 @@ public class AuctionManager {
         return instance;
     }
 
-    public void addItem(Auction auction){
+    public synchronized void addAuction(Auction auction) {
         auctionList.add(auction);
     }
     public ArrayList<Auction> getAuctionList(){
