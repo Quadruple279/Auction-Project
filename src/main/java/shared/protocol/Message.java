@@ -7,8 +7,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 public class Message {
     public static final int PROTOCOL_VERSION = 1;
+
     //các field bắt buộc theo từng type - method valit sẽ kiểm tra trc khi gửi
     private static final Map<MessageType, List<String>> REQUIRED_FIELDS = Map.of(
             MessageType.LOGIN,          List.of("username", "password"),
@@ -20,11 +22,12 @@ public class Message {
             MessageType.AUCTION_UPDATE, List.of("auctionId", "currentPrice", "leadingBidder", "eventType"),
             MessageType.ERROR,          List.of("reason")
     );
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .disable(SerializationFeature.INDENT_OUTPUT);
+
+    private static final ObjectMapper MAPPER = new ObjectMapper().disable(SerializationFeature.INDENT_OUTPUT);
     private int version = PROTOCOL_VERSION;
     private MessageType type;
     private Map<String, String> payload;
+
     // Constructor mặc định — Jackson cần để deserialize
     public Message() {
         this.payload = new HashMap<>();
@@ -35,15 +38,18 @@ public class Message {
         this.payload = new HashMap<>();
     }
     // ── Factory + Fluent API ─────────────────────────────────────────────────
+
     //tao 1 Msg moi voi type cho truoc
     public static Message of(MessageType type) {
         return new Message(type);
     }
+
     // them thong tin vao payload
     public Message put(String key, String value) {
         this.payload.put(key, value);
         return this;
     }
+
     // lay gia tri tu payload
     public String get(String key) {
         String value = payload.get(key);
@@ -53,10 +59,12 @@ public class Message {
         }
         return value;
     }
+
     // lay gia tri va tra ve fallback neu khong co trong cac field tu chon
     public String getOrDefault(String key, String fallback) {
         return payload.getOrDefault(key, fallback);
     }
+
     // kiem tra payload co du thuoc tinh bat buoc khong?
     public Message validate() {
         List<String> required = REQUIRED_FIELDS.get(this.type);
@@ -71,6 +79,7 @@ public class Message {
         }
         return this;
     }
+
     //Chuyen Msg thanh chuoi Json(Serialize)
     public String toJson() {
         try {
@@ -79,6 +88,7 @@ public class Message {
             throw new RuntimeException("Không thể serialize Message: " + e.getMessage());
         }
     }
+
     // chuyen tu chuoi Json ve lai Object (Deserialize)
     public static Message fromJson(String json) {
         try {
@@ -96,8 +106,10 @@ public class Message {
                     .put("reason", "Parse failed: " + e.getOriginalMessage());
         }
     }
+
     // Getter-setter
     public int getVersion() { return version; }
+
     public void setVersion(int version) { this.version = version; }
 
     public MessageType getType() { return type; }

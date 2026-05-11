@@ -1,6 +1,4 @@
-package server.model.observer;
-
-import server.model.AuctionEvent;
+package shared.protocol;
 
 public interface AuctionObserver {
     void onAuctionEvent(AuctionEvent event);

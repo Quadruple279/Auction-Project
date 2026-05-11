@@ -16,19 +16,19 @@ public class AuctionDataTest {
 
         Item iPhone = ItemFactory.creatItem(
                 "electronics", "ITEM001", "iPhone 15 Pro",
-                20000000, "Điện thoại mới 100%, chưa kích hoạt",
+                20000000, "Điện thoại mới 100%, chưa kích hoạt","seller1",
                 "12", ""
         );
 
         Item tranh = ItemFactory.creatItem(
                 "art", "ITEM002", "Tranh sơn dầu",
-                5000000, "Tác phẩm nghệ thuật độc đáo",
+                5000000, "Tác phẩm nghệ thuật độc đáo","seller1",
                 "Picasso", ""
         );
 
         Item xe = ItemFactory.creatItem(
                 "vehicle", "ITEM003", "Toyota Camry 2020",
-                800000000, "Xe đẹp, ít sử dụng, còn mới 95%",
+                800000000, "Xe đẹp, ít sử dụng, còn mới 95%","seller1",
                 "2020", "Toyota"
         );
 
