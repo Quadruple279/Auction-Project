@@ -23,7 +23,18 @@ public class AuctionManager {
     public synchronized void addAuction(Auction auction) {
         auctionList.add(auction);
     }
+
     public ArrayList<Auction> getAuctionList(){
         return auctionList;
+    }
+
+    // Tìm phiên theo ID, trả về null nếu không tồn tại
+    public Auction findById(String auctionId) {
+        for (Auction a : auctionList) {
+            if (a.getAuctionId().equals(auctionId)) {
+                return a;
+            }
+        }
+        return null;
     }
 }

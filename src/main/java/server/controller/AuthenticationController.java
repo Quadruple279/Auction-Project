@@ -1,23 +1,30 @@
 package server.controller;
 
 import server.dao.DataStorage;
+import server.dao.UserDAO;
 import server.model.user.*;
 import server.exception.AuthenticationException;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class AuthenticationController {
+    private final UserDAO userDAO = new UserDAO();
 
     private Map<String, User> users = new HashMap<>();
-    // constructor để load từ DataStorage
+    // constructor để load từ DataBase
     public AuthenticationController() {
-        for (User user : DataStorage.users) {
-            users.put(user.getId(), user);
+        try{
+            for (User user : userDAO.findAll()){
+                users.put(user.getId(),user);
+            }
+        } catch (SQLException e){
+            System.out.println("Lỗi load user từ DataBase: " + e.getMessage());
         }
     }
     private User currentUser;
-
+    // lưu vào DataBase
     public void register(String id, String name, String password, String role) {
         User newUser = null;
 
@@ -31,8 +38,11 @@ public class AuthenticationController {
 
         if (newUser != null) {
             users.put(id, newUser);              // lưu vào Map (runtime)
-            DataStorage.users.add(newUser);      // lưu vào List (để ghi file)
-            DataStorage.saveData();              // 👈 LƯU FILE
+            try {
+                userDAO.save(newUser);
+            } catch (SQLException e) {
+                System.out.println("Lỗi lưu user: " + e.getMessage());
+            }
         }
     }
 

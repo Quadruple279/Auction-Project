@@ -3,34 +3,52 @@ package server.model.item;
 import java.util.Map;
 
 public class ItemFactory {
-    public static hgItem creatItem(String type, String id, String name, double basePrice,String description, String info1,String info2){
-        if (type == null || type.isEmpty()){
+
+    public static Item creatItem(String type,
+                                 String id,
+                                 String name,
+                                 double basePrice,
+                                 String description,
+                                 String sellerId,
+                                 String info1,
+                                 String info2) {
+
+        if (type == null || type.isEmpty()) {
             return null;
         }
+
         String lowerType = type.toLowerCase();
-        switch (lowerType){
+
+        switch (lowerType) {
+
             case "art":
-                return new Art(id,name,basePrice,description,info1);
+                return new Art(id, name, basePrice, description, sellerId, info1);
+
             case "electronics":
-                try{
+                try {
                     int wM = Integer.parseInt(info1);
-                    return new Electronics(id,name,basePrice,description,wM);
+                    return new Electronics(id, name, basePrice, description, sellerId, wM);
                 }
-                catch (Exception e){
-                    System.out.println("Loi: "+e.getMessage());
+                catch (Exception e) {
+                    System.out.println("Loi: " + e.getMessage());
                 }
                 break;
+
             case "vehicle":
-                try{
+                try {
                     int carYear = Integer.parseInt(info1);
-                    return new Vehicle(id,name,basePrice,description,carYear,info2);
+                    return new Vehicle(id, name, basePrice, description, sellerId, carYear, info2);
                 }
-                catch (Exception e){
-                    System.out.println("Loi: "+e.getMessage());
+                catch (Exception e) {
+                    System.out.println("Loi: " + e.getMessage());
                 }
                 break;
+
             default:
-                throw new IllegalArgumentException("Loại vật phẩm '" + type + "' không có được đấu giá.");
+                throw new IllegalArgumentException(
+                        "Loại vật phẩm '" + type + "' không có được đấu giá.");
         }
+
+        return null;
     }
 }

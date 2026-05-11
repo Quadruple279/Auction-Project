@@ -1,6 +1,7 @@
 package server.model.observer;
 
-import server.model.AuctionEvent;
+import shared.protocol.AuctionEvent;
+import shared.protocol.AuctionObserver;
 
 public interface AuctionSubject {
     void attach(AuctionObserver observer);

@@ -3,17 +3,13 @@ package server.model;
 import server.exception.AuctionClosedException;
 import server.exception.InvalidBidException;
 import server.model.item.Item;
-import server.model.item.ItemFactory;
-import server.model.observer.AuctionObserver;
+import shared.protocol.AuctionEvent;
+import shared.protocol.AuctionObserver;
 import server.model.observer.AuctionSubject;
-import server.model.observer.subObservers.AuctionEndObserver;
-import server.model.observer.subObservers.BidLogObserver;
-import server.model.observer.subObservers.LeaderBoardObserver;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observer;
 
 public class Auction implements AuctionSubject {
     private ArrayList<BidTransaction> transactionHistory = new ArrayList<>();
@@ -33,6 +29,14 @@ public class Auction implements AuctionSubject {
         this.leadingBidder = "None";
         this.isFinished = false;
         this.endTime = endTime;
+    }
+    public Auction(String auctionId,Item item,double currentPrice,String leadingBidder,boolean isFinished,LocalDateTime endTime){
+        this.auctionId=auctionId;
+        this.item=item;
+        this.currentPrice=currentPrice;
+        this.leadingBidder=leadingBidder;
+        this.isFinished=isFinished;
+        this.endTime=endTime;
     }
 
     @Override

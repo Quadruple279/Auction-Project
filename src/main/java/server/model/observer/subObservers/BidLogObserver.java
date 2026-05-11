@@ -1,8 +1,7 @@
 package server.model.observer.subObservers;
 
-import server.exception.InvalidBidException;
-import server.model.AuctionEvent;
-import server.model.observer.AuctionObserver;
+import shared.protocol.AuctionEvent;
+import shared.protocol.AuctionObserver;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
