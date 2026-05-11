@@ -94,7 +94,7 @@ public class LoginController {
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
-            messageLabel.setText("Lỗi: Không thể tải màn hình");
+            messageLabel.setText("Loi: Khong the tai man hinh");
         }
     }
 }

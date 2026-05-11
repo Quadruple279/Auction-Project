@@ -19,16 +19,19 @@ public class Auction implements AuctionSubject {
     private String leadingBidder;
     private boolean isFinished;
     private LocalDateTime endTime;
+    private String owner;
+    private boolean cancelled = false;
     //them dsach observer
     private final List<AuctionObserver> observers = new ArrayList<>();
 
-    public Auction(String auId, Item item, LocalDateTime endTime) {
+    public Auction(String auId, Item item, LocalDateTime endTime, String owner) {
         this.auctionId = auId;
         this.item = item;
         this.currentPrice = item.getBasePrice();
         this.leadingBidder = "None";
         this.isFinished = false;
         this.endTime = endTime;
+        this.owner = owner;
     }
     public Auction(String auctionId,Item item,double currentPrice,String leadingBidder,boolean isFinished,LocalDateTime endTime){
         this.auctionId=auctionId;
@@ -110,9 +113,22 @@ public class Auction implements AuctionSubject {
 
     public double getPrice()       { return item.getBasePrice(); }
 
+    public String getOwner() { return owner; }
+
     // get dsach dau gia
     public ArrayList<BidTransaction> getTransactionHistory() {
         return transactionHistory;
+    }
+
+    public void setPrice(double price) {
+
+    }
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
     }
 }
     //test main

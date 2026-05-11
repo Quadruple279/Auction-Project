@@ -24,7 +24,7 @@ public class ServerApp {
 
             List<Auction> auctions = auctionDAO.findAll();
             for (Auction auction : auctions) {
-                manager.addItem(auction);
+                manager.addAuction(auction);
             }
             System.out.println("[O] Đã load " + auctions.size() + " phiên đấu giá từ DB.");
 

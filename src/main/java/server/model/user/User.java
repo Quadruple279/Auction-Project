@@ -1,6 +1,20 @@
 package server.model.user;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.io.Serializable;
+
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "role" // Phân biệt dựa vào trường role
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = Bidder.class, name = "BIDDER"),
+        @JsonSubTypes.Type(value = Seller.class, name = "SELLER"),
+        @JsonSubTypes.Type(value = Admin.class, name = "ADMIN")
+})
 
 public abstract class User implements Serializable {
 
