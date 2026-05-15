@@ -14,20 +14,19 @@ import java.util.List;
 
 public class UserDAO {
     public void save(User user) throws SQLException {
-        String sql = "INSERT INTO users (id,name,password,role) VALUES (?,?,?,?)";
+        String sql = "INSERT INTO users (name,password,role) VALUES (?,?,?)";
         Connection conn = DBConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1,user.getId());
-        pstmt.setString(2, user.getName());
-        pstmt.setString(3,user.getPassword());
-        pstmt.setString(4, user.getRole());
+        pstmt.setString(1, user.getName());
+        pstmt.setString(2,user.getPassword());
+        pstmt.setString(3, user.getRole());
         pstmt.executeUpdate();
     }
-    public User findById(String id) throws SQLException {
+    public User findById(int id) throws SQLException {
         String sql = "SELECT * FROM users where id = ?";
         Connection conn = DBConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1,id);
+        pstmt.setInt(1,id);
         ResultSet rs = pstmt.executeQuery();
         if (rs.next()){
             return mapRowToUser(rs);
@@ -46,7 +45,7 @@ public class UserDAO {
         return users;
     }
     private User mapRowToUser(ResultSet rs) throws SQLException {
-        String id = rs.getString("id");
+        int id = rs.getInt("id");
         String name = rs.getString("name");
         String password = rs.getString("password");
         String role = rs.getString("role");
@@ -56,5 +55,12 @@ public class UserDAO {
             case "ADMIN" -> new Admin(id,name,password);
             default -> throw new SQLException("Unknown role: "+role);
         };
+    }
+    public void delete(int id) throws SQLException{
+        String sql = "DELETE FROM users WHERE ID = ?";
+        Connection conn = DBConnection.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setInt(1,id);
+        pstmt.executeUpdate();
     }
 }

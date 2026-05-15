@@ -11,7 +11,7 @@ import java.util.List;
 
 public class ItemDAO {
     public void save(Item item) throws SQLException {
-        String sql = "INSERT INTO items (id,name,base_price,description,item_type,seller_id," +
+        String sql = "INSERT INTO items (id,name,base_price,description,item_type,seller_name," +
                 "car_year,bien_so_xe,artist,warranty_months) VALUES (?,?,?,?,?,?,?,?,?,?) ";
         Connection conn = DBConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -20,7 +20,7 @@ public class ItemDAO {
         pstmt.setDouble(3,item.getBasePrice());
         pstmt.setString(4,item.getDescription());
         pstmt.setString(5,item.getType());
-        pstmt.setString(6,item.getSellerId());
+        pstmt.setString(6,item.getSeller_name());
         if (item instanceof Vehicle) {
             Vehicle vehicle = (Vehicle) item;
             pstmt.setInt(7,vehicle.getCarYear());
@@ -44,6 +44,24 @@ public class ItemDAO {
         }
         pstmt.executeUpdate();
     }
+    public void delete(String itemId) throws SQLException {
+        String sql = "DELETE FROM items WHERE id = ?";
+        Connection conn = DBConnection.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setString(1, itemId);
+        pstmt.executeUpdate();
+    }
+    public void update(Item item) throws SQLException {
+        String sql = "UPDATE items SET name = ?, description = ?, base_price = ? WHERE id = ?";
+        Connection conn = DBConnection.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setString(1, item.getName());
+        pstmt.setString(2, item.getDescription());
+        pstmt.setDouble(3, item.getBasePrice());
+        pstmt.setString(4, item.getId());
+        pstmt.executeUpdate();
+    }
+
     public Item findById(String id) throws SQLException {
         String sql = "SELECT * FROM items where id = ?";
         Connection conn = DBConnection.getConnection();
@@ -72,15 +90,15 @@ public class ItemDAO {
         double base_price = rs.getDouble("base_price");
         String des = rs.getString("description");
         String item_type = rs.getString("item_type");
-        String seller_id = rs.getString("seller_id");
+        String seller_name = rs.getString("seller_name");
         int car_year = rs.getInt("car_year");
         String bien_so_xe = rs.getString("bien_so_xe");
         String artist = rs.getString("artist");
         int wm = rs.getInt("warranty_months");
         return switch (item_type){
-            case "ART" -> new Art(id,name,base_price,des,seller_id,artist);
-            case "VEHICLE" -> new Vehicle(id,name,base_price,des,seller_id,car_year,bien_so_xe);
-            case "ELECTRONICS" -> new Electronics(id,name,base_price,des,seller_id,wm);
+            case "ART" -> new Art(id,name,base_price,des,seller_name,artist);
+            case "VEHICLE" -> new Vehicle(id,name,base_price,des,seller_name,car_year,bien_so_xe);
+            case "ELECTRONICS" -> new Electronics(id,name,base_price,des,seller_name,wm);
             default -> throw new SQLException("Unknown item_type: "+item_type);
         };
     }

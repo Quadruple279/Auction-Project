@@ -33,10 +33,11 @@ public class Auction implements AuctionSubject {
         this.endTime = endTime;
         this.owner = owner;
     }
-    public Auction(String auctionId,Item item,double currentPrice,String leadingBidder,boolean isFinished,LocalDateTime endTime){
+    public Auction(String auctionId,Item item,double currentPrice,String owner,String leadingBidder,boolean isFinished,LocalDateTime endTime){
         this.auctionId=auctionId;
         this.item=item;
         this.currentPrice=currentPrice;
+        this.owner=owner;
         this.leadingBidder=leadingBidder;
         this.isFinished=isFinished;
         this.endTime=endTime;

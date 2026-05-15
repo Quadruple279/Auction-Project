@@ -21,7 +21,6 @@ public class RegisterController  implements Initializable{
     private PasswordField password2;
     @FXML
     private Label messageLabel;
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 

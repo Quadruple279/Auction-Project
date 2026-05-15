@@ -10,6 +10,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import server.controller.AuthenticationController;
+import server.dao.ItemDAO;
+import server.dao.AuctionDAO;
 import server.model.Auction;
 import server.model.AuctionManager;
 import server.model.item.Item;
@@ -17,6 +19,7 @@ import server.model.item.ItemFactory;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +49,8 @@ public class SellerController implements Initializable {
     // ── Dependencies ──────────────────────────────────────────
     private AuthenticationController authController;
     private final AuctionManager manager = AuctionManager.getInstance();
-
+    private final ItemDAO itemDAO = new ItemDAO();
+    private final AuctionDAO auctionDAO = new AuctionDAO();
     // ── Nhận authController từ LoginController ────────────────
     public void setAuthController(AuthenticationController auth) {
         this.authController = auth;
@@ -113,6 +117,14 @@ public class SellerController implements Initializable {
                 btnDelete.setOnAction(e -> {
                     Auction a = getItem();
                     if (a != null) {
+                        try{
+                            auctionDAO.delete(a.getAuctionId());
+                            itemDAO.delete(a.getItem().getId());
+                        }
+                        catch (Exception ex){
+                            showError("Lỗi xóa DB: "+ex.getMessage());
+                            return;
+                        }
                         manager.removeAuction(a);
                         loadMyAuctions();
                         updateStats();
@@ -168,13 +180,13 @@ public class SellerController implements Initializable {
         try {
             double giaKD = Double.parseDouble(gia.replace(",", ""));
             int    phut  = Integer.parseInt(thoiGian);
-            String sellerId = authController.getCurrentUser().getId();
+            String seller_name = authController.getCurrentUser().getName();
 
             // Tạo Item qua ItemFactory
             Item item = ItemFactory.creatItem(
                     loai,
                     "ITEM" + System.currentTimeMillis(),
-                    ten, giaKD, moTa,sellerId , info1, info2
+                    ten, giaKD, moTa,seller_name , info1, info2
             );
 
             if (item == null) {
@@ -192,7 +204,13 @@ public class SellerController implements Initializable {
                     currentUser
             );
             manager.addAuction(auction);
-
+            try {
+                itemDAO.save(item);
+                auctionDAO.save(auction);
+            } catch (SQLException e) {
+                System.out.println("[DB] Lỗi lưu vào DB " + e.getMessage());
+                return;
+            }
             // Cập nhật UI
             showSuccess("Đăng sản phẩm \"" + ten + "\" thành công!");
             clearForm();
@@ -248,7 +266,7 @@ public class SellerController implements Initializable {
 
         for (Auction a : manager.getAuctionList()) {
 
-            if (!a.getOwner().equals(currentUser)) continue;
+            if (!currentUser.equals(a.getOwner())) continue;
             myAuctions.add(a);
             myAuctionList.getItems().add(a);
         }
@@ -333,7 +351,7 @@ public class SellerController implements Initializable {
 
             // cho phép sửa giá khởi điểm
             selectedAuction.getItem().setPrice(newPrice);
-
+            itemDAO.update(selectedAuction.getItem());
             showSuccess("Cập nhật thành công");
             isEditing = false;
             clearForm();

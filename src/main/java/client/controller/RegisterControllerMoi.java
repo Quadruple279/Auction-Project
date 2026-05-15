@@ -167,7 +167,6 @@ public class RegisterControllerMoi implements Initializable {
             // Gọi register() thật
             authController.register(
                     tenDangNhap,
-                    tenDangNhap,
                     matKhau,
                     selectedRole
             );

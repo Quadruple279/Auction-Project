@@ -130,7 +130,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
             String username = msg.get("username");
             String password = msg.get("password");
             String role     = msg.get("role");
-            authController.register(username, username, password, role);
+            authController.register(username, password, role);
             System.out.println("[SERVER] Đăng ký thành công: " + username);
             return Message.of(MessageType.REGISTER_SUCCESS);
         } catch (Exception e) {

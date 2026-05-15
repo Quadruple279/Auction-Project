@@ -11,7 +11,6 @@ import java.sql.SQLException;
 
 import server.model.Auction;
 import server.model.user.User;
-import server.dao.DataStorage;
 
 public class AuctionController {
 
@@ -56,7 +55,7 @@ public class AuctionController {
         if (!currentUser.getRole().equals("SELLER")){
             throw new RuntimeException("Chỉ SELLER mới được tạo phiên đấu giá");
         }
-        Auction auction = new Auction(auctionId,item,endTime,currentUser.getId());
+        Auction auction = new Auction(auctionId,item,endTime,currentUser.getName());
         auctionManager.addAuction(auction);
         try{
             auctionDAO.save(auction);

@@ -1,7 +1,6 @@
 package server;
 
 import server.dao.AuctionDAO;
-import server.dao.DataStorage;
 import server.model.Auction;
 import server.model.AuctionManager;
 import server.network.ClientHandler;

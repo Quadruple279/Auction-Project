@@ -9,7 +9,7 @@ public class ItemFactory {
                                  String name,
                                  double basePrice,
                                  String description,
-                                 String sellerId,
+                                 String seller_name,
                                  String info1,
                                  String info2) {
 
@@ -22,12 +22,12 @@ public class ItemFactory {
         switch (lowerType) {
 
             case "art":
-                return new Art(id, name, basePrice, description, sellerId, info1);
+                return new Art(id, name, basePrice, description, seller_name, info1);
 
             case "electronics":
                 try {
                     int wM = Integer.parseInt(info1);
-                    return new Electronics(id, name, basePrice, description, sellerId, wM);
+                    return new Electronics(id, name, basePrice, description, seller_name, wM);
                 }
                 catch (Exception e) {
                     System.out.println("Loi: " + e.getMessage());
@@ -37,7 +37,7 @@ public class ItemFactory {
             case "vehicle":
                 try {
                     int carYear = Integer.parseInt(info1);
-                    return new Vehicle(id, name, basePrice, description, sellerId, carYear, info2);
+                    return new Vehicle(id, name, basePrice, description, seller_name, carYear, info2);
                 }
                 catch (Exception e) {
                     System.out.println("Loi: " + e.getMessage());

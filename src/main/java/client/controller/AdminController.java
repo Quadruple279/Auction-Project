@@ -103,7 +103,7 @@ public class AdminController implements Initializable {
     // ===== TABLE SETUP =====
     private void setupTables() {
         // ----- USER TABLE -----
-        colUserId.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getId()));  // Đã sửa: getId() thay vì getName()
+        colUserId.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getId())));  // Đã sửa: getId() thay vì getName()
         colUserName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getName()));
         colUserRole.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getRole()));
         setupUserAction();
@@ -124,7 +124,7 @@ public class AdminController implements Initializable {
         // ----- DASHBOARD PREVIEW -----
         dashColUserName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getName()));
         dashColUserRole.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getRole()));
-        dashColUserId.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getId()));
+        dashColUserId.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getId())));
 
         dashColAuctionId.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getAuctionId()));
         dashColAuctionItem.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getItem().getName()));
