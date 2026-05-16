@@ -122,7 +122,7 @@ public class Auction implements AuctionSubject {
     }
 
     public void setPrice(double price) {
-
+        this.currentPrice = price;
     }
     public boolean isCancelled() {
         return cancelled;

@@ -3,6 +3,7 @@ package server.controller;
 import server.dao.UserDAO;
 import server.model.user.*;
 import server.exception.AuthenticationException;
+import shared.dto.UserDTO;
 
 import java.util.ArrayList;
 import java.sql.SQLException;
@@ -64,6 +65,12 @@ public class AuthenticationController {
         return currentUser;
     }
 
+    public UserDTO getCurrentUserDTO(){
+        if (currentUser == null){
+            return null;
+        }
+        return new UserDTO(currentUser.getId(),currentUser.getName(),currentUser.getRole());
+    }
     public List<User> getAllUsers() {
         return new ArrayList<>(users.values());
     }

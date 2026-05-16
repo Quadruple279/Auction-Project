@@ -5,7 +5,8 @@ public class AuctionEvent {
     public enum Type{
         BID_PLACED, // chap nhan luot bid
         BID_REJECTED, // tu choi luot bid
-        AUCTION_ENDED //ket thuc phien
+        AUCTION_ENDED, //ket thuc phien
+        NEW_AUCTION
     }
     private final Type type;
     private final String auctionId, bidderName, leadingBidder;

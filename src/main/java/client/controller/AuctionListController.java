@@ -1,6 +1,7 @@
 package client.controller;
 
 import client.ClientSocket;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -14,31 +15,32 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import server.controller.AuthenticationController;
-import server.model.Auction;
-import server.model.AuctionManager;
+import shared.dto.AuctionDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
+import shared.protocol.MessageType;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
-public class AuctionController implements Initializable, AuctionObserver {
+public class AuctionListController implements Initializable, AuctionObserver {
 
-    @FXML private TableView<Auction> tableView;
-    @FXML private TableColumn<Auction, String> auction;
-    @FXML private TableColumn<Auction, String> itemName;
-    @FXML private TableColumn<Auction, String> description;
-    @FXML private TableColumn<Auction, Double> price;
-    @FXML private TableColumn<Auction, Double> highestBid;
-    @FXML private TableColumn<Auction, String> owner;
+    @FXML private TableView<AuctionDTO> tableView;
+    @FXML private TableColumn<AuctionDTO, String> auction;
+    @FXML private TableColumn<AuctionDTO, String> itemName;
+    @FXML private TableColumn<AuctionDTO, String> description;
+    @FXML private TableColumn<AuctionDTO, Double> price;
+    @FXML private TableColumn<AuctionDTO, Double> highestBid;
+    @FXML private TableColumn<AuctionDTO, String> owner;
     @FXML private TextArea console;
     @FXML private MenuItem disconnect;
     @FXML private Button back;
 
     private AuthenticationController authenticationController = new AuthenticationController();
 
-    private ObservableList<Auction> danhSach = FXCollections.observableArrayList();
+    private ObservableList<AuctionDTO> danhSach = FXCollections.observableArrayList();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -51,7 +53,7 @@ public class AuctionController implements Initializable, AuctionObserver {
         // Nhấn đôi vào hàng → vào phòng đấu giá
         tableView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
-                Auction selected = tableView.getSelectionModel().getSelectedItem();
+                AuctionDTO selected = tableView.getSelectionModel().getSelectedItem();
                 if (selected != null) {
                     openAuctionRoom(selected);
                 }
@@ -61,7 +63,7 @@ public class AuctionController implements Initializable, AuctionObserver {
 
     // ─── Mở phòng đấu giá ────────────────────────────────────────────────────
 
-    private void openAuctionRoom(Auction auction) {
+    private void openAuctionRoom(AuctionDTO auction) {
         System.out.println("[DEBUG] openAuctionRoom() được gọi: " + auction.getAuctionId());
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -94,7 +96,7 @@ public class AuctionController implements Initializable, AuctionObserver {
         owner.setCellValueFactory(new PropertyValueFactory<>("leadingBidder"));
 
         price.setCellValueFactory(new PropertyValueFactory<>("price"));
-        price.setCellFactory(col -> new TableCell<Auction, Double>() {
+        price.setCellFactory(col -> new TableCell<AuctionDTO, Double>() {
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
@@ -104,7 +106,7 @@ public class AuctionController implements Initializable, AuctionObserver {
         });
 
         highestBid.setCellValueFactory(new PropertyValueFactory<>("currentPrice"));
-        highestBid.setCellFactory(col -> new TableCell<Auction, Double>() {
+        highestBid.setCellFactory(col -> new TableCell<AuctionDTO, Double>() {
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
@@ -118,8 +120,30 @@ public class AuctionController implements Initializable, AuctionObserver {
 
     public void loadDuLieu() {
         log("Đang tải dữ liệu phiên đấu giá...");
-        danhSach.setAll(AuctionManager.getInstance().getAuctionList());
-        log("Đã tải " + danhSach.size() + " phiên đấu giá.");
+        ClientSocket.getInstance().setResponseListener(msg -> {
+            if (msg.getType() == MessageType.AUCTION_LIST) {
+                try {
+                    String jsonData = msg.get("data");
+                    // Deserialize chuỗi JSON → List<AuctionDTO>
+                    // TypeReference cần thiết vì Java xóa generic type lúc runtime
+                    ObjectMapper mapper = new ObjectMapper();
+                    List<AuctionDTO> list = mapper.readValue(
+                            jsonData,
+                            new com.fasterxml.jackson.core.type.TypeReference<List<AuctionDTO>>() {}
+                    );
+
+                    // Cập nhật UI phải chạy trên JavaFX Thread
+                    Platform.runLater(() -> {
+                        danhSach.setAll(list);
+                        log("Đã tải " + list.size() + " phiên đấu giá.");
+                    });
+
+                } catch (Exception e) {
+                    Platform.runLater(() -> log("Lỗi parse dữ liệu: " + e.getMessage()));
+                }
+            }
+        });
+        ClientSocket.getInstance().sendGetAuctions();
     }
 
     // ─── AuctionObserver ─────────────────────────────────────────────────────
@@ -132,6 +156,13 @@ public class AuctionController implements Initializable, AuctionObserver {
                     log(event.getBidderName() + " vừa đặt "
                             + String.format("%,.0f ₫", event.getBidAmount())
                             + " cho phiên " + event.getAuctionId());
+                    // Cập nhật currentPrice trong danhSach để bảng hiển thị đúng
+                    for (AuctionDTO dto : danhSach) {
+                        if (dto.getAuctionId().equals(event.getAuctionId())) {
+                            dto.setCurrentPrice(event.getCurrentPrice());
+                            break;
+                        }
+                    }
                     tableView.refresh();
                     break;
                 case BID_REJECTED:
@@ -141,6 +172,10 @@ public class AuctionController implements Initializable, AuctionObserver {
                 case AUCTION_ENDED:
                     log(event.getAuctionId() + " đã đóng! Người thắng: "
                             + event.getLeadingBidder());
+                    break;
+                case NEW_AUCTION:
+                    log("Có phiên đấu giá mới! Đang cập nhật danh sách...");
+                    loadDuLieu();
                     break;
             }
         });

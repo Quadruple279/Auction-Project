@@ -1,5 +1,8 @@
 package client.controller;
 
+import client.ClientSocket;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -10,17 +13,11 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import server.controller.AuthenticationController;
-import server.dao.ItemDAO;
-import server.dao.AuctionDAO;
-import server.model.Auction;
-import server.model.AuctionManager;
-import server.model.item.Item;
-import server.model.item.ItemFactory;
+import shared.dto.AuctionDTO;
+import shared.protocol.MessageType;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -40,21 +37,17 @@ public class SellerController implements Initializable {
     @FXML private Label            activeCountLabel;
     @FXML private Label            soldCountLabel;
     @FXML private Label            pendingCountLabel;
-    @FXML private ListView<Auction> myAuctionList;
+    @FXML private ListView<AuctionDTO> myAuctionList;
 
-    private Auction selectedAuction;
-    private List<Auction> myAuctions = new ArrayList<>();
+    private AuctionDTO selectedAuction;
+    private List<AuctionDTO> myAuctions = new ArrayList<>();
     private boolean isEditing = false;
 
     // ── Dependencies ──────────────────────────────────────────
     private AuthenticationController authController;
-    private final AuctionManager manager = AuctionManager.getInstance();
-    private final ItemDAO itemDAO = new ItemDAO();
-    private final AuctionDAO auctionDAO = new AuctionDAO();
     // ── Nhận authController từ LoginController ────────────────
     public void setAuthController(AuthenticationController auth) {
         this.authController = auth;
-
         if (authController != null) {
             loadMyAuctions();
             updateStats();
@@ -90,9 +83,8 @@ public class SellerController implements Initializable {
 
             if (index != -1) {
                 selectedAuction = myAuctions.get(index);
-
-                itemNameField.setText(selectedAuction.getItem().getName());
-                descriptionField.setText(selectedAuction.getItem().getDescription());
+                itemNameField.setText(selectedAuction.getItemName());        // thay getItem().getName()
+                descriptionField.setText(selectedAuction.getDescription());  // thay getItem().getDescription()
                 basePriceField.setText(String.valueOf(selectedAuction.getCurrentPrice()));
             }
         });
@@ -104,37 +96,36 @@ public class SellerController implements Initializable {
 
             {
                 btnEdit.setOnAction(e -> {
-                    Auction a = getItem();
+                    AuctionDTO a = getItem();
                     if (a != null) {
                         selectedAuction = a;
                         isEditing = true;
-                        itemNameField.setText(a.getItem().getName());
-                        descriptionField.setText(a.getItem().getDescription());
+                        itemNameField.setText(a.getItemName());
+                        descriptionField.setText(a.getDescription());
                         basePriceField.setText(String.valueOf(a.getCurrentPrice()));
                     }
                 });
 
                 btnDelete.setOnAction(e -> {
-                    Auction a = getItem();
+                    AuctionDTO a = getItem();
                     if (a != null) {
-                        try{
-                            auctionDAO.delete(a.getAuctionId());
-                            itemDAO.delete(a.getItem().getId());
-                        }
-                        catch (Exception ex){
-                            showError("Lỗi xóa DB: "+ex.getMessage());
-                            return;
-                        }
-                        manager.removeAuction(a);
-                        loadMyAuctions();
-                        updateStats();
+                        ClientSocket.getInstance().setResponseListener(msg -> {
+                            if (msg.getType() == MessageType.DELETE_AUCTION_SUCCESS) {
+                                Platform.runLater(() -> loadMyAuctions());
+                            } else if (msg.getType() == MessageType.ERROR) {
+                                Platform.runLater(() -> showError("Lỗi xóa: " + msg.get("reason")));
+                            }
+                        });
+                        ClientSocket.getInstance().sendDeleteAuction(a.getAuctionId());
+
                     }
+
                 });
             }
 
 
             @Override
-            protected void updateItem(Auction a, boolean empty) {
+            protected void updateItem(AuctionDTO a, boolean empty) {
                 super.updateItem(a, empty);
 
                 if (empty || a == null) {
@@ -142,10 +133,8 @@ public class SellerController implements Initializable {
                 } else {
                     String text = String.format("[%s] %s - %,.0f ₫",
                             a.getAuctionId(),
-                            a.getItem().getName(),
-                            a.getCurrentPrice()
-                    );
-
+                            a.getItemName(),          // thay getItem().getName()
+                            a.getCurrentPrice());
                     label.setText(text);
                     setGraphic(box);
                 }
@@ -180,42 +169,21 @@ public class SellerController implements Initializable {
         try {
             double giaKD = Double.parseDouble(gia.replace(",", ""));
             int    phut  = Integer.parseInt(thoiGian);
-            String seller_name = authController.getCurrentUser().getName();
 
-            // Tạo Item qua ItemFactory
-            Item item = ItemFactory.creatItem(
-                    loai,
-                    "ITEM" + System.currentTimeMillis(),
-                    ten, giaKD, moTa,seller_name , info1, info2
-            );
-
-            if (item == null) {
-                showError("Không thể tạo sản phẩm. Kiểm tra lại thông tin.");
-                return;
-            }
-
-            // Tạo Auction và thêm vào AuctionManager
-            String currentUser = authController.getCurrentUser().getName();
-
-            Auction auction = new Auction(
-                    "AU" + System.currentTimeMillis(),
-                    item,
-                    LocalDateTime.now().plusMinutes(phut),
-                    currentUser
-            );
-            manager.addAuction(auction);
-            try {
-                itemDAO.save(item);
-                auctionDAO.save(auction);
-            } catch (SQLException e) {
-                System.out.println("[DB] Lỗi lưu vào DB " + e.getMessage());
-                return;
-            }
-            // Cập nhật UI
-            showSuccess("Đăng sản phẩm \"" + ten + "\" thành công!");
-            clearForm();
-            loadMyAuctions();
-            updateStats();
+            // Gửi qua socket — server tự tạo item và auction
+            String finalTen = ten;
+            ClientSocket.getInstance().setResponseListener(msg -> {
+                if (msg.getType() == MessageType.CREATE_AUCTION_SUCCESS) {
+                    Platform.runLater(() -> {
+                        showSuccess("Đăng sản phẩm \"" + finalTen + "\" thành công!");
+                        clearForm();
+                        loadMyAuctions();
+                    });
+                } else if (msg.getType() == MessageType.ERROR) {
+                    Platform.runLater(() -> showError("Lỗi: " + msg.get("reason")));
+                }
+            });
+            ClientSocket.getInstance().sendCreateAuction(loai, ten, moTa, giaKD, phut, info1, info2);
 
         } catch (Exception e) {
             showError("Lỗi: " + e.getMessage());
@@ -259,29 +227,42 @@ public class SellerController implements Initializable {
     //  LOAD DỮ LIỆU
     // ════════════════════════════════════════════════════════════
     private void loadMyAuctions() {
-        myAuctionList.getItems().clear();
-        myAuctions.clear();
-
         String currentUser = authController.getCurrentUser().getName();
-
-        for (Auction a : manager.getAuctionList()) {
-
-            if (!currentUser.equals(a.getOwner())) continue;
-            myAuctions.add(a);
-            myAuctionList.getItems().add(a);
-        }
+        ClientSocket.getInstance().setResponseListener(msg -> {
+            if (msg.getType() == MessageType.AUCTION_LIST) {
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    List<AuctionDTO> list = mapper.readValue(
+                            msg.get("data"),
+                            new com.fasterxml.jackson.core.type.TypeReference<List<AuctionDTO>>() {});
+                    Platform.runLater(() -> {
+                        myAuctions.clear();
+                        myAuctionList.getItems().clear();
+                        for (AuctionDTO dto : list) {
+                            if (currentUser.equals(dto.getOwner())) {
+                                myAuctions.add(dto);
+                                myAuctionList.getItems().add(dto);
+                            }
+                        }
+                        updateStats();
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(() -> showError("Lỗi tải dữ liệu: " + e.getMessage()));
+                }
+            }
+        });
+        ClientSocket.getInstance().sendGetAuctions();
     }
 
-    private void updateStats() {
-        long dangMo  = manager.getAuctionList().stream()
-                .filter(a -> !a.isFinished()).count();
-        long ketThuc = manager.getAuctionList().stream()
-                .filter(Auction::isFinished).count();
 
+    private void updateStats() {
+        long dangMo  = myAuctions.stream().filter(a -> !a.isFinished()).count();
+        long ketThuc = myAuctions.stream().filter(AuctionDTO::isFinished).count();
         activeCountLabel.setText(String.valueOf(dangMo));
         soldCountLabel.setText(String.valueOf(ketThuc));
         pendingCountLabel.setText("0");
     }
+
 
     // ════════════════════════════════════════════════════════════
     //  ĐIỀU HƯỚNG
@@ -294,7 +275,7 @@ public class SellerController implements Initializable {
             );
             Parent root = loader.load();
 
-            AuctionController dashboardController = loader.getController();
+            AuctionListController dashboardController = loader.getController();
             dashboardController.setAuthenticationController(authController);
 
             Stage stage = (Stage) buttonBack.getScene().getWindow();
@@ -332,35 +313,28 @@ public class SellerController implements Initializable {
 
     @FXML
     private void handleUpdate() {
-        if (selectedAuction == null) {
-            showError("Chọn sản phẩm để sửa");
-            return;
-        }
-
+        if (selectedAuction == null) { showError("Chọn sản phẩm để sửa"); return; }
         try {
-            selectedAuction.getItem().setName(itemNameField.getText());
-            selectedAuction.getItem().setDescription(descriptionField.getText());
-
+            String newName = itemNameField.getText();
+            String newDesc = descriptionField.getText();
             double newPrice = Double.parseDouble(basePriceField.getText().replace(",", ""));
-
-            // chỉ cho sửa nếu chưa có ai bid
-            if (selectedAuction.getCurrentPrice() > selectedAuction.getItem().getBasePrice()) {
-                showError("Không thể sửa giá khi đã có người đấu");
-                return;
-            }
-
-            // cho phép sửa giá khởi điểm
-            selectedAuction.getItem().setPrice(newPrice);
-            itemDAO.update(selectedAuction.getItem());
-            showSuccess("Cập nhật thành công");
-            isEditing = false;
-            clearForm();
-
-            loadMyAuctions();
-            updateStats();
-
-        } catch (Exception e) {
-            showError("Lỗi: " + e.getMessage());
+            ClientSocket.getInstance().setResponseListener(msg -> {
+                if (msg.getType() == MessageType.UPDATE_AUCTION_SUCCESS) {
+                    Platform.runLater(() -> {
+                        showSuccess("Cập nhật thành công");
+                        isEditing = false;
+                        selectedAuction = null;
+                        clearForm();
+                        loadMyAuctions();
+                    });
+                } else if (msg.getType() == MessageType.ERROR) {
+                    Platform.runLater(() -> showError("Lỗi: " + msg.get("reason")));
+                }
+            });
+            ClientSocket.getInstance().sendUpdateAuction(
+                    selectedAuction.getAuctionId(), newName, newDesc, newPrice);
+        } catch (NumberFormatException e) {
+            showError("Giá không hợp lệ");
         }
     }
 }

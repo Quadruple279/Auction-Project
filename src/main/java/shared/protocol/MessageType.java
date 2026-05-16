@@ -8,6 +8,11 @@ public enum MessageType {
     SUBSCRIBE,      // payload: auctionId
     UNSUBSCRIBE,    // payload: auctionId
     LOGOUT,
+    GET_AUCTIONS,
+    CREATE_AUCTION,   // payload: itemType, itemName, description, price, durationMinutes, info1, info2
+    DELETE_AUCTION,   // payload: auctionId
+    UPDATE_AUCTION,   // payload: auctionId, newName, newDescription, newPrice
+
 
     // ── Server → Client ──────────────────────────
     LOGIN_SUCCESS,  // payload: username, role
@@ -16,5 +21,9 @@ public enum MessageType {
     REGISTER_FAILED,
     AUCTION_UPDATE, // payload: auctionId, currentPrice, leadingBidder, eventType
     AUCTION_LIST,   // payload: data (JSON array dạng string)
-    ERROR           // payload: reason
+    ERROR,CREATE_AUCTION_SUCCESS,  // payload: auctionId
+    DELETE_AUCTION_SUCCESS,  // payload: auctionId
+    UPDATE_AUCTION_SUCCESS,  // (không cần payload)
+    NEW_AUCTION             // broadcast đến tất cả client: payload: auctionId
+    // payload: reason
 }

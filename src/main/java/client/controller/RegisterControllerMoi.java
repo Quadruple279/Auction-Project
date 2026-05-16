@@ -149,7 +149,6 @@ public class RegisterControllerMoi implements Initializable {
 
         return null;
     }
-
     @FXML
     private void handleRegister() {
         String tenDangNhap = loginName.getText().trim();

@@ -4,7 +4,7 @@ import java.util.Map;
 
 public class ItemFactory {
 
-    public static Item creatItem(String type,
+    public static Item createItem(String type,
                                  String id,
                                  String name,
                                  double basePrice,

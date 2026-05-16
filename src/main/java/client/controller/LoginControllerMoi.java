@@ -1,5 +1,6 @@
 package client.controller;
 
+import client.ClientSocket;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -9,6 +10,7 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 import server.controller.AuthenticationController;
 import server.exception.AuthenticationException;
+import shared.dto.UserDTO;
 
 import java.io.IOException;
 import java.net.URL;
@@ -60,6 +62,7 @@ public class LoginControllerMoi implements Initializable {
 
         try {
             authenticationController.login(tenDangNhap, matKhau);
+            ClientSocket.getInstance().sendLogin(tenDangNhap,matKhau);
             showSuccess("Đăng nhập thành công!");
             openDashboard();
 
@@ -73,7 +76,8 @@ public class LoginControllerMoi implements Initializable {
     private void openDashboard() {
         try {
             // Lấy role của user hiện tại
-            String role = authenticationController.getCurrentUser().getRole();
+            UserDTO userDTO = authenticationController.getCurrentUserDTO();
+            String role = userDTO.getRole();
 
             String fxmlPath;
             String title;
@@ -111,7 +115,7 @@ public class LoginControllerMoi implements Initializable {
                     // adminController.setAuthController(authenticationController);
                 }
                 default -> {
-                    AuctionController dashboardController = loader.getController();
+                    AuctionListController dashboardController = loader.getController();
                     dashboardController.setAuthenticationController(authenticationController);
                 }
             }
