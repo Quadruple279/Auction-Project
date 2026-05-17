@@ -4,7 +4,7 @@ public class Seller extends User {
 
     public Seller() {}
 
-    public Seller(String id, String name, String password) {
+    public Seller(int id, String name, String password) {
         super(id, name, password, "SELLER");
     }
 

@@ -19,24 +19,29 @@ public class Auction implements AuctionSubject {
     private String leadingBidder;
     private boolean isFinished;
     private LocalDateTime endTime;
-    //them dsach observer
+    private String owner;
+    private boolean cancelled = false;
+
+    //Tạo danh sách observer
     private final List<AuctionObserver> observers = new ArrayList<>();
 
-    public Auction(String auId, Item item, LocalDateTime endTime) {
+    public Auction(String auId, Item item, LocalDateTime endTime, String owner) {
         this.auctionId = auId;
         this.item = item;
         this.currentPrice = item.getBasePrice();
         this.leadingBidder = "None";
         this.isFinished = false;
         this.endTime = endTime;
+        this.owner = owner;
     }
-    public Auction(String auctionId,Item item,double currentPrice,String leadingBidder,boolean isFinished,LocalDateTime endTime){
-        this.auctionId=auctionId;
-        this.item=item;
-        this.currentPrice=currentPrice;
-        this.leadingBidder=leadingBidder;
-        this.isFinished=isFinished;
-        this.endTime=endTime;
+    public Auction(String auctionId, Item item, double currentPrice, String owner, String leadingBidder, boolean isFinished, LocalDateTime endTime){
+        this.auctionId = auctionId;
+        this.item = item;
+        this.currentPrice = currentPrice;
+        this.owner = owner;
+        this.leadingBidder = leadingBidder;
+        this.isFinished = isFinished;
+        this.endTime = endTime;
     }
 
     @Override
@@ -110,26 +115,21 @@ public class Auction implements AuctionSubject {
 
     public double getPrice()       { return item.getBasePrice(); }
 
+    public String getOwner() { return owner; }
+
     // get dsach dau gia
     public ArrayList<BidTransaction> getTransactionHistory() {
         return transactionHistory;
     }
-}
-    //test main
-/*    public static void main(String[] args) {
-          Item vision = ItemFactory.creatItem("vehicle","HD-VS-01","vision-sportVersion",10_000_000,"2025","29AE-57650");
-          Auction auction = new Auction("AU001", vision, LocalDateTime.now().plusHours(2));
-          vision.displayDetails();
-          // Đăng ký các Observer thêm/bớt thoải mái mà không đụng Auction
-          auction.attach(new BidLogObserver());
-          auction.attach(new LeaderBoardObserver());
-          auction.attach(new AuctionEndObserver());
-          // cac luot dau gia
-          auction.placeBid("An",   16_000_000);
-          auction.placeBid("Bình", 14_000_000); // reject
-          auction.placeBid("Cúc",  18_500_000);
-          auction.placeBid("Đạt",  18_000_000); // reject
-          ket thuc phien
-          auction.finishAuction();
-      }*/
 
+    public void setPrice(double price) {
+        this.currentPrice = price;
+    }
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+    }
+}

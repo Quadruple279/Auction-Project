@@ -1,7 +1,6 @@
 package server;
 
 import server.dao.AuctionDAO;
-import server.dao.DataStorage;
 import server.model.Auction;
 import server.model.AuctionManager;
 import server.network.ClientHandler;
@@ -24,7 +23,7 @@ public class ServerApp {
 
             List<Auction> auctions = auctionDAO.findAll();
             for (Auction auction : auctions) {
-                manager.addItem(auction);
+                manager.addAuction(auction);
             }
             System.out.println("[O] Đã load " + auctions.size() + " phiên đấu giá từ DB.");
 

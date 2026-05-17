@@ -1,6 +1,7 @@
 package server.controller;
 import server.dao.AuctionDAO;
 import server.dao.BidTransactionDAO;
+import server.dao.ItemDAO;
 import server.exception.AuctionClosedException;
 import server.exception.InvalidBidException;
 import server.model.AuctionManager;
@@ -11,15 +12,14 @@ import java.sql.SQLException;
 
 import server.model.Auction;
 import server.model.user.User;
-import server.dao.DataStorage;
 
-public class AuctionController {
+public class AuctionService {
 
     private AuthenticationController auth;
     private final AuctionDAO auctionDAO = new AuctionDAO();
     private final AuctionManager auctionManager = AuctionManager.getInstance();
     private final BidTransactionDAO bidTransactionDAO = new BidTransactionDAO();
-    public AuctionController(AuthenticationController auth) {
+    public AuctionService(AuthenticationController auth) {
         this.auth = auth;
     }
 
@@ -44,25 +44,29 @@ public class AuctionController {
             BidTransaction lastBid = auction.getTransactionHistory().get(auction.getTransactionHistory().size()-1);
             bidTransactionDAO.save(lastBid);
 
-        } catch (SQLException | AuctionClosedException | InvalidBidException e) {
-            System.out.println("Lỗi lưu database: " + e.getMessage());
+        } catch (AuctionClosedException | InvalidBidException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        catch (SQLException e){
+            throw new RuntimeException("Lỗi database: " + e.getMessage());
         }
     }
     public void createAuction(String auctionId,Item item,LocalDateTime endTime){
         User currentUser = auth.getCurrentUser();
         if (currentUser == null){
-            System.out.println("Chưa đăng nhập");
+            throw new RuntimeException("Chưa đăng nhập");
         }
         if (!currentUser.getRole().equals("SELLER")){
             throw new RuntimeException("Chỉ SELLER mới được tạo phiên đấu giá");
         }
-        Auction auction = new Auction(auctionId,item,endTime);
-        auctionManager.addItem(auction);
+        Auction auction = new Auction(auctionId,item,endTime,currentUser.getName());
+        auctionManager.addAuction(auction);
         try{
+            new ItemDAO().save(item);
             auctionDAO.save(auction);
         }
         catch (SQLException e){
-            System.out.printf("Lỗi lưu DB: "+e.getMessage());
+            throw new RuntimeException("Lỗi lưu DB: "+e.getMessage());
         }
     }
     public void finishAuction(String auctionId){
@@ -75,7 +79,34 @@ public class AuctionController {
             auctionDAO.finish(auctionId);
         }
         catch (SQLException e){
-            System.out.println("Lỗi lưu DB: "+ e.getMessage());
+            throw new RuntimeException("Lỗi lưu DB: "+ e.getMessage());
         }
     }
+    public void deleteAuction(String auctionId) {
+        Auction auction = auctionManager.findById(auctionId);
+        if (auction == null) throw new RuntimeException("Không tìm thấy phiên đấu giá");
+        String itemId = auction.getItem().getId();
+        auctionManager.removeAuction(auction);
+        try {
+            auctionDAO.delete(auctionId);
+            new ItemDAO().delete(itemId);
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi xóa DB: " + e.getMessage());
+        }
+    }
+    public void updateAuction(String auctionId, String newName, String newDescription, double newPrice) {
+        Auction auction = auctionManager.findById(auctionId);
+        if (auction == null) throw new RuntimeException("Không tìm thấy phiên đấu giá");
+        if (auction.getCurrentPrice() > auction.getItem().getBasePrice())
+            throw new RuntimeException("Không thể sửa giá khi đã có người đấu");
+        auction.getItem().setName(newName);
+        auction.getItem().setDescription(newDescription);
+        auction.getItem().setPrice(newPrice);
+        try {
+            new ItemDAO().update(auction.getItem());
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi cập nhật DB: " + e.getMessage());
+        }
+    }
+
 }

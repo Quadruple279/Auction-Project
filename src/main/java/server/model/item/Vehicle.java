@@ -5,8 +5,8 @@ import javax.xml.namespace.QName;
 public class Vehicle extends Item {
     private int carYear;
     private String bienSoXe;
-    public Vehicle(String id,String name,double basePrice,String description,String sellerId,int carYear,String bienSoXe){
-        super(id,name,basePrice,description,sellerId);
+    public Vehicle(String id,String name,double basePrice,String description,String seller_name,int carYear,String bienSoXe){
+        super(id,name,basePrice,description,seller_name);
         this.carYear=carYear;
         this.bienSoXe=bienSoXe;
     }

@@ -15,15 +15,15 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
-import server.model.Auction;
-import server.model.BidTransaction;
+
+import shared.dto.AuctionDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
 import shared.protocol.MessageType;
 
 import java.io.IOException;
 import java.net.URL;
-import java.time.format.DateTimeFormatter;
+
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -51,7 +51,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     private javafx.animation.Timeline countdownTimer;
 
     // Phiên đấu giá hiện tại (dữ liệu ban đầu lấy từ AuctionManager)
-    private Auction currentAuction;
+    private AuctionDTO currentAuction;
 
     // ─── Khởi tạo ────────────────────────────────────────────────────────────
 
@@ -102,29 +102,29 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     }
 
     /**
-     * Được gọi từ AuctionController sau khi load FXML.
+     * Được gọi từ AuctionListController sau khi load FXML.
      * Không nhận AuthenticationController — mọi thứ qua ClientSocket.
      */
-    public void setAuction(Auction auction) {
-        this.currentAuction = auction;
+    public void setAuction(AuctionDTO auctionDTO) {
+        this.currentAuction = auctionDTO;
 
         hienThiThongTin();
         loadLichSuDauGia();
         startCountdown();
-        log("Đã vào phiên: " + auction.getAuctionId());
+        log("Đã vào phiên: " + auctionDTO.getAuctionId());
 
         // Đăng ký nhận thông báo realtime
         ClientSocket.getInstance().addObserver(this);
-        ClientSocket.getInstance().subscribe(auction.getAuctionId());
+        ClientSocket.getInstance().subscribe(auctionDTO.getAuctionId());
     }
 
     // ─── Hiển thị thông tin ───────────────────────────────────────────────────
 
     private void hienThiThongTin() {
         auctionIdLabel.setText("Phiên: " + currentAuction.getAuctionId());
-        itemNameLabel.setText(currentAuction.getItem().getName());
-        descriptionLabel.setText(currentAuction.getItem().getDescription());
-        basePriceLabel.setText(String.format("%,.0f đ", currentAuction.getItem().getBasePrice()));
+        itemNameLabel.setText(currentAuction.getItemName());
+        descriptionLabel.setText(currentAuction.getDescription());
+        basePriceLabel.setText(String.format("%,.0f đ", currentAuction.getPrice()));
         currentPriceLabel.setText(String.format("%,.0f đ", currentAuction.getCurrentPrice()));
         leaderLabel.setText(currentAuction.getLeadingBidder());
 
@@ -140,16 +140,10 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
 
     private void loadLichSuDauGia() {
         bidHistoryList.getItems().clear();
-        for (BidTransaction t : currentAuction.getTransactionHistory()) {
-            String dong = t.getBidderName()
-                    + " | " + String.format("%,.0f ₫", t.getBidAmount())
-                    + " | " + t.getBidTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-            bidHistoryList.getItems().add(0, dong);
-        }
-        if (bidHistoryList.getItems().isEmpty()) {
-            bidHistoryList.getItems().add("Chưa có ai đặt giá.||");
-        }
+        bidHistoryList.getItems().add("Chưa có ai đặt giá.");
+        // Lịch sử sẽ được cập nhật realtime khi nhận BID_PLACED event
     }
+
 
     // ─── Countdown timer ─────────────────────────────────────────────────────
 
@@ -161,8 +155,8 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                         javafx.util.Duration.seconds(1),
                         e -> {
                             java.time.LocalDateTime now = java.time.LocalDateTime.now();
-                            java.time.Duration timeLeft = java.time.Duration.between(
-                                    now, currentAuction.getEndTime());
+                            java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(currentAuction.getEndTime());
+                            java.time.Duration timeLeft = java.time.Duration.between(now, endTime);
 
                             if (timeLeft.isNegative() || timeLeft.isZero()) {
                                 timeLabel.setText("00:00:00");
@@ -205,17 +199,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
         // Đặt response listener để xử lý phản hồi từ server
         ClientSocket.getInstance().setResponseListener(msg -> {
             Platform.runLater(() -> {
-                if (msg.getType() == MessageType.AUCTION_UPDATE) {
-                    // Cập nhật UI từ dữ liệu server trả về
-                    currentPriceLabel.setText(
-                            String.format("%,.0f ₫", Double.parseDouble(msg.get("currentPrice"))));
-                    leaderLabel.setText(msg.get("leadingBidder"));
-                    bidAmountField.clear();
-                    log("Đặt giá thành công: " + String.format("%,.0f ₫", (double) soTien));
-                } else {
-                    // ERROR
                     log("Lỗi: " + msg.getOrDefault("reason", "Không thể đặt giá"));
-                }
             });
         });
 
@@ -235,8 +219,17 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                     currentPriceLabel.setText(
                             String.format("%,.0f ₫", event.getCurrentPrice()));
                     leaderLabel.setText(event.getLeadingBidder());
+
+                    // Thêm dòng này để cập nhật lịch sử bid realtime
+                    String dong = event.getBidderName()
+                            + " | " + String.format("%,.0f ₫", event.getBidAmount())
+                            + " | " + java.time.LocalTime.now().format(
+                            java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    bidHistoryList.getItems().add(0, dong);
+
                     log("Bid mới! " + event.getBidderName()
                             + " đặt " + String.format("%,.0f ₫", event.getBidAmount()));
+
                 }
                 case BID_REJECTED -> log("Bid bị từ chối của " + event.getBidderName());
                 case AUCTION_ENDED -> {

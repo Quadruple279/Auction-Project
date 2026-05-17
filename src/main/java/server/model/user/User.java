@@ -1,10 +1,24 @@
 package server.model.user;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.io.Serializable;
+
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "role" // Phân biệt dựa vào trường role
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = Bidder.class, name = "BIDDER"),
+        @JsonSubTypes.Type(value = Seller.class, name = "SELLER"),
+        @JsonSubTypes.Type(value = Admin.class, name = "ADMIN")
+})
 
 public abstract class User implements Serializable {
 
-    protected String id;
+    protected int id;
     protected String name;
     protected String password;
     protected String role;
@@ -13,7 +27,7 @@ public abstract class User implements Serializable {
     public User() {
     }
 
-    public User(String id, String name, String password, String role) {
+    public User(int id, String name, String password, String role) {
         this.id = id;
         this.name = name;
         this.password = password;
@@ -26,7 +40,7 @@ public abstract class User implements Serializable {
         return name;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
     public String getPassword() {return password;}

@@ -1,8 +1,8 @@
 package server.model.item;
 public class Art extends Item{
     private String artist;
-    public Art(String id,String name,double basePrice,String description,String sellerId,String artist){
-        super(id,name,basePrice,description,sellerId);
+    public Art(String id,String name,double basePrice,String description,String seller_name,String artist){
+        super(id,name,basePrice,description,seller_name);
         this.artist=artist;
     }
     @Override

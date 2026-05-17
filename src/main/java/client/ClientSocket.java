@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ClientSocket {
@@ -23,14 +22,16 @@ public class ClientSocket {
     private boolean running = false;
 
     // Observer nhận AuctionEvent realtime
-    private List<AuctionObserver> observers = new ArrayList<>();
+    private List<AuctionObserver> observers = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     // Listener nhận phản hồi một lần (LOGIN_SUCCESS, LOGIN_FAILED, ERROR, …)
     private ResponseListener responseListener;
 
     private static ClientSocket instance;
 
-    /** Callback nhận phản hồi không phải AUCTION_UPDATE (login, register, lỗi…). */
+    /**
+     * Callback nhận phản hồi không phải AUCTION_UPDATE (login, register, lỗi…).
+     */
     public interface ResponseListener {
         void onResponse(Message message);
     }
@@ -42,14 +43,15 @@ public class ClientSocket {
         return instance;
     }
 
-    private ClientSocket() {}
+    private ClientSocket() {
+    }
 
     // ─── Kết nối ─────────────────────────────────────────────────────────────
 
     public boolean connect() {
         try {
             socket = new Socket(HOST, PORT);
-            in  = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
             running = true;
             startListening();
@@ -61,7 +63,9 @@ public class ClientSocket {
         }
     }
 
-    /** Background thread lắng nghe liên tục, tự động cập nhật UI qua Observer. */
+    /**
+     * Background thread lắng nghe liên tục, tự động cập nhật UI qua Observer.
+     */
     private void startListening() {
         Thread bgThread = new Thread(() -> {
             System.out.println("[CLIENT] Background Thread đang lắng nghe");
@@ -82,24 +86,30 @@ public class ClientSocket {
         bgThread.start();
     }
 
-    /** Phân loại Message nhận được: AUCTION_UPDATE → notifyObservers, còn lại → responseListener. */
+    /**
+     * Phân loại Message nhận được: AUCTION_UPDATE → notifyObservers, còn lại → responseListener.
+     */
     private void handleMessage(String json) {
         try {
             Message msg = Message.fromJson(json);
 
             if (msg.getType() == MessageType.AUCTION_UPDATE) {
-                String auctionId     = msg.get("auctionId");
-                String eventType     = msg.get("eventType");
-                double currentPrice  = Double.parseDouble(msg.get("currentPrice"));
+                String auctionId = msg.get("auctionId");
+                String eventType = msg.get("eventType");
+                double currentPrice = Double.parseDouble(msg.get("currentPrice"));
                 String leadingBidder = msg.get("leadingBidder");
-                String bidderName    = msg.getOrDefault("bidderName", "");
-                double bidAmount     = Double.parseDouble(msg.getOrDefault("bidAmount", "0"));
+                String bidderName = msg.getOrDefault("bidderName", "");
+                double bidAmount = Double.parseDouble(msg.getOrDefault("bidAmount", "0"));
 
                 AuctionEvent.Type type = AuctionEvent.Type.valueOf(eventType);
                 AuctionEvent event = new AuctionEvent(
                         type, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
                 notifyObservers(event);
 
+            } else if (msg.getType() == MessageType.NEW_AUCTION) {
+                AuctionEvent event = new AuctionEvent(
+                        AuctionEvent.Type.NEW_AUCTION, msg.get("auctionId"), "", "", 0, 0);
+                notifyObservers(event);
             } else if (responseListener != null) {
                 responseListener.onResponse(msg);
             }
@@ -134,6 +144,10 @@ public class ClientSocket {
                 .put("amount", String.valueOf(amount)));
     }
 
+    public void sendGetAuctions() {
+        send(Message.of(MessageType.GET_AUCTIONS));
+    }
+
     public void subscribe(String auctionId) {
         send(Message.of(MessageType.SUBSCRIBE).put("auctionId", auctionId));
     }
@@ -150,7 +164,8 @@ public class ClientSocket {
         try {
             if (socket != null) socket.close();
             System.out.println("[CLIENT] Đã ngắt kết nối.");
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
     }
 
     private void send(Message msg) {
@@ -175,4 +190,29 @@ public class ClientSocket {
             observer.onAuctionEvent(event);
         }
     }
+
+    public void sendCreateAuction(String itemType, String itemName, String description,
+                                  double price, int durationMinutes, String info1, String info2) {
+        send(Message.of(MessageType.CREATE_AUCTION)
+                .put("itemType", itemType)
+                .put("itemName", itemName)
+                .put("description", description)
+                .put("price", String.valueOf(price))
+                .put("durationMinutes", String.valueOf(durationMinutes))
+                .put("info1", info1)
+                .put("info2", info2));
+    }
+
+    public void sendDeleteAuction(String auctionId) {
+        send(Message.of(MessageType.DELETE_AUCTION).put("auctionId", auctionId));
+    }
+
+    public void sendUpdateAuction(String auctionId, String newName, String newDescription, double newPrice) {
+        send(Message.of(MessageType.UPDATE_AUCTION)
+                .put("auctionId", auctionId)
+                .put("newName", newName)
+                .put("newDescription", newDescription)
+                .put("newPrice", String.valueOf(newPrice)));
+    }
+
 }

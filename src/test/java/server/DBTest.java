@@ -32,12 +32,12 @@ public class DBTest {
         UserDAO userDAO = new UserDAO();
 
         // Thêm user mới
-        Bidder testUser = new Bidder("TEST001", "Nguyen Test", "123456");
+        Bidder testUser = new Bidder(1, "Nguyen Test", "123456");
         userDAO.save(testUser);
         System.out.println("[OK] Đã lưu user: " + testUser.getName());
 
         // Tìm lại theo id
-        User found = userDAO.findById("TEST001");
+        User found = userDAO.findById(1);
         System.out.println(found != null ? "[OK] findById: " + found.getName() : "[FAIL] Không tìm thấy!");
 
         // Load tất cả
@@ -48,7 +48,7 @@ public class DBTest {
         ItemDAO itemDAO = new ItemDAO();
 
         // Thêm item mới
-        Art testArt = new Art("ITEM001", "Tranh Test", 5_000_000, "Tranh đẹp", "TEST001", "Picasso");
+        Art testArt = new Art("ITEM001", "Tranh Test", 5_000_000, "Tranh đẹp", "Minh", "Picasso");
         itemDAO.save(testArt);
         System.out.println("[OK] Đã lưu item: " + testArt.getName());
 
@@ -60,7 +60,7 @@ public class DBTest {
         AuctionDAO auctionDAO = new AuctionDAO();
 
         // Tạo auction dùng item ở bước 3
-        Auction testAuction = new Auction("AU-TEST-001", foundItem, LocalDateTime.now().plusHours(2));
+        Auction testAuction = new Auction("AU-TEST-001", foundItem, LocalDateTime.now().plusHours(2),"Minh");
         auctionDAO.save(testAuction);
         System.out.println("[OK] Đã lưu auction: " + testAuction.getAuctionId());
 
@@ -77,8 +77,6 @@ public class DBTest {
         auctionDAO.finish("AU-TEST-001");
         Auction finished = auctionDAO.findById("AU-TEST-001");
         System.out.println("[OK] isFinished: " + finished.isFinished());
-
-
 
     }
 
