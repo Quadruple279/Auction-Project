@@ -109,4 +109,20 @@ public class AuctionService {
         }
     }
 
+
+    public void cancelAuction(String auctionId) {
+        Auction auction = auctionManager.findById(auctionId);
+        if (auction == null) throw new RuntimeException("Không tìm thấy phiên đấu giá");
+        boolean ok = auctionManager.cancelAuction(auction);
+        if (!ok) throw new RuntimeException("Không thể hủy phiên ở trạng thái: " + auction.getStatus());
+    }
+
+    public void markPaid(String auctionId) {
+        Auction auction = auctionManager.findById(auctionId);
+        if (auction == null) throw new RuntimeException("Không tìm thấy phiên đấu giá");
+        boolean ok = auction.markPaid();
+        if (!ok) throw new RuntimeException("Chỉ có thể thanh toán phiên FINISHED");
+        try { auctionDAO.markPaid(auctionId); }
+        catch (SQLException e) { throw new RuntimeException("Lỗi lưu DB: " + e.getMessage()); }
+    }
 }

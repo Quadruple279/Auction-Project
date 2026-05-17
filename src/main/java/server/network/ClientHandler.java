@@ -190,6 +190,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
                         a.getLeadingBidder(),
                         a.getOwner(),
                         a.isFinished(),
+                        a.getStatus().name(),  // status enum
                         a.getEndTime().toString()
                 ));
             }
@@ -306,6 +307,15 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.UPDATE_AUCTION_SUCCESS);
         } catch (RuntimeException e) {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
+    /**
+     * Broadcast AUCTION_ENDED tới tất cả các client đang kết nối
+     * Đc gọi bỏi AuctionManager.finishAndSave() thông qua broadcaster callback.
+     */
+    public static void broadcastToAll(Message msg) {
+        for (ClientHandler client : allClients) {
+            client.send(msg);
         }
     }
 }
