@@ -78,8 +78,6 @@ public class DBTest {
         Auction finished = auctionDAO.findById("AU-TEST-001");
         System.out.println("[OK] isFinished: " + finished.isFinished());
 
-
-
     }
 
 }

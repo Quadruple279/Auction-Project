@@ -22,7 +22,7 @@ class AuctionTest {
     @BeforeEach
     void setUp(){
         item = ItemFactory.createItem("vehicle","HD-VS-01","vision-sportVersion",10_000_000,"Xe rac","seller1","2025","29AE-57650");
-        auction = new Auction("AU001", item, LocalDateTime.now().plusHours(2));
+        auction = new Auction("AU001", item, LocalDateTime.now(), "Allen the alien");
     }
     @Test
     void testPlaceBidDetailed() throws Exception{

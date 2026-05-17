@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 
 public class Server {
     private static final int PORT = 8080;
+
     // Khởi tạo Thread Pool xử lý tối đa 50 client đồng thời
     private static final ExecutorService pool = Executors.newFixedThreadPool(50);
 

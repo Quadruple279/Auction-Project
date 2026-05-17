@@ -21,7 +21,8 @@ public class Auction implements AuctionSubject {
     private LocalDateTime endTime;
     private String owner;
     private boolean cancelled = false;
-    //them dsach observer
+
+    //Tạo danh sách observer
     private final List<AuctionObserver> observers = new ArrayList<>();
 
     public Auction(String auId, Item item, LocalDateTime endTime, String owner) {
@@ -33,14 +34,14 @@ public class Auction implements AuctionSubject {
         this.endTime = endTime;
         this.owner = owner;
     }
-    public Auction(String auctionId,Item item,double currentPrice,String owner,String leadingBidder,boolean isFinished,LocalDateTime endTime){
-        this.auctionId=auctionId;
-        this.item=item;
-        this.currentPrice=currentPrice;
-        this.owner=owner;
-        this.leadingBidder=leadingBidder;
-        this.isFinished=isFinished;
-        this.endTime=endTime;
+    public Auction(String auctionId, Item item, double currentPrice, String owner, String leadingBidder, boolean isFinished, LocalDateTime endTime){
+        this.auctionId = auctionId;
+        this.item = item;
+        this.currentPrice = currentPrice;
+        this.owner = owner;
+        this.leadingBidder = leadingBidder;
+        this.isFinished = isFinished;
+        this.endTime = endTime;
     }
 
     @Override
@@ -132,21 +133,3 @@ public class Auction implements AuctionSubject {
         this.cancelled = cancelled;
     }
 }
-    //test main
-/*    public static void main(String[] args) {
-          Item vision = ItemFactory.creatItem("vehicle","HD-VS-01","vision-sportVersion",10_000_000,"2025","29AE-57650");
-          Auction auction = new Auction("AU001", vision, LocalDateTime.now().plusHours(2));
-          vision.displayDetails();
-          // Đăng ký các Observer thêm/bớt thoải mái mà không đụng Auction
-          auction.attach(new BidLogObserver());
-          auction.attach(new LeaderBoardObserver());
-          auction.attach(new AuctionEndObserver());
-          // cac luot dau gia
-          auction.placeBid("An",   16_000_000);
-          auction.placeBid("Bình", 14_000_000); // reject
-          auction.placeBid("Cúc",  18_500_000);
-          auction.placeBid("Đạt",  18_000_000); // reject
-          ket thuc phien
-          auction.finishAuction();
-      }*/
-

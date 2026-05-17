@@ -20,7 +20,8 @@ public class BidTransaction {
         this.bidAmount = bidAmount;
         this.bidTime = bidTime;   // Lay tu database
     }
-    //Getters Để sau này có thể thống kê hoặc hiển thị lên bảng lịch sử
+
+    // Getters để sau này có thể thống kê hoặc hiển thị lên bảng lịch sử
     public String getBidderName() { return bidderName; }
     public double getBidAmount() { return bidAmount; }
     public LocalDateTime getBidTime() { return bidTime; }
