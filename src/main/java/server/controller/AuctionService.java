@@ -125,4 +125,46 @@ public class AuctionService {
         try { auctionDAO.markPaid(auctionId); }
         catch (SQLException e) { throw new RuntimeException("Lỗi lưu DB: " + e.getMessage()); }
     }
+
+    public void enableAutoBid(
+            String auctionId,
+            double maxAmount
+    ) {
+
+        User currentUser = auth.getCurrentUser();
+
+        if (currentUser == null) {
+            throw new RuntimeException("Chưa đăng nhập");
+        }
+
+        Auction auction =
+                auctionManager.findById(auctionId);
+
+        if (auction == null) {
+            throw new RuntimeException(
+                    "Không tìm thấy phiên đấu giá"
+            );
+        }
+
+        auction.enableAutoBid(
+                currentUser.getName(),
+                maxAmount
+        );
+
+        try {
+
+            auctionDAO.updateAutoBid(
+                    auctionId,
+                    currentUser.getName(),
+                    maxAmount
+            );
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Lỗi database: "
+                            + e.getMessage()
+            );
+        }
+    }
 }

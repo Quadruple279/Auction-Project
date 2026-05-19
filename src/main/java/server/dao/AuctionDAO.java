@@ -14,9 +14,11 @@ public class AuctionDAO {
     private final ItemDAO itemDAO = new ItemDAO();
 
     public void save(Auction auction) throws SQLException {
-        String sql = "INSERT INTO auctions (id, item_id, current_price, owner, " +
-                "leading_bidder, is_finished, status, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
+        String sql = "INSERT INTO auctions (" +
+                "id, item_id, current_price, owner, " +
+                "leading_bidder, is_finished, status, end_time, " +
+                "auto_bidder, max_auto_bid" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, auction.getAuctionId());
@@ -29,7 +31,13 @@ public class AuctionDAO {
             pstmt.setBoolean(6, auction.isFinished());
             pstmt.setString(7, auction.getStatus().name());
             pstmt.setTimestamp(8, Timestamp.valueOf(auction.getEndTime()));
+            pstmt.setString(9,
+                    auction.getAutoBidder());
+
+            pstmt.setDouble(10,
+                    auction.getMaxAutoBid());
             pstmt.executeUpdate();
+
         }
     }
 
@@ -87,6 +95,32 @@ public class AuctionDAO {
         }
     }
 
+    public void updateAutoBid(
+            String auctionId,
+            String autoBidder,
+            double maxAutoBid
+    ) throws SQLException {
+
+        String sql =
+                "UPDATE auctions " +
+                        "SET auto_bidder = ?, " +
+                        "max_auto_bid = ? " +
+                        "WHERE id = ?";
+
+        try (
+                Connection conn = DBConnection.getConnection();
+                PreparedStatement pstmt =
+                        conn.prepareStatement(sql)
+        ) {
+
+            pstmt.setString(1, autoBidder);
+            pstmt.setDouble(2, maxAutoBid);
+            pstmt.setString(3, auctionId);
+
+            pstmt.executeUpdate();
+        }
+    }
+
     public Auction findById(String auctionId) throws SQLException {
         String sql = "SELECT * FROM auctions WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -118,6 +152,11 @@ public class AuctionDAO {
         String leadingBidder = rs.getString("leading_bidder");
         if (leadingBidder == null) leadingBidder = "None";
         LocalDateTime endTime = rs.getTimestamp("end_time").toLocalDateTime();
+        String autoBidder =
+                rs.getString("auto_bidder");
+
+        double maxAutoBid =
+                rs.getDouble("max_auto_bid");
 
         // Đọc status: nếu cột chưa tồn tại (DB cũ) thì suy ra từ is_finished
         AuctionStatus status;
@@ -132,7 +171,25 @@ public class AuctionDAO {
         }
 
         Item item = itemDAO.findById(itemId);
-        return new Auction(auctionId, item, currentPrice, owner, leadingBidder, status, endTime);
+        Auction auction = new Auction(
+                auctionId,
+                item,
+                currentPrice,
+                owner,
+                leadingBidder,
+                status,
+                endTime
+        );
+
+        if (autoBidder != null) {
+
+            auction.enableAutoBid(
+                    autoBidder,
+                    maxAutoBid
+            );
+        }
+
+        return auction;
     }
 
     // Suy ra AuctionStatus từ cột is_finished khi chưa có cột. */

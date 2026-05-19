@@ -10,31 +10,43 @@ import server.model.observer.AuctionSubject;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.time.temporal.ChronoUnit;
 public class Auction implements AuctionSubject {
     private ArrayList<BidTransaction> transactionHistory = new ArrayList<>();
     private String auctionId;
     private Item item;
     private double currentPrice;
     private String leadingBidder;
+    private String autoBidder;
+    private double maxAutoBid;
     private AuctionStatus status;
     private LocalDateTime endTime;
     private String owner;
     private boolean cancelled = false;
+
 
     private boolean isFinished; // boolean cũ dùng cho constructor cũ (code mới dùng AuctionStatus)
 
     //Tạo danh sách observer
     private final List<AuctionObserver> observers = new ArrayList<>();
 
-    public Auction(String auId, Item item, LocalDateTime endTime, String owner) {
-        this.auctionId     = auId;
-        this.item          = item;
-        this.currentPrice  = item.getBasePrice();
+    public Auction(
+            String auId,
+            Item item,
+            LocalDateTime endTime,
+            String owner
+    ) {
+
+        this.auctionId = auId;
+        this.item = item;
+        this.currentPrice = item.getBasePrice();
+
+        // mặc định chưa ai bid
         this.leadingBidder = "None";
-        this.status        = AuctionStatus.OPEN;
-        this.endTime       = endTime;
-        this.owner         = owner;
+
+        this.status = AuctionStatus.OPEN;
+        this.endTime = endTime;
+        this.owner = owner;
     }
 
     // Constructor dùng khi load từ database
@@ -114,8 +126,63 @@ public class Auction implements AuctionSubject {
             AuctionEvent event = new AuctionEvent(
                     AuctionEvent.Type.BID_PLACED, auctionId, bidderName,
                     leadingBidder, bidAmount, currentPrice);
-            notifyObservers(event); // thay thế cho displayTransaction (để đảm bảo Auction chỉ thực hiện 1 task placeBid( SRP ))
-        } else {
+            notifyObservers(event);// thay thế cho displayTransaction (để đảm bảo Auction chỉ thực hiện 1 task placeBid( SRP ))
+
+            // ===== AUTO BIDDING =====
+
+            if (autoBidder != null
+                    && !bidderName.equals(autoBidder)
+                    && currentPrice < maxAutoBid
+                    && status != AuctionStatus.FINISHED
+                    && status != AuctionStatus.CANCELLED) {
+
+                double autoBidPrice = currentPrice + 1;
+
+                if (autoBidPrice <= maxAutoBid) {
+
+                    currentPrice = autoBidPrice;
+                    leadingBidder = autoBidder;
+
+                    // lưu transaction auto-bid
+                    BidTransaction autoBidTransaction =
+                            new BidTransaction(
+                                    auctionId,
+                                    autoBidder,
+                                    autoBidPrice
+                            );
+
+                    transactionHistory.add(autoBidTransaction);
+
+                    // notify realtime
+                    AuctionEvent autoEvent = new AuctionEvent(
+                            AuctionEvent.Type.BID_PLACED,
+                            auctionId,
+                            autoBidder,
+                            bidderName,
+                            autoBidPrice,
+                            currentPrice
+                    );
+
+                    notifyObservers(autoEvent);
+
+                    System.out.println(
+                            " Auto-bid by "
+                                    + autoBidder
+                                    + ": "
+                                    + autoBidPrice
+                    );
+
+
+                }
+            }
+
+            if (getRemainingSeconds() <= 5) {
+                extendAuctionTime();
+            }
+        }
+
+
+        else {
             AuctionEvent event = new AuctionEvent(
                     AuctionEvent.Type.BID_REJECTED, auctionId, bidderName,
                     leadingBidder, bidAmount, currentPrice);
@@ -131,6 +198,9 @@ public class Auction implements AuctionSubject {
 
         this.status = AuctionStatus.FINISHED;
 
+        autoBidder = null;
+        maxAutoBid = 0;
+
 
         AuctionEvent event = new AuctionEvent(AuctionEvent.Type.AUCTION_ENDED, auctionId,
                 leadingBidder, leadingBidder, currentPrice, currentPrice);
@@ -142,6 +212,9 @@ public class Auction implements AuctionSubject {
     public synchronized boolean cancelAuction() {
         if (status == AuctionStatus.OPEN || status == AuctionStatus.RUNNING) {
             this.status = AuctionStatus.CANCELLED;
+
+            autoBidder = null;
+            maxAutoBid = 0;
 
             AuctionEvent event = new AuctionEvent(
                     AuctionEvent.Type.AUCTION_ENDED, auctionId, leadingBidder,
@@ -173,6 +246,14 @@ public class Auction implements AuctionSubject {
     public String        getOwner()         {return owner;}
     public AuctionStatus getStatus()        {return status;}
 
+    public String getAutoBidder() {
+        return autoBidder;
+    }
+
+    public double getMaxAutoBid() {
+        return maxAutoBid;
+    }
+
     // Lấy danh sách đấu giá
     public ArrayList<BidTransaction> getTransactionHistory() {
         return transactionHistory;
@@ -194,6 +275,29 @@ public class Auction implements AuctionSubject {
     public boolean isActive() {
         return (status == AuctionStatus.OPEN || status == AuctionStatus.RUNNING)
                 && !LocalDateTime.now().isAfter(endTime);
+    }
+
+    public long getRemainingSeconds() {
+        return LocalDateTime.now().until(endTime, ChronoUnit.SECONDS);
+    }
+
+    public void extendAuctionTime() {
+        endTime = endTime.plusSeconds(10);
+
+        System.out.println("Auction được gia hạn thêm 10 giây!");
+    }
+
+    public void enableAutoBid(String bidderName, double maxAmount) {
+
+        this.autoBidder = bidderName;
+        this.maxAutoBid = maxAmount;
+
+        System.out.println(
+                "Auto-bid enabled for "
+                        + bidderName
+                        + " max: "
+                        + maxAmount
+        );
     }
 
     public void setPrice(double price) {
