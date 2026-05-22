@@ -1,6 +1,8 @@
 package client.controller;
 
+import client.AppContext;
 import client.ClientSocket;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -24,9 +26,7 @@ public class LoginControllerMoi implements Initializable {
     @FXML private PasswordField password;
     @FXML private Label         messageLabel;
 
-    private AuthenticationController authenticationController
-            = new AuthenticationController();
-    
+    private AuthenticationController authenticationController = AppContext.getAuthController();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -53,24 +53,41 @@ public class LoginControllerMoi implements Initializable {
     @FXML
     public void handleLogin() {
         String tenDangNhap = userName.getText().trim();
-        String matKhau     = password.getText();
-
+        String matKhau = password.getText();
         if (tenDangNhap.isEmpty() || matKhau.isEmpty()) {
-            showError("Không được để trống tên đăng nhập và mật khẩu.");
+            showError("Không được để trống.");
             return;
         }
 
-        try {
-            authenticationController.login(tenDangNhap, matKhau);
-            ClientSocket.getInstance().sendLogin(tenDangNhap,matKhau);
-            showSuccess("Đăng nhập thành công!");
-            openDashboard();
+        buttonLogin.setDisable(true);
+        messageLabel.setText("Đang đăng nhập...");
 
-        } catch (AuthenticationException e) {
-            showError("Sai tài khoản hoặc mật khẩu.");
-        } catch (Exception e) {
-            showError("Lỗi: " + e.getMessage());
-        }
+        Task<UserDTO> task = new Task<>() {
+            @Override
+            protected UserDTO call() throws Exception {
+                authenticationController.login(tenDangNhap, matKhau); // DB chạy ở background
+                ClientSocket.getInstance().sendLogin(tenDangNhap, matKhau);
+                return authenticationController.getCurrentUserDTO();
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            showSuccess("Đăng nhập thành công!");
+            openDashboard(); // chuyển màn hình trên FX thread
+            buttonLogin.setDisable(false);
+        });
+
+        task.setOnFailed(e -> {
+            Throwable ex = task.getException();
+            if (ex instanceof AuthenticationException) {
+                showError("Sai tài khoản hoặc mật khẩu.");
+            } else {
+                showError("Lỗi: " + ex.getMessage());
+            }
+            buttonLogin.setDisable(false);
+        });
+
+        new Thread(task).start();
     }
 
     private void openDashboard() {

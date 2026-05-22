@@ -1,39 +1,34 @@
 package server.dao;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import java.sql.*;
+import java.util.Properties;
 
 
 public class DBConnection {
+    private static HikariDataSource pool;
 
-    private static final String URL;
-    private static final String DB_USER;
-    private static final String DB_PASSWORD;
-    static{
-        try{
-            java.util.Properties props = new java.util.Properties();
+    static {
+        try {
+            Properties props = new Properties();
             props.load(DBConnection.class.getClassLoader()
                     .getResourceAsStream("db.properties"));
-            URL = props.getProperty("db.url");
-            DB_USER = props.getProperty("db.user");
-            DB_PASSWORD = props.getProperty("db.password");
+
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl(props.getProperty("db.url"));
+            config.setUsername(props.getProperty("db.user"));
+            config.setPassword(props.getProperty("db.password"));
+            config.setMaximumPoolSize(10);
+            config.setConnectionTimeout(3000);
+            pool = new HikariDataSource(config);
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
         }
-        catch (Exception e){
-            throw new ExceptionInInitializerError(
-                    "Không tìm thấy db.properties: " + e.getMessage()
-            );
-        }
-    }
-    public static Connection getConnection() throws SQLException{
-        return DriverManager.getConnection(URL,DB_USER,DB_PASSWORD);
     }
 
-    public static void main(String[] args) throws SQLException {
-        Connection con = getConnection();
-        if (con != null){
-            System.out.println("Successful");
-        }
-        else{
-            System.out.println("Failed");
-        }
+    public static Connection getConnection() throws SQLException {
+        return pool.getConnection(); // lấy connection từ pool, không mở mới
     }
 }

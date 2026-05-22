@@ -3,9 +3,9 @@ package shared.protocol;
 // Đây là lớp sử dụng để gói thông tin của 1 lượt đặt giá lại (thay vì nhiều tham số thì lúc này nó thành 1 object)
 public class AuctionEvent {
     public enum Type{
-        BID_PLACED, // chap nhan luot bid
-        BID_REJECTED, // tu choi luot bid
-        AUCTION_ENDED, //ket thuc phien
+        BID_PLACED, // chấp nhận lượt bid
+        BID_REJECTED, // từ chối lượt bid
+        AUCTION_ENDED, // kết thúc phiên
         NEW_AUCTION
     }
     private final Type type;
@@ -21,7 +21,7 @@ public class AuctionEvent {
         this.currentPrice = currentPrice;
     }
 
-    //Cac ham getter
+    // Các hàm getter
     public Type getType(){
         return type;
     }

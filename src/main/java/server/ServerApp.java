@@ -4,6 +4,8 @@ import server.dao.AuctionDAO;
 import server.model.Auction;
 import server.model.AuctionManager;
 import server.network.ClientHandler;
+import shared.protocol.Message;
+import shared.protocol.MessageType;
 
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -26,6 +28,15 @@ public class ServerApp {
                 manager.addAuction(auction);
             }
             System.out.println("[O] Đã load " + auctions.size() + " phiên đấu giá từ DB.");
+
+            // Đăng ký broadcaster để AuctionManager có thể
+            // thông báo AUCTION_ENDED tới tất cả client (kể cả chưa subscribe)
+            manager.setAuctionEndedBroadcaster(auctionId -> {
+                Message msg = Message.of(MessageType.AUCTION_UPDATE)
+                        .put("auctionId", auctionId)
+                        .put("eventType", "AUCTION_ENDED");
+                ClientHandler.broadcastToAll(msg);
+            });
 
             // 2. Mở cổng và chờ client kết nối
             ServerSocket serverSocket = new ServerSocket(8080);
