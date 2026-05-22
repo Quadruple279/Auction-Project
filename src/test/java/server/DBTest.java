@@ -18,6 +18,7 @@ public class DBTest {
         System.out.println("===== TEST KẾT NỐI =====");
         Connection conn = DBConnection.getConnection();
         System.out.println(conn != null ? "[OK] Kết nối thành công!" : "[FAIL] Kết nối thất bại!");
+
         // Xóa dữ liệu test cũ nếu tồn tại (để có thể chạy lại nhiều lần)
         System.out.println("\n===== CLEANUP =====");
         conn.createStatement().executeUpdate("DELETE FROM bid_transactions WHERE auction_id = 'AU-TEST-001'");
@@ -25,7 +26,6 @@ public class DBTest {
         conn.createStatement().executeUpdate("DELETE FROM items WHERE id = 'ITEM001'");
         conn.createStatement().executeUpdate("DELETE FROM users WHERE id = 'TEST001'");
         System.out.println("[OK] Đã xóa dữ liệu test cũ.");
-
 
         // TEST 2: UserDAO
         System.out.println("\n===== TEST USER DAO =====");
@@ -77,7 +77,6 @@ public class DBTest {
         auctionDAO.finish("AU-TEST-001");
         Auction finished = auctionDAO.findById("AU-TEST-001");
         System.out.println("[OK] isFinished: " + finished.isFinished());
-
     }
 
 }
