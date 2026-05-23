@@ -128,7 +128,8 @@ public class AuctionService {
 
     public void enableAutoBid(
             String auctionId,
-            double maxAmount
+            double maxAmount,
+            double increment
     ) {
 
         User currentUser = auth.getCurrentUser();
@@ -148,7 +149,8 @@ public class AuctionService {
 
         auction.enableAutoBid(
                 currentUser.getName(),
-                maxAmount
+                maxAmount,
+                increment
         );
 
         try {
@@ -156,7 +158,8 @@ public class AuctionService {
             auctionDAO.updateAutoBid(
                     auctionId,
                     currentUser.getName(),
-                    maxAmount
+                    maxAmount,
+                    increment
             );
 
         } catch (SQLException e) {

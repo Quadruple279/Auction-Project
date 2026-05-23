@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.temporal.ChronoUnit;
+
+import javafx.application.Platform;
+
 public class Auction implements AuctionSubject {
     private ArrayList<BidTransaction> transactionHistory = new ArrayList<>();
     private String auctionId;
@@ -19,6 +22,7 @@ public class Auction implements AuctionSubject {
     private String leadingBidder;
     private String autoBidder;
     private double maxAutoBid;
+    private double autoBidIncrement = 10;
     private AuctionStatus status;
     private LocalDateTime endTime;
     private String owner;
@@ -132,11 +136,12 @@ public class Auction implements AuctionSubject {
 
             if (autoBidder != null
                     && !bidderName.equals(autoBidder)
-                    && currentPrice < maxAutoBid
+                    && currentPrice + autoBidIncrement <= maxAutoBid
                     && status != AuctionStatus.FINISHED
                     && status != AuctionStatus.CANCELLED) {
 
-                double autoBidPrice = currentPrice + 1;
+                double autoBidPrice =
+                        currentPrice + autoBidIncrement;
 
                 if (autoBidPrice <= maxAutoBid) {
 
@@ -255,8 +260,8 @@ public class Auction implements AuctionSubject {
     }
 
     // Lấy danh sách đấu giá
-    public ArrayList<BidTransaction> getTransactionHistory() {
-        return transactionHistory;
+    public List<BidTransaction> getTransactionHistory() {
+        return List.copyOf(transactionHistory);
     }
 
     // ── Convenience helpers (Tương thích ngược) ───────────────────────────────
@@ -287,16 +292,23 @@ public class Auction implements AuctionSubject {
         System.out.println("Auction được gia hạn thêm 10 giây!");
     }
 
-    public void enableAutoBid(String bidderName, double maxAmount) {
+    public void enableAutoBid(
+            String bidderName,
+            double maxAmount,
+            double increment
+    ) {
 
         this.autoBidder = bidderName;
         this.maxAutoBid = maxAmount;
+        this.autoBidIncrement = increment;
 
         System.out.println(
                 "Auto-bid enabled for "
                         + bidderName
                         + " max: "
                         + maxAmount
+                        + " increment: "
+                        + increment
         );
     }
 
@@ -308,5 +320,8 @@ public class Auction implements AuctionSubject {
     @Deprecated
     public void setCancelled(boolean cancelled) {
         if (cancelled) this.status = AuctionStatus.CANCELLED;
+    }
+    public double getAutoBidIncrement() {
+        return autoBidIncrement;
     }
 }
