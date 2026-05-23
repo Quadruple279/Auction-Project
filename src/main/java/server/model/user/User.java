@@ -52,4 +52,11 @@ public abstract class User implements Serializable {
     public boolean checkPassword(String password) {
         return this.password.equals(password);
     }
+
+    public void setName(String newName) {
+        this.name = newName;
+    }
+    public void setPassword(String newPassword) {
+        this.password = newPassword;
+    }
 }

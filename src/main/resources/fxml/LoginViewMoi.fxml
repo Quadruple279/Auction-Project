@@ -13,140 +13,151 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="800.0" prefWidth="1280.0" style="-fx-background-color: #1d1d1d;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.controller.LoginControllerMoi">
+<AnchorPane style="-fx-background-color: #1d1d1d;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.controller.LoginControllerMoi">
    <children>
-      <HBox layoutX="231.0" layoutY="407.0" prefHeight="800.0" prefWidth="1280.0" style="-fx-background-color: #1d1d1d;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <VBox prefHeight="800.0" prefWidth="640.0" style="-fx-background-color: #1d1d1d; -fx-padding: 60 70; -fx-spacing: 0;">
+            <HBox alignment="CENTER_LEFT" prefWidth="640.0" spacing="14.0" VBox.vgrow="ALWAYS">
                <children>
-                  <HBox alignment="CENTER_LEFT" prefWidth="640.0" spacing="14.0">
+                  <Pane prefHeight="56.0" prefWidth="56.0" style="-fx-background-color: #2563eb; -fx-background-radius: 14;">
                      <children>
-                        <Pane prefHeight="56.0" prefWidth="56.0" style="-fx-background-color: #2563eb; -fx-background-radius: 14;">
+                        <Label layoutX="20.0" layoutY="2.0" text="⚡" textFill="#f97316">
+                           <font>
+                              <Font size="36.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </Pane>
+                  <VBox HBox.hgrow="ALWAYS">
+                     <children>
+                        <Label style="-fx-font-weight: bold;" text="BidNow" textFill="WHITE">
+                           <font>
+                              <Font size="20.0" />
+                           </font>
+                        </Label>
+                        <Label text="Online Auction System" textFill="#6b7280">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </VBox>
+                  <Region HBox.hgrow="ALWAYS" />
+                  <HBox style="-fx-border-radius: 10; -fx-background-radius: 10;">
+                     <children>
+                        <Button fx:id="buttonLogin" maxWidth="1.7976931348623157E308" mnemonicParsing="false" prefHeight="56.0" prefWidth="230.0" style="-fx-background-color: #3b82f6; -fx-font-weight: bold; -fx-background-radius: 10 0 0 10; -fx-border-color: #3b82f6; -fx-border-radius: 10 0 0 10;" text="Login" textFill="WHITE" HBox.hgrow="ALWAYS">
+                           <font>
+                              <Font size="16.0" />
+                           </font>
+                           <HBox.margin>
+                              <Insets />
+                           </HBox.margin>
+                        </Button>
+                        <Button fx:id="buttonRegister" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleSwitchToRegister" prefHeight="56.0" prefWidth="230.0" style="-fx-background-color: transparent; -fx-background-radius: 0 10 10 0; -fx-border-color: #3b82f6; -fx-border-radius: 0 10 10 0;" text="Register" textFill="#6b7280" HBox.hgrow="ALWAYS">
+                           <font>
+                              <Font size="16.0" />
+                           </font>
+                        </Button>
+                     </children>
+                  </HBox>
+               </children>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </HBox>
+            <Separator VBox.vgrow="ALWAYS" />
+            <HBox style="-fx-background-color: #1d1d1d;" VBox.vgrow="ALWAYS">
+               <children>
+                  <VBox alignment="CENTER_LEFT" maxHeight="Infinity" prefHeight="800.0" style="-fx-background-color: #111827; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 0 100;" HBox.hgrow="ALWAYS">
+                     <HBox.margin>
+                        <Insets />
+                     </HBox.margin>
+                     <children>
+                        <Region prefWidth="200.0" />
+                        <Label style="-fx-font-weight: bold; -fx-letter-spacing: 1.5;" text="USERNAME" textFill="#6b7280">
+                           <VBox.margin>
+                              <Insets bottom="6.0" />
+                           </VBox.margin>
+                        </Label>
+                        <TextField fx:id="userName" prefHeight="56.0" prefWidth="460.0" promptText="Nhập Tên đăng nhập..." style="-fx-background-color: #2b2b2b; -fx-text-fill: white; -fx-prompt-text-fill: #6b7280; -fx-font-size: 16; -fx-background-radius: 10; -fx-border-color: #374151; -fx-border-radius: 10; -fx-padding: 0 20;">
+                           <VBox.margin>
+                              <Insets bottom="20.0" />
+                           </VBox.margin>
+                        </TextField>
+                        <Label style="-fx-font-weight: bold; -fx-letter-spacing: 1.5;" text=" PASSWORD" textFill="#6b7280">
+                           <VBox.margin>
+                              <Insets bottom="6.0" />
+                           </VBox.margin>
+                        </Label>
+                        <PasswordField fx:id="password" prefHeight="56.0" prefWidth="460.0" promptText="Nhập Mật khẩu..." style="-fx-background-color: #2b2b2b; -fx-text-fill: white; -fx-prompt-text-fill: #6b7280; -fx-font-size: 16; -fx-background-radius: 10; -fx-border-color: #374151; -fx-border-radius: 10; -fx-padding: 0 20;">
+                           <VBox.margin>
+                              <Insets bottom="20.0" />
+                           </VBox.margin>
+                        </PasswordField>
+                        <Label fx:id="messageLabel" alignment="CENTER" textFill="#fa5656">
+                           <font>
+                              <Font size="16.0" />
+                           </font>
+                           <VBox.margin>
+                              <Insets bottom="10.0" top="6.0" />
+                           </VBox.margin>
+                        </Label>
+                        <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleLogin" prefHeight="56.0" prefWidth="460.0" style="-fx-background-color: #3b82f6; -fx-border-color: #374151; -fx-border-radius: 10; -fx-cursor: hand; -fx-font-weight: bold; -fx-background-radius: 10;" text="Sign In" textFill="WHITE">
+                           <font>
+                              <Font size="18.0" />
+                           </font>
+                           <VBox.margin>
+                              <Insets bottom="20.0" />
+                           </VBox.margin>
+                        </Button>
+                        <HBox alignment="TOP_CENTER" prefHeight="100.0" prefWidth="200.0">
                            <children>
-                              <Label layoutX="20.0" layoutY="2.0" text="⚡" textFill="#f97316">
+                              <Label text="Chưa có tài khoản?" textFill="#6b7280">
                                  <font>
-                                    <Font size="36.0" />
+                                    <Font size="14.0" />
                                  </font>
                               </Label>
-                           </children>
-                        </Pane>
-                        <VBox>
-                           <children>
-                              <Label style="-fx-font-weight: bold;" text="BidNow" textFill="WHITE">
-                                 <font>
-                                    <Font size="20.0" />
-                                 </font>
-                              </Label>
-                              <Label text="Online Auction System" textFill="#6b7280">
+                              <Label alignment="CENTER" onMouseClicked="#handleRegister" text="Đăng ký ngay" textFill="#3b82f6" HBox.hgrow="ALWAYS">
                                  <font>
                                     <Font size="14.0" />
                                  </font>
                               </Label>
                            </children>
-                        </VBox>
-                     </children>
-                  </HBox>
-                  <Region prefHeight="80.0" VBox.vgrow="ALWAYS" />
-                  <VBox prefHeight="200.0" prefWidth="100.0">
-                     <children>
-                        <Label style="-fx-font-weight: bold;" text="Welcome" textFill="WHITE">
-                           <font>
-                              <Font size="72.0" />
-                           </font>
-                        </Label>
-                        <Label style="-fx-font-style: italic;" text="back" textFill="#3b82f6">
-                           <font>
-                              <Font size="72.0" />
-                           </font>
-                        </Label>
+                        </HBox>
                      </children>
                   </VBox>
-                  <Label maxWidth="400.0" style="-fx-wrap-text: true;" text="Tham gia đấu giá và khám phá những sản phẩm độc đáo từ khắp nơi trên thế giới." textFill="#6b7280">
-                     <font>
-                        <Font size="15.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets top="20.0" />
-                     </VBox.margin>
-                  </Label>
-                  <Region prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
-               </children>
-            </VBox>
-            <Separator orientation="VERTICAL" prefHeight="800.0" prefWidth="1.0" style="-fx-background-color: #1e2d4a;" />
-            <VBox alignment="CENTER_LEFT" prefHeight="800.0" prefWidth="639.0" style="-fx-background-color: #111827; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 0 100;">
-               <HBox.margin>
-                  <Insets />
-               </HBox.margin>
-               <children>
-                  <HBox prefWidth="460.0" style="-fx-border-color: #374151; -fx-background-radius: 10; -fx-border-radius: 10;">
-                     <VBox.margin>
-                        <Insets bottom="36.0" />
-                     </VBox.margin>
+                  <Separator orientation="VERTICAL" style="-fx-background-color: #1e2d4a;" HBox.hgrow="ALWAYS" />
+                  <VBox maxHeight="Infinity" style="-fx-background-color: #111827; -fx-padding: 60 70; -fx-spacing: 0;" HBox.hgrow="ALWAYS">
                      <children>
-                        <Button fx:id="buttonLogin" mnemonicParsing="false" prefHeight="48.0" prefWidth="230.0" style="-fx-background-color: #3b82f6; -fx-font-weight: bold; -fx-background-radius: 10 0 0 10; -fx-border-color: #374151;" text="Login" textFill="WHITE">
+                        <Region prefHeight="120.0" />
+                        <VBox prefHeight="200.0" prefWidth="100.0">
+                           <children>
+                              <Label style="-fx-font-weight: bold;" text="Welcome" textFill="WHITE">
+                                 <font>
+                                    <Font size="72.0" />
+                                 </font>
+                              </Label>
+                              <Label style="-fx-font-style: italic;" text="back" textFill="#3b82f6">
+                                 <font>
+                                    <Font size="72.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                        </VBox>
+                        <Label maxWidth="400.0" style="-fx-wrap-text: true;" text="Tham gia đấu giá và khám phá những sản phẩm độc đáo từ khắp nơi trên thế giới." textFill="#6b7280">
                            <font>
-                              <Font size="16.0" />
+                              <Font size="15.0" />
                            </font>
-                        </Button>
-                        <Button fx:id="buttonRegister" mnemonicParsing="false" onAction="#handleSwitchToRegister" prefHeight="48.0" prefWidth="230.0" style="-fx-background-color: transparent; -fx-background-radius: 0 10 10 0; -fx-border-color: #374151;" text="Register" textFill="#6b7280">
-                           <font>
-                              <Font size="16.0" />
-                           </font>
-                        </Button>
-                     </children>
-                  </HBox>
-                  <Label style="-fx-font-weight: bold; -fx-letter-spacing: 1.5;" text="USERNAME" textFill="#6b7280">
-                     <VBox.margin>
-                        <Insets bottom="6.0" />
-                     </VBox.margin>
-                  </Label>
-                  <TextField fx:id="userName" prefHeight="56.0" prefWidth="460.0" promptText="Nhập Tên đăng nhập..." style="-fx-background-color: #2b2b2b; -fx-text-fill: white; -fx-prompt-text-fill: #6b7280; -fx-font-size: 16; -fx-background-radius: 10; -fx-border-color: #374151; -fx-border-radius: 10; -fx-padding: 0 20;">
-                     <VBox.margin>
-                        <Insets bottom="20.0" />
-                     </VBox.margin>
-                  </TextField>
-                  <Label style="-fx-font-weight: bold; -fx-letter-spacing: 1.5;" text=" PASSWORD" textFill="#6b7280">
-                     <VBox.margin>
-                        <Insets bottom="6.0" />
-                     </VBox.margin>
-                  </Label>
-                  <PasswordField fx:id="password" prefHeight="56.0" prefWidth="460.0" promptText="Nhập Mật khẩu..." style="-fx-background-color: #2b2b2b; -fx-text-fill: white; -fx-prompt-text-fill: #6b7280; -fx-font-size: 16; -fx-background-radius: 10; -fx-border-color: #374151; -fx-border-radius: 10; -fx-padding: 0 20;">
-                     <VBox.margin>
-                        <Insets bottom="20.0" />
-                     </VBox.margin></PasswordField>
-                  <Label fx:id="messageLabel" alignment="CENTER" textFill="#fa5656">
-                     <font>
-                        <Font size="16.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets bottom="10.0" top="6.0" />
-                     </VBox.margin>
-                  </Label>
-                  <Button mnemonicParsing="false" onAction="#handleLogin" prefHeight="56.0" prefWidth="460.0" style="-fx-background-color: #3b82f6; -fx-border-color: #374151; -fx-border-radius: 10; -fx-cursor: hand; -fx-font-weight: bold; -fx-background-radius: 10;" text="Sign In" textFill="WHITE">
-                     <font>
-                        <Font size="18.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets bottom="20.0" />
-                     </VBox.margin>
-                  </Button>
-                  <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="4.0">
-                     <children>
-                        <Label text="Chưa có tài khoản?" textFill="#6b7280">
-                           <font>
-                              <Font size="14.0" />
-                           </font>
+                           <VBox.margin>
+                              <Insets top="20.0" />
+                           </VBox.margin>
                         </Label>
-                        <Label onMouseClicked="#handleRegister" text="Đăng ký ngay" textFill="#3b82f6">
-                           <font>
-                              <Font size="14.0" />
-                           </font>
-                        </Label>
+                        <Region prefHeight="100.0" prefWidth="200.0" />
                      </children>
-                  </HBox>
+                  </VBox>
                </children>
-            </VBox>
+            </HBox>
          </children>
-      </HBox>
+      </VBox>
    </children>
 </AnchorPane>

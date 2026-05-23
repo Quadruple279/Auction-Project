@@ -279,17 +279,12 @@ public class SellerController implements Initializable {
             dashboardController.setAuthenticationController(authController);
 
             Stage stage = (Stage) buttonBack.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-
+            stage.getScene().setRoot(root);
         } catch (IOException e) {
             showError("Lỗi: Không thể quay về Dashboard.");
         }
     }
 
-    // ════════════════════════════════════════════════════════════
-    //  HELPER
-    // ════════════════════════════════════════════════════════════
     private void clearForm() {
         itemNameField.clear();
         descriptionField.clear();

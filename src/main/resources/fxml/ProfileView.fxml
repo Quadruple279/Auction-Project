@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefWidth="1280.0" style="-fx-background-color: #1b1b1b;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.controller.ProfileController">
+    <children>
+        <VBox spacing="20.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <children>
+
+                <!-- ══ NAVBAR ══ -->
+                <HBox alignment="CENTER_LEFT" prefHeight="56.0" style="-fx-background-color: #2b2b2b;                      -fx-padding: 0 20;                      -fx-spacing: 12;                      -fx-border-color: #3a3a3a;                      -fx-border-width: 0 0 0.5 0;">
+                    <children>
+                        <Button fx:id="backButton" onAction="#handleBack" prefHeight="32" style="-fx-background-color: #3a3a3a;                                -fx-text-fill: #cccccc;                                -fx-background-radius: 6;                                -fx-border-color: #555555;                                -fx-border-radius: 6;                                -fx-cursor: hand;                                -fx-font-size: 12px;" text="← Back">
+                        </Button>
+                        <Label style="-fx-font-weight: bold;" text="Thông tin tài khoản" textFill="WHITE">
+                            <font>
+                                <Font size="15" />
+                            </font>
+                        </Label>
+                    </children>
+                </HBox>
+                <HBox spacing="16.0">
+                    <children>
+
+                        <!-- ══ NỘI DUNG ══ -->
+                        <AnchorPane prefWidth="600" style="-fx-background-color: #242424;                            -fx-background-radius: 12;                            -fx-border-color: #3a3a3a;                            -fx-border-radius: 12;                            -fx-border-width: 0.5;">
+                            <children>
+
+                                <!-- Avatar -->
+                                <Pane fx:id="avatarPane" layoutX="250" layoutY="30" prefHeight="80" prefWidth="80" style="-fx-background-color: #3b82f6; -fx-background-radius: 40;">
+                                    <children>
+                                        <Label fx:id="avatarLabel" layoutX="18" layoutY="16" style="-fx-font-weight: bold;" text="?" textFill="WHITE">
+                                            <font>
+                                                <Font size="32" />
+                                            </font>
+                                        </Label>
+                                    </children>
+                                </Pane>
+
+                                <!-- Tên và role hiển thị -->
+                                <Label fx:id="displayNameLabel" alignment="CENTER" layoutX="0" layoutY="120" prefWidth="600" style="-fx-font-weight: bold;" text="---" textFill="WHITE">
+                                    <font>
+                                        <Font size="20" />
+                                    </font>
+                                </Label>
+
+                                <Label fx:id="displayRoleLabel" alignment="CENTER" layoutX="0" layoutY="148" prefWidth="600" text="---" textFill="#3b82f6">
+                                    <font>
+                                        <Font size="13" />
+                                    </font>
+                                </Label>
+
+                                <!-- Đường kẻ phân cách -->
+                                <AnchorPane layoutX="24" layoutY="178" prefHeight="0.5" prefWidth="552" style="-fx-background-color: #3a3a3a;" />
+
+                                <!-- Form sửa thông tin -->
+                                <VBox layoutX="40" layoutY="196" prefWidth="520" spacing="16">
+                                    <children>
+
+                                        <!-- Tên -->
+                                        <VBox spacing="6">
+                                            <children>
+                                                <Label text="Tên hiển thị" textFill="#888888">
+                                                    <font>
+                                                        <Font size="11" />
+                                                    </font>
+                                                </Label>
+                                                <TextField fx:id="fullNameField" prefHeight="42" prefWidth="520" promptText="Nhập tên hiển thị..." style="-fx-background-color: #1b1b1b;                                                   -fx-text-fill: white;                                                   -fx-prompt-text-fill: #555555;                                                   -fx-border-color: #3a3a3a;                                                   -fx-border-radius: 8;                                                   -fx-background-radius: 8;                                                   -fx-font-size: 14px;                                                   -fx-padding: 0 12;">
+                                                </TextField>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- Username -->
+                                        <VBox spacing="6">
+                                            <children>
+                                                <Label text="Tên đăng nhập" textFill="#888888">
+                                                    <font>
+                                                        <Font size="11" />
+                                                    </font>
+                                                </Label>
+                                                <TextField fx:id="usernameField" prefHeight="42" prefWidth="520" promptText="Nhập tên đăng nhập..." style="-fx-background-color: #1b1b1b;                                                   -fx-text-fill: white;                                                   -fx-prompt-text-fill: #555555;                                                   -fx-border-color: #3a3a3a;                                                   -fx-border-radius: 8;                                                   -fx-background-radius: 8;                                                   -fx-font-size: 14px;                                                   -fx-padding: 0 12;">
+                                                </TextField>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- Mật khẩu mới -->
+                                        <VBox spacing="6">
+                                            <children>
+                                                <Label text="Mật khẩu mới (để trống nếu không đổi)" textFill="#888888">
+                                                    <font>
+                                                        <Font size="11" />
+                                                    </font>
+                                                </Label>
+                                                <PasswordField fx:id="newPasswordField" prefHeight="42" prefWidth="520" promptText="Nhập mật khẩu mới..." style="-fx-background-color: #1b1b1b;                                                      -fx-text-fill: white;                                                      -fx-prompt-text-fill: #555555;                                                      -fx-border-color: #3a3a3a;                                                      -fx-border-radius: 8;                                                      -fx-background-radius: 8;                                                      -fx-font-size: 14px;                                                      -fx-padding: 0 12;">
+                                                </PasswordField>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- Xác nhận mật khẩu -->
+                                        <VBox spacing="6">
+                                            <children>
+                                                <Label text="Xác nhận mật khẩu mới" textFill="#888888">
+                                                    <font>
+                                                        <Font size="11" />
+                                                    </font>
+                                                </Label>
+                                                <PasswordField fx:id="confirmPasswordField" prefHeight="42" prefWidth="520" promptText="Xác nhận mật khẩu mới..." style="-fx-background-color: #1b1b1b;                                                      -fx-text-fill: white;                                                      -fx-prompt-text-fill: #555555;                                                      -fx-border-color: #3a3a3a;                                                      -fx-border-radius: 8;                                                      -fx-background-radius: 8;                                                      -fx-font-size: 14px;                                                      -fx-padding: 0 12;">
+                                                </PasswordField>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- Thông báo -->
+                                        <Label fx:id="messageLabel" alignment="CENTER" prefWidth="520" textFill="#ff4444">
+                                            <font>
+                                                <Font size="12" />
+                                            </font>
+                                        </Label>
+
+                                        <!-- Nút Lưu -->
+                                        <Button onAction="#handleSave" prefHeight="44" prefWidth="520" style="-fx-background-color: #3b82f6;                                        -fx-text-fill: white;                                        -fx-background-radius: 8;                                        -fx-cursor: hand;                                        -fx-font-size: 14px;                                        -fx-font-weight: bold;" text="Lưu thay đổi">
+                                            <VBox.margin>
+                                                <Insets bottom="14.0" />
+                                            </VBox.margin></Button>
+
+                                    </children>
+                                </VBox>
+
+                            </children>
+                        </AnchorPane>
+                        <!-- Lịch sử đấu giá -->
+                        <AnchorPane style="-fx-background-color: #242424;                    -fx-background-radius: 12;                    -fx-border-color: #3a3a3a;                    -fx-border-radius: 12;                    -fx-border-width: 0.5;" HBox.hgrow="ALWAYS">
+                            <children>
+                                <Label layoutX="20" layoutY="14" style="-fx-font-weight: bold;" text="Lịch sử đấu giá" textFill="WHITE">
+                                    <font>
+                                        <Font size="14" />
+                                    </font>
+                                </Label>
+                                <TableView fx:id="historyTable" layoutX="16" layoutY="40" prefHeight="224" style="-fx-background-color: #1b1b1b;                           -fx-border-color: transparent;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="4.0" AnchorPane.rightAnchor="4.0" AnchorPane.topAnchor="40.0">
+                                    <columns>
+                                        <TableColumn fx:id="colAuctionId" prefWidth="200.0" text="Mã phiên" />
+                                        <TableColumn fx:id="colBidAmount" prefWidth="250.0" text="Giá đặt" />
+                                        <TableColumn fx:id="colBidTime" prefWidth="200.0" text="Thời gian" />
+                                    </columns>
+                                </TableView>
+                            </children>
+                        </AnchorPane>
+                    </children>
+                    <VBox.margin>
+                        <Insets />
+                    </VBox.margin>
+                    <padding>
+                        <Insets left="6.0" right="6.0" />
+                    </padding>
+                </HBox>
+            </children>
+        </VBox>
+    </children>
+</AnchorPane>

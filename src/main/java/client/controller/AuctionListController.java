@@ -37,6 +37,8 @@ public class AuctionListController implements Initializable, AuctionObserver {
     @FXML private TextArea console;
     @FXML private MenuItem disconnect;
     @FXML private Button back;
+    @FXML private MenuItem openProfile;
+    @FXML private MenuItem openSellerView;
 
     private AuthenticationController authenticationController = new AuthenticationController();
 
@@ -209,15 +211,69 @@ public class AuctionListController implements Initializable, AuctionObserver {
         this.authenticationController = auth;
     }
 
+    @FXML
+    public void openProfile(ActionEvent actionEvent) {
+        if (authenticationController == null ||
+                authenticationController.getCurrentUser() == null) {
+            log("Lỗi: Không có thông tin user.");
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/ProfileView.fxml")
+            );
+            Parent root = loader.load();
+
+            ProfileController profileController = loader.getController();
+            profileController.setAuthController(authenticationController);
+
+            Stage stage = (Stage) tableView.getScene().getWindow();
+            stage.getScene().setRoot(root);
+        } catch (IOException e) {
+            log("Lỗi: Không thể mở Seller Dashboard.");
+        }
+    }
+
+    @FXML
+    public void openSellerView(ActionEvent actionEvent) {
+        if (authenticationController == null ||
+                authenticationController.getCurrentUser() == null) {
+            log("Lỗi: Không có thông tin user.");
+            return;
+        }
+
+        String role = authenticationController.getCurrentUser().getRole();
+
+        if (!"SELLER".equals(role)) {
+            log("Bạn không có quyền truy cập Seller Dashboard.");
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/SellerView.fxml")
+            );
+            Parent root = loader.load();
+
+            SellerController sellerController = loader.getController();
+            sellerController.setAuthController(authenticationController);
+
+            Stage stage = (Stage) tableView.getScene().getWindow();
+            stage.getScene().setRoot(root);
+
+        } catch (IOException e) {
+            log("Lỗi: Không thể mở Seller Dashboard.");
+        }
+    }
+
     private void switchScene(String fxmlPath) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
             Stage stage = (Stage) tableView.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
+            stage.getScene().setRoot(root);
         } catch (IOException e) {
-            e.printStackTrace();
             log("Lỗi: Không thể tải màn hình");
         }
     }
