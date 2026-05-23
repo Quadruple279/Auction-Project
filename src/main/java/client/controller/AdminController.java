@@ -294,8 +294,7 @@ public class AdminController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/LoginViewMoi.fxml"));
             Parent root = loader.load();
             Stage stage = (Stage) adminNameLabel.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
+            stage.getScene().setRoot(root);
         } catch (IOException e) {
             e.printStackTrace();
         }

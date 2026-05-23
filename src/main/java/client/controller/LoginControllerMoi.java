@@ -1,8 +1,6 @@
 package client.controller;
 
-import client.AppContext;
 import client.ClientSocket;
-import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -26,11 +24,21 @@ public class LoginControllerMoi implements Initializable {
     @FXML private PasswordField password;
     @FXML private Label         messageLabel;
 
-    private AuthenticationController authenticationController = AppContext.getAuthController();
+    private AuthenticationController authenticationController
+            = new AuthenticationController();
+
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         setActiveTab("LOGIN");
+
+        // Bấm Enter ở bất kỳ field nào → tự động login
+        userName.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER) handleLogin();
+        });
+        password.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER) handleLogin();
+        });
     }
 
     private void setActiveTab(String tab) {
@@ -53,41 +61,24 @@ public class LoginControllerMoi implements Initializable {
     @FXML
     public void handleLogin() {
         String tenDangNhap = userName.getText().trim();
-        String matKhau = password.getText();
+        String matKhau     = password.getText();
+
         if (tenDangNhap.isEmpty() || matKhau.isEmpty()) {
-            showError("Không được để trống.");
+            showError("Không được để trống tên đăng nhập và mật khẩu.");
             return;
         }
 
-        buttonLogin.setDisable(true);
-        messageLabel.setText("Đang đăng nhập...");
-
-        Task<UserDTO> task = new Task<>() {
-            @Override
-            protected UserDTO call() throws Exception {
-                authenticationController.login(tenDangNhap, matKhau); // DB chạy ở background
-                ClientSocket.getInstance().sendLogin(tenDangNhap, matKhau);
-                return authenticationController.getCurrentUserDTO();
-            }
-        };
-
-        task.setOnSucceeded(e -> {
+        try {
+            authenticationController.login(tenDangNhap, matKhau);
+            ClientSocket.getInstance().sendLogin(tenDangNhap,matKhau);
             showSuccess("Đăng nhập thành công!");
-            openDashboard(); // chuyển màn hình trên FX thread
-            buttonLogin.setDisable(false);
-        });
+            openDashboard();
 
-        task.setOnFailed(e -> {
-            Throwable ex = task.getException();
-            if (ex instanceof AuthenticationException) {
-                showError("Sai tài khoản hoặc mật khẩu.");
-            } else {
-                showError("Lỗi: " + ex.getMessage());
-            }
-            buttonLogin.setDisable(false);
-        });
-
-        new Thread(task).start();
+        } catch (AuthenticationException e) {
+            showError("Sai tài khoản hoặc mật khẩu.");
+        } catch (Exception e) {
+            showError("Lỗi: " + e.getMessage());
+        }
     }
 
     private void openDashboard() {
@@ -127,9 +118,8 @@ public class LoginControllerMoi implements Initializable {
                     sellerController.setAuthController(authenticationController);
                 }
                 case "ADMIN" -> {
-                    // TODO: AdminController sau
-                    // AdminController adminController = loader.getController();
-                    // adminController.setAuthController(authenticationController);
+                    AdminController adminController = loader.getController();
+                    adminController.setAuthController(authenticationController);
                 }
                 default -> {
                     AuctionListController dashboardController = loader.getController();
@@ -138,9 +128,8 @@ public class LoginControllerMoi implements Initializable {
             }
 
             Stage stage = (Stage) messageLabel.getScene().getWindow();
-            stage.setScene(new Scene(root));
             stage.setTitle(title);
-            stage.show();
+            stage.getScene().setRoot(root);
 
         } catch (IOException e) {
             showError("Lỗi: Không thể mở dashboard.");
@@ -173,15 +162,14 @@ public class LoginControllerMoi implements Initializable {
 
     private void switchScene(String fxmlPath) {
         try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(fxmlPath)
-            );
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
-            Stage stage  = (Stage) messageLabel.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
+            Stage stage = (Stage) userName.getScene().getWindow();
+            stage.getScene().setRoot(root);
+
         } catch (IOException e) {
-            showError("Lỗi: Không thể tải màn hình.");
+            e.printStackTrace();
+            showError("Lỗi: Không thể tải màn hình");
         }
     }
 }

@@ -88,4 +88,30 @@ public class AuthenticationController {
     public void logout() {
         this.currentUser = null;
     }
+
+    public void updateUser(String oldName, String newName, String newPassword) {
+        User user = users.get(oldName);
+        if (user == null) return;
+
+        // Đổi tên nếu khác
+        if (!newName.equals(oldName)) {
+            users.remove(oldName);
+            user.setName(newName);
+            users.put(newName, user);
+        }
+
+        // Đổi mật khẩu nếu có
+        if (newPassword != null && !newPassword.isEmpty()) {
+            user.setPassword(newPassword);
+        }
+
+        // TODO: Lưu vào DB sau
+        // try {
+        //     userDAO.update(user);
+        // } catch (SQLException e) {
+        //     System.out.println("Lỗi cập nhật user vào DB: " + e.getMessage());
+        // }
+
+        currentUser = user;
+    }
 }

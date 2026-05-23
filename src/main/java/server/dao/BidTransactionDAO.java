@@ -39,4 +39,33 @@ public class BidTransactionDAO {
             return trans;
         }
     }
+
+    public List<BidTransaction> findByBidderName(String bidderName) throws SQLException {
+        String sql = "SELECT * FROM bid_transactions " +
+                "WHERE bidder_name = ? " +
+                "ORDER BY bid_time DESC";
+
+        List<BidTransaction> result = new ArrayList<>();
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, bidderName);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String auctionId   = rs.getString("auction_id");
+                    String bidderName2 = rs.getString("bidder_name");
+                    double bidAmount   = rs.getDouble("bid_amount");
+                    LocalDateTime bidTime = rs.getTimestamp("bid_time")
+                            .toLocalDateTime();
+
+                    result.add(new BidTransaction(
+                            auctionId, bidderName2, bidAmount, bidTime
+                    ));
+                }
+            }
+        }
+        return result;
+    }
 }
