@@ -42,11 +42,19 @@ public class AuctionDAO {
     }
 
     public void delete(String auctionId) throws SQLException {
-        String sql = "DELETE FROM auctions WHERE id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, auctionId);
-            pstmt.executeUpdate();
+        try (Connection conn = DBConnection.getConnection()) {
+            // 1. Xóa bid_transactions trước
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "DELETE FROM bid_transactions WHERE auction_id = ?")) {
+                pstmt.setString(1, auctionId);
+                pstmt.executeUpdate();
+            }
+            // 2. Rồi mới xóa auction
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "DELETE FROM auctions WHERE id = ?")) {
+                pstmt.setString(1, auctionId);
+                pstmt.executeUpdate();
+            }
         }
     }
 
