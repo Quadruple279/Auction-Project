@@ -11,6 +11,10 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+
 
 <AnchorPane style="-fx-background-color: #1d1d1d;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.controller.AuctionRoomController">
    <children>
@@ -83,6 +87,26 @@
                                     <Font size="13.0" />
                                  </font>
                               </Label>
+                           </children>
+                        </AnchorPane>
+                        <!-- BIỂU ĐỒ GIÁ REALTIME -->
+                        <AnchorPane layoutX="16.0" layoutY="295.0" prefHeight="180.0" prefWidth="424.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
+                           <children>
+                              <Label layoutX="16" layoutY="8.0" text="BIỂU ĐỒ GIÁ REALTIME" textFill="#888888">
+                                 <font><Font size="11.0" /></font>
+                              </Label>
+                              <LineChart fx:id="priceChart" layoutX="0" layoutY="24.0"
+                                         prefWidth="424.0" prefHeight="150.0" animated="false" legendVisible="false"
+                                         style="-fx-background-color: transparent;">
+                                 <xAxis>
+                                    <CategoryAxis fx:id="chartXAxis" tickLabelsVisible="false" tickMarkVisible="false"
+                                                  style="-fx-tick-label-fill: #555555;" />
+                                 </xAxis>
+                                 <yAxis>
+                                    <NumberAxis fx:id="chartYAxis" autoRanging="true"
+                                                style="-fx-tick-label-fill: #888888;" />
+                                 </yAxis>
+                              </LineChart>
                            </children>
                         </AnchorPane>
 

@@ -1,5 +1,6 @@
 package client.controller;
 
+import client.ClientSocket;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -11,6 +12,7 @@ import server.controller.AuthenticationController;
 import server.dao.BidTransactionDAO;
 import server.model.BidTransaction;
 import server.model.user.User;
+import shared.protocol.MessageType;
 
 import java.io.IOException;
 import java.net.URL;
@@ -111,7 +113,6 @@ public class ProfileController implements Initializable {
         String newPassword = newPasswordField.getText();
         String confirmPw   = confirmPasswordField.getText();
 
-        // Validate
         if (newName.isEmpty() || newUsername.isEmpty()) {
             showError("Tên và tên đăng nhập không được để trống.");
             return;
@@ -128,24 +129,26 @@ public class ProfileController implements Initializable {
             }
         }
 
-        try {
-            String oldName = authController.getCurrentUser().getName();
-            authController.updateUser(
-                    oldName,
-                    newUsername,
-                    newPassword.isEmpty() ? null : newPassword
-            );
+        ClientSocket.getInstance().setResponseListener(msg -> {
+            if (msg.getType() == MessageType.UPDATE_USER_SUCCESS) {
+                javafx.application.Platform.runLater(() -> {
+                    displayNameLabel.setText(newName);
+                    avatarLabel.setText(
+                            String.valueOf(newName.charAt(0)).toUpperCase()
+                    );
+                    showSuccess("Cập nhật thành công!");
+                    newPasswordField.clear();
+                    confirmPasswordField.clear();
+                });
+            } else if (msg.getType() == MessageType.ERROR) {
+                javafx.application.Platform.runLater(() ->
+                        showError("Lỗi: " + msg.getOrDefault("reason", "Không thể cập nhật"))
+                );
+            }
+        });
 
-            // Cập nhật lại UI
-            displayNameLabel.setText(newUsername);
-            avatarLabel.setText(
-                    String.valueOf(newUsername.charAt(0)).toUpperCase()
-            );
-            showSuccess("Cập nhật thành công!");
-
-        } catch (Exception e) {
-            showError("Lỗi: " + e.getMessage());
-        }
+        ClientSocket.getInstance().sendUpdateUser(newName,
+                newPassword.isEmpty() ? null : newPassword);
     }
 
     @FXML

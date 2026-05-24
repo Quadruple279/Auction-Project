@@ -78,23 +78,25 @@ public class SellerController implements Initializable {
         setUpListView();
     }
     private void setUpListView() {
-        myAuctionList.setOnMouseClicked(e -> {
-            int index = myAuctionList.getSelectionModel().getSelectedIndex();
-
-            if (index != -1) {
-                selectedAuction = myAuctions.get(index);
-                itemNameField.setText(selectedAuction.getItemName());        // thay getItem().getName()
-                descriptionField.setText(selectedAuction.getDescription());  // thay getItem().getDescription()
-                basePriceField.setText(String.valueOf(selectedAuction.getCurrentPrice()));
-            }
-        });
         myAuctionList.setCellFactory(list -> new ListCell<>() {
-            private Button btnEdit = new Button("Sửa");
-            private Button btnDelete = new Button("Xóa");
-            private Label label = new Label();
-            private HBox box = new HBox(10, label, btnEdit, btnDelete);
+            private final Button btnEdit   = new Button("Sửa");
+            private final Button btnDelete = new Button("Xóa");
+            private final Button btnFinish = new Button("Kết thúc");
+            private final Button btnCancel = new Button("Hủy");
+            private final Button btnPaid   = new Button("Đã thanh toán");
+            private final Label  label     = new Label();
+            private final HBox   box       = new HBox(8, label, btnEdit, btnDelete, btnFinish, btnCancel, btnPaid);
 
             {
+                // Style các nút
+                btnEdit.setStyle("-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-background-radius: 4;");
+                btnDelete.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white; -fx-background-radius: 4;");
+                btnFinish.setStyle("-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-background-radius: 4;");
+                btnCancel.setStyle("-fx-background-color: #6b7280; -fx-text-fill: white; -fx-background-radius: 4;");
+                btnPaid.setStyle("-fx-background-color: #4caf50; -fx-text-fill: white; -fx-background-radius: 4;");
+                label.setStyle("-fx-text-fill: white;");
+                box.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
                 btnEdit.setOnAction(e -> {
                     AuctionDTO a = getItem();
                     if (a != null) {
@@ -111,33 +113,102 @@ public class SellerController implements Initializable {
                     if (a != null) {
                         ClientSocket.getInstance().setResponseListener(msg -> {
                             if (msg.getType() == MessageType.DELETE_AUCTION_SUCCESS) {
-                                Platform.runLater(() -> loadMyAuctions());
+                                javafx.application.Platform.runLater(() -> loadMyAuctions());
                             } else if (msg.getType() == MessageType.ERROR) {
-                                Platform.runLater(() -> showError("Lỗi xóa: " + msg.get("reason")));
+                                javafx.application.Platform.runLater(() ->
+                                        showError("Lỗi xóa: " + msg.get("reason")));
                             }
                         });
                         ClientSocket.getInstance().sendDeleteAuction(a.getAuctionId());
-
                     }
+                });
 
+                btnFinish.setOnAction(e -> {
+                    AuctionDTO a = getItem();
+                    if (a != null) {
+                        ClientSocket.getInstance().setResponseListener(msg -> {
+                            if (msg.getType() == MessageType.FINISH_AUCTION_SUCCESS) {
+                                javafx.application.Platform.runLater(() -> {
+                                    showSuccess("Đã kết thúc phiên!");
+                                    loadMyAuctions();
+                                });
+                            } else if (msg.getType() == MessageType.ERROR) {
+                                javafx.application.Platform.runLater(() ->
+                                        showError("Lỗi: " + msg.get("reason")));
+                            }
+                        });
+                        ClientSocket.getInstance().sendFinishAuction(a.getAuctionId());
+                    }
+                });
+
+                btnCancel.setOnAction(e -> {
+                    AuctionDTO a = getItem();
+                    if (a != null) {
+                        ClientSocket.getInstance().setResponseListener(msg -> {
+                            if (msg.getType() == MessageType.CANCEL_AUCTION_SUCCESS) {
+                                javafx.application.Platform.runLater(() -> {
+                                    showSuccess("Đã hủy phiên!");
+                                    loadMyAuctions();
+                                });
+                            } else if (msg.getType() == MessageType.ERROR) {
+                                javafx.application.Platform.runLater(() ->
+                                        showError("Lỗi: " + msg.get("reason")));
+                            }
+                        });
+                        ClientSocket.getInstance().sendCancelAuction(a.getAuctionId());
+                    }
+                });
+
+                btnPaid.setOnAction(e -> {
+                    AuctionDTO a = getItem();
+                    if (a != null) {
+                        ClientSocket.getInstance().setResponseListener(msg -> {
+                            if (msg.getType() == MessageType.MARK_PAID_SUCCESS) {
+                                javafx.application.Platform.runLater(() -> {
+                                    showSuccess("Đã xác nhận thanh toán!");
+                                    loadMyAuctions();
+                                });
+                            } else if (msg.getType() == MessageType.ERROR) {
+                                javafx.application.Platform.runLater(() ->
+                                        showError("Lỗi: " + msg.get("reason")));
+                            }
+                        });
+                        ClientSocket.getInstance().sendMarkPaid(a.getAuctionId());
+                    }
                 });
             }
-
 
             @Override
             protected void updateItem(AuctionDTO a, boolean empty) {
                 super.updateItem(a, empty);
-
                 if (empty || a == null) {
                     setGraphic(null);
-                } else {
-                    String text = String.format("[%s] %s - %,.0f ₫",
-                            a.getAuctionId(),
-                            a.getItemName(),          // thay getItem().getName()
-                            a.getCurrentPrice());
-                    label.setText(text);
-                    setGraphic(box);
+                    return;
                 }
+
+                String text = String.format("[%s] %s — %,.0f ₫ — %s",
+                        a.getAuctionId(),
+                        a.getItemName(),
+                        a.getCurrentPrice(),
+                        a.getStatus()
+                );
+                label.setText(text);
+
+                // Phiên kết thúc → khóa Sửa, Xóa, Kết thúc
+                boolean finished = a.isFinished();
+                btnEdit.setDisable(finished);
+                btnDelete.setDisable(finished);
+                btnFinish.setDisable(finished);
+
+                // Chỉ hiện "Đã thanh toán" khi phiên FINISHED
+                btnPaid.setVisible("FINISHED".equals(a.getStatus()));
+                btnPaid.setManaged("FINISHED".equals(a.getStatus()));
+
+                // Chỉ hiện "Hủy" khi phiên chưa kết thúc
+                btnCancel.setVisible(!finished);
+                btnCancel.setManaged(!finished);
+
+                setGraphic(box);
             }
         });
     }
