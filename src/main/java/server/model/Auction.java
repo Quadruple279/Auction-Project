@@ -293,6 +293,9 @@ public class Auction implements AuctionSubject {
         notifyObservers(event);
 
         System.out.println("Auction được gia hạn thêm 10 giây!");
+
+        // Reschedule lại scheduler theo endTime mới
+        AuctionManager.getInstance().rescheduleFinish(this); // ← THÊM DÒNG NÀY
     }
 
     public void enableAutoBid(String bidderName, double maxAmount, double increment) {

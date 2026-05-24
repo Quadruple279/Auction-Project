@@ -101,6 +101,10 @@ public class AuctionManager {
                 + " sau " + delay + " ms");
     }
 
+    public void rescheduleFinish(Auction auction) {
+        scheduleFinish(auction);
+    }
+
     private void finishAndSave(Auction auction) {
         if (auction.isFinished() || auction.isCancelled()) return;
 

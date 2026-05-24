@@ -12,6 +12,7 @@ public enum MessageType {
     CREATE_AUCTION,   // payload: itemType, itemName, description, price, durationMinutes, info1, info2
     DELETE_AUCTION,   // payload: auctionId
     UPDATE_AUCTION,   // payload: auctionId, newName, newDescription, newPrice
+    ENABLE_AUTO_BID,  // payload: auctionId, maxBid, increment
 
 
     // ── Server → Client ──────────────────────────

@@ -130,6 +130,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case CREATE_AUCTION -> handleCreateAuction(msg);
             case DELETE_AUCTION -> handleDeleteAuction(msg);
             case UPDATE_AUCTION -> handleUpdateAuction(msg);
+            case ENABLE_AUTO_BID -> handleEnableAutoBid(msg);
             default -> Message.of(MessageType.ERROR)
                     .put("reason", "Lệnh không xác định: " + msg.getType());
         };
@@ -313,6 +314,28 @@ public class ClientHandler implements Runnable, AuctionObserver {
                     msg.get("newDescription"),
                     Double.parseDouble(msg.get("newPrice")));
             return Message.of(MessageType.UPDATE_AUCTION_SUCCESS);
+        } catch (RuntimeException e) {
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
+
+    private Message handleEnableAutoBid(Message msg) {
+        try {
+            String auctionId = msg.get("auctionId");
+            double maxBid    = Double.parseDouble(msg.get("maxBid"));
+            double increment = Double.parseDouble(msg.getOrDefault("increment", "10"));
+
+            Auction auction = AuctionManager.getInstance().findById(auctionId);
+            if (auction == null)
+                return Message.of(MessageType.ERROR).put("reason", "Không tìm thấy phiên: " + auctionId);
+
+            auction.enableAutoBid(authController.getCurrentUser().getName(), maxBid, increment);
+            return Message.of(MessageType.AUCTION_UPDATE)
+                    .put("auctionId", auctionId)
+                    .put("eventType", "AUTO_BID_ENABLED")
+                    .put("currentPrice", String.valueOf(auction.getCurrentPrice()))
+                    .put("leadingBidder", auction.getLeadingBidder());
+
         } catch (RuntimeException e) {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
