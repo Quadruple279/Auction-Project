@@ -26,6 +26,10 @@ import java.net.URL;
 
 import java.util.Locale;
 import java.util.ResourceBundle;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.XYChart;
+import javafx.scene.chart.NumberAxis;
 
 /**
  * Phiên đấu giá — mọi thao tác với server đều qua ClientSocket,
@@ -47,6 +51,12 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     @FXML private Button placeBidButton;
     @FXML private ListView<String> bidHistoryList;
     @FXML private TextArea console;
+    @FXML private LineChart<String, Number> priceChart;
+    @FXML private CategoryAxis chartXAxis;
+    @FXML private NumberAxis chartYAxis;
+
+    private XYChart.Series<String, Number> priceSeries;
+    private int bidCounter = 0;
 
     private javafx.animation.Timeline countdownTimer;
 
@@ -58,6 +68,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         setupBidHistoryList();
+        setupPriceChart();
 
         // Chỉ cho phép nhập số, tự động format 1,000,000
         bidAmountField.setTextFormatter(new TextFormatter<>(change -> {
@@ -229,6 +240,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
 
                     log("Bid mới! " + event.getBidderName()
                             + " đặt " + String.format("%,.0f ₫", event.getBidAmount()));
+                    updatePriceChart(event.getBidAmount());
 
                 }
                 case BID_REJECTED -> log("Bid bị từ chối của " + event.getBidderName());
@@ -237,6 +249,33 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                     statusLabel.setText("● ĐÃ KẾT THÚC");
                     statusLabel.setTextFill(javafx.scene.paint.Color.web("#ff6b6b"));
                     log("Phiên đấu giá đã kết thúc! Người thắng: " + event.getLeadingBidder());
+                }
+                case TIME_EXTENDED -> {
+                    // Cập nhật endTime nội bộ để countdown timer tự khớp
+                    if (event.getNewEndTimeEpoch() > 0) {
+                        java.time.LocalDateTime newEnd = java.time.LocalDateTime
+                                .ofEpochSecond(event.getNewEndTimeEpoch(), 0,
+                                        java.time.ZoneOffset.of("+07:00"));
+                        currentAuction = new shared.dto.AuctionDTO(
+                                currentAuction.getAuctionId(),
+                                currentAuction.getItemName(),
+                                currentAuction.getDescription(),
+                                currentAuction.getPrice(),
+                                currentAuction.getCurrentPrice(),
+                                currentAuction.getLeadingBidder(),
+                                currentAuction.getOwner(),
+                                currentAuction.isFinished(),
+                                currentAuction.getStatus(),
+                                newEnd.toString()
+                        );
+                    }
+                    log("⚠ Anti-snipe! Phiên được gia hạn thêm 10 giây.");
+                    javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                            javafx.scene.control.Alert.AlertType.INFORMATION);
+                    alert.setTitle("Gia hạn phiên");
+                    alert.setHeaderText(null);
+                    alert.setContentText("⚠ Có người đặt giá vào phút cuối!\nPhiên được gia hạn thêm 10 giây.");
+                    alert.show();
                 }
             }
         });
@@ -265,6 +304,28 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     }
 
     // ─── Tiện ích ─────────────────────────────────────────────────────────────
+
+    private void setupPriceChart() {
+        priceSeries = new XYChart.Series<>();
+        priceSeries.setName("Giá");
+        priceChart.getData().add(priceSeries);
+        priceChart.setLegendVisible(false);
+        priceChart.setAnimated(false);
+        priceChart.setCreateSymbols(true);
+        priceChart.lookup(".chart-plot-background")  ;
+        // Style đường kẻ xanh lá
+        priceChart.setStyle("-fx-background-color: transparent;");
+    }
+
+    private void updatePriceChart(double price) {
+        bidCounter++;
+        String label = String.valueOf(bidCounter);
+        priceSeries.getData().add(new XYChart.Data<>(label, price));
+        // Giữ tối đa 20 điểm để chart không quá dày
+        if (priceSeries.getData().size() > 20) {
+            priceSeries.getData().remove(0);
+        }
+    }
 
     private void log(String msg) {
         if (console != null) console.appendText(msg + "\n");

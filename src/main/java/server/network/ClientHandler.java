@@ -89,6 +89,14 @@ public class ClientHandler implements Runnable, AuctionObserver {
                             .put("bidderName", event.getBidderName())
                             .put("bidAmount", String.valueOf(event.getBidAmount()))
             );
+            case TIME_EXTENDED -> send(
+                    Message.of(MessageType.AUCTION_UPDATE)
+                            .put("auctionId", event.getAuctionId())
+                            .put("eventType", "TIME_EXTENDED")
+                            .put("currentPrice", "0")
+                            .put("leadingBidder", "")
+                            .put("newEndTimeEpoch", String.valueOf(event.getNewEndTimeEpoch()))
+            );
             case AUCTION_ENDED -> send(
                     Message.of(MessageType.AUCTION_UPDATE)
                             .put("auctionId", event.getAuctionId())
