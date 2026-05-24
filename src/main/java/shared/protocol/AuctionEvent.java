@@ -6,31 +6,19 @@ public class AuctionEvent {
         BID_PLACED, // chấp nhận lượt bid
         BID_REJECTED, // từ chối lượt bid
         AUCTION_ENDED, // kết thúc phiên
-        NEW_AUCTION,
-        TIME_EXTENDED
+        NEW_AUCTION
     }
     private final Type type;
     private final String auctionId, bidderName, leadingBidder;
     private final double bidAmount, currentPrice;
-    private long newEndTimeEpoch;
 
-    public AuctionEvent(Type type,String auctionId, String bidderName, String leadingBidder,double bidAmount,double currentPrice){
+    public AuctionEvent(Type type,String auctionId,String bidderName, String leadingBidder,double bidAmount,double currentPrice){
         this.type = type;
         this.auctionId = auctionId;
         this.bidderName = bidderName;
         this.leadingBidder = leadingBidder;
         this.bidAmount = bidAmount;
         this.currentPrice = currentPrice;
-    }
-
-    public AuctionEvent(
-            Type type,
-            String auctionId,
-            long newEndTimeEpoch
-    ) {
-
-        this(type, auctionId, "", "", 0, 0);
-        this.newEndTimeEpoch = newEndTimeEpoch;
     }
 
     // Các hàm getter
@@ -51,8 +39,5 @@ public class AuctionEvent {
     }
     public double getCurrentPrice(){
         return currentPrice;
-    }
-    public long getNewEndTimeEpoch() {
-        return newEndTimeEpoch;
     }
 }

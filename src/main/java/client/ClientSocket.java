@@ -101,36 +101,9 @@ public class ClientSocket {
                 String bidderName = msg.getOrDefault("bidderName", "");
                 double bidAmount = Double.parseDouble(msg.getOrDefault("bidAmount", "0"));
 
-                AuctionEvent.Type type =
-                        AuctionEvent.Type.valueOf(eventType);
-
-                AuctionEvent event;
-
-                if (type == AuctionEvent.Type.TIME_EXTENDED) {
-
-                    long newEndTimeEpoch =
-                            Long.parseLong(
-                                    msg.get("newEndTimeEpoch")
-                            );
-
-                    event = new AuctionEvent(
-                            type,
-                            auctionId,
-                            newEndTimeEpoch
-                    );
-
-                } else {
-
-                    event = new AuctionEvent(
-                            type,
-                            auctionId,
-                            bidderName,
-                            leadingBidder,
-                            bidAmount,
-                            currentPrice
-                    );
-                }
-
+                AuctionEvent.Type type = AuctionEvent.Type.valueOf(eventType);
+                AuctionEvent event = new AuctionEvent(
+                        type, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
                 notifyObservers(event);
 
             } else if (msg.getType() == MessageType.NEW_AUCTION) {
