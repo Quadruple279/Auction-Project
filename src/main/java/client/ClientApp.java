@@ -13,7 +13,7 @@ public class ClientApp extends Application {
         ClientSocket.getInstance().connect();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/LoginViewMoi.fxml"));
         Scene scene = new Scene(loader.load());
-        stage.setTitle("BidNow - Đấu giá trực tuyến");
+        stage.setTitle("Abstract Auction - Đấu giá trực tuyến");
         stage.setX(50);
         stage.setY(0);
         stage.setScene(scene);

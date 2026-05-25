@@ -93,16 +93,16 @@ public class LoginControllerMoi implements Initializable {
             switch (role) {
                 case "SELLER" -> {
                     fxmlPath = "/fxml/SellerView.fxml";
-                    title    = "BidNow — Seller Dashboard";
+                    title    = "Abstract Auction — Seller Dashboard";
                 }
                 case "ADMIN" -> {
                     fxmlPath = "/fxml/AdminView.fxml";
-                    title    = "BidNow — Admin Dashboard";
+                    title    = "Abstract Auction — Admin Dashboard";
                 }
                 default -> {
                     // BIDDER hoặc role khác → vào AuctionView
                     fxmlPath = "/fxml/AuctionView.fxml";
-                    title    = "BidNow — Danh sách đấu giá";
+                    title    = "Abstract Auction — Danh sách đấu giá";
                 }
             }
 

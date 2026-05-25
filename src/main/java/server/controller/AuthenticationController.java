@@ -104,10 +104,12 @@ public class AuthenticationController {
             user.setTenHienThi(newTenHienThi);
         }
 
+        // Đổi mật khẩu nếu có
         if (newPassword != null && !newPassword.isEmpty()) {
             user.setPassword(newPassword);
         }
 
+        // Lưu vào DB
         try {
             userDAO.update(user);
         } catch (SQLException e) {
