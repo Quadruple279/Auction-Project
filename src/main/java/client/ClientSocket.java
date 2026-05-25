@@ -144,14 +144,15 @@ public class ClientSocket {
                 .put("amount", String.valueOf(amount)));
     }
 
-    public void sendUpdateUser(String newName, String newPassword) {
+    public void sendUpdateUser(String newDisplayName, String newPassword) {
         Message msg = Message.of(MessageType.UPDATE_USER)
-                .put("newName", newName);
-        if (newPassword != null) {
+                .put("newDisplayName", newDisplayName);
+        if (newPassword != null && !newPassword.isEmpty()) {
             msg.put("newPassword", newPassword);
         }
         send(msg);
     }
+
 
     public void sendGetAuctions() {
         send(Message.of(MessageType.GET_AUCTIONS));

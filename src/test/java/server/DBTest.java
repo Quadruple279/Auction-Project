@@ -32,7 +32,7 @@ public class DBTest {
         UserDAO userDAO = new UserDAO();
 
         // Thêm user mới
-        Bidder testUser = new Bidder(1, "Nguyen Test", "123456");
+        Bidder testUser = new Bidder(1, "Nguyen Test","Nguyen Test", "123456");
         userDAO.save(testUser);
         System.out.println("[OK] Đã lưu user: " + testUser.getName());
 

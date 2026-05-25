@@ -85,7 +85,7 @@
                                                         <Font size="11" />
                                                     </font>
                                                 </Label>
-                                                    <TextField fx:id="usernameField" prefHeight="42" prefWidth="520" promptText="Nhập tên đăng nhập..." style="-fx-background-color: #1b1b1b;                                                   -fx-text-fill: white;                                                   -fx-prompt-text-fill: #555555;                                                   -fx-border-color: #3a3a3a;                                                   -fx-border-radius: 8;                                                   -fx-background-radius: 8;                                                   -fx-font-size: 14px;                                                   -fx-padding: 0 12;">
+                                                <TextField fx:id="usernameField" editable="false" prefHeight="42" prefWidth="520" promptText="Tên đăng nhập" style="-fx-background-color: #2b2b2b;             -fx-text-fill: #888888;             -fx-border-color: #3a3a3a;             -fx-border-radius: 8;             -fx-background-radius: 8;             -fx-font-size: 14px;             -fx-padding: 0 12;">
                                                     </TextField>
                                                 </children>
                                             </VBox>

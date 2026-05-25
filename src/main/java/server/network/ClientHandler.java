@@ -122,6 +122,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case CREATE_AUCTION -> handleCreateAuction(msg);
             case DELETE_AUCTION -> handleDeleteAuction(msg);
             case UPDATE_AUCTION -> handleUpdateAuction(msg);
+            case CANCEL_AUCTION -> handleCancelAuction(msg);
             case UPDATE_USER -> handleUpdateUser(msg);
             default -> Message.of(MessageType.ERROR)
                     .put("reason", "Lệnh không xác định: " + msg.getType());
@@ -298,6 +299,15 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
+    private Message handleCancelAuction(Message msg){
+        try{
+            auctionService.cancelAuction(msg.get("auctionId"));
+            return Message.of(MessageType.CANCEL_AUCTION_SUCCESS).put("auctionId", msg.get("auctionId"));
+        }
+        catch (RuntimeException e){
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
     private Message handleUpdateAuction(Message msg) {
         try {
             auctionService.updateAuction(
@@ -320,27 +330,15 @@ public class ClientHandler implements Runnable, AuctionObserver {
         }
     }
     private Message handleUpdateUser(Message msg) {
-        try {
-            // Lấy user từ session hiện tại (đã login)
-            User currentUser = authController.getCurrentUser();
-            if (currentUser == null) {
-                return Message.of(MessageType.ERROR)
-                        .put("reason", "Bạn chưa đăng nhập.");
-            }
+        User user = authController.getCurrentUser();
+        if (user == null)
+            return Message.of(MessageType.ERROR).put("reason", "Chưa đăng nhập");
 
-            // Đọc newName và newPassword (newPassword có thể null)
-            String newName = msg.get("newName");
-            String newPassword = msg.getOrDefault("newPassword", null);   // null nếu client không gửi
+        String newDisplayName = msg.getOrDefault("newDisplayName", null);
+        String newPassword   = msg.getOrDefault("newPassword", null);
 
-            // Gọi service cập nhật, dùng username từ currentUser
-            authController.updateUser(currentUser.getName(), newName, newPassword);
-
-            System.out.println("[SERVER] Đã cập nhật user: " + currentUser.getName());
-            return Message.of(MessageType.UPDATE_USER_SUCCESS);
-
-        } catch (Exception e) {
-            return Message.of(MessageType.ERROR)
-                    .put("reason", "Lỗi cập nhật: " + e.getMessage());
-        }
+        authController.updateUser(user.getName(), newDisplayName, newPassword);
+        return Message.of(MessageType.UPDATE_USER_SUCCESS);
     }
+
 }

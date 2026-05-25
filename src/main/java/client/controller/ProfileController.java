@@ -5,14 +5,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import server.controller.AuthenticationController;
 import server.dao.BidTransactionDAO;
 import server.model.BidTransaction;
 import server.model.user.User;
-import shared.protocol.Message;
 import shared.protocol.MessageType;
 
 import java.io.IOException;
@@ -95,27 +93,26 @@ public class ProfileController implements Initializable {
 
         // Avatar — lấy chữ cái đầu của tên
         avatarLabel.setText(
-                String.valueOf(user.getName().charAt(0)).toUpperCase()
+                String.valueOf(user.getDisplayName().charAt(0)).toUpperCase()
         );
 
         // Tên và role hiển thị
-        displayNameLabel.setText(user.getName());
+        displayNameLabel.setText(user.getDisplayName());
         displayRoleLabel.setText("● " + user.getRole());
 
         // Điền sẵn vào form
-        fullNameField.setText(user.getName());
+        fullNameField.setText(user.getDisplayName());
         usernameField.setText(user.getName());
     }
 
     @FXML
     private void handleSave() {
         String newDisplayName = fullNameField.getText().trim();
-        String username = usernameField.getText().trim();
         String newPassword = newPasswordField.getText();
         String confirmPw   = confirmPasswordField.getText();
 
         if (newDisplayName.isEmpty()) {
-            showError("Tên và tên đăng nhập không được để trống.");
+            showError("Tên hiển thị không được để trống.");
             return;
         }
 
