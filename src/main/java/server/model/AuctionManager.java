@@ -1,6 +1,7 @@
 package server.model;
 
 import server.dao.AuctionDAO;
+import server.model.AdminEventBus;
 
 import java.sql.SQLException;
 import java.time.Duration;
@@ -72,6 +73,10 @@ public class AuctionManager {
             } catch (SQLException e) {
                 System.err.println("[AuctionManager] Loi luu DB khi huy phien: " + e.getMessage());
             }
+            AdminEventBus.getInstance().publish(
+                    AdminEventBus.EVENT_AUCTION_CANCELED,
+                    auction.getAuctionId() + " — " + auction.getItem().getName()
+            );
             broadcastEnded(auction.getAuctionId());
         }
         return cancelled;
@@ -111,6 +116,12 @@ public class AuctionManager {
             System.err.println("[Scheduler] Loi luu DB khi ket thuc phien: " + e.getMessage());
         }
         System.out.println("[Scheduler] Phien " + auction.getAuctionId() + " da ket thuc tu dong.");
+
+        AdminEventBus.getInstance().publish(
+                AdminEventBus.EVENT_AUCTION_FINISHED,
+                auction.getAuctionId() + " — " + auction.getItem().getName()
+                        + " | Người thắng: " + auction.getLeadingBidder()
+        );
 
         // Broadcast toi tat ca client (ke ca chua subscribe phien nay)
         broadcastEnded(auction.getAuctionId());

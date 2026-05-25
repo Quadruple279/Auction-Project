@@ -1,8 +1,5 @@
 package client.controller;
 
-import client.AppContext;
-import client.ClientSocket;
-import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -15,8 +12,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import server.controller.AuthenticationController;
-import server.exception.AuthenticationException;
-import shared.dto.UserDTO;
 
 import java.io.IOException;
 import java.net.URL;
@@ -53,12 +48,23 @@ public class RegisterControllerMoi implements Initializable {
     // Mã bí mật để đăng ký Admin
     private static final String ADMIN_SECRET = "ADMIN2024";
 
-    private AuthenticationController authController = AppContext.getAuthController();
+    private AuthenticationController authController = new AuthenticationController();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         // Mặc định highlight Bidder khi mở màn hình
         setActiveRole("BIDDER");
+
+        // Bấm Enter → tự động đăng ký
+        loginName.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER) handleRegister();
+        });
+        password1.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER) handleRegister();
+        });
+        password2.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER) handleRegister();
+        });
     }
 
     @FXML
@@ -156,53 +162,41 @@ public class RegisterControllerMoi implements Initializable {
     }
     @FXML
     private void handleRegister() {
-        String tenDangNhap = loginName.getText().trim();   // ← loginName
-        String matKhau = password1.getText();              // ← password1
+        String tenDangNhap = loginName.getText().trim();
+        String matKhau = password1.getText();
         String xacNhan = password2.getText();
 
+        // Validate form
         String error = validate(tenDangNhap, matKhau, xacNhan);
         if (error != null) {
             showError(error);
             return;
         }
 
-        buttonRegister.setDisable(true);                   // ← buttonRegister
-        messageLabel.setText("Đang đăng ký...");
+        try {
+            // Gọi register() thật
+            authController.register(
+                    tenDangNhap,
+                    matKhau,
+                    selectedRole
+            );
 
-        Task<Void> task = new Task<>() {
-            @Override
-            protected Void call() throws Exception {
-                authController.register(tenDangNhap, matKhau, selectedRole);
-                return null;
-            }
-        };
-
-        task.setOnSucceeded(e -> {
             showSuccess("Đăng ký thành công! Đang chuyển về đăng nhập...");
-            buttonRegister.setDisable(false);              // ← buttonRegister
 
-            // Chuyển màn hình trên FX thread
-            try {
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/fxml/LoginViewMoi.fxml"));
-                Parent root = loader.load();
-                LoginControllerMoi loginController = loader.getController();
-                loginController.setAuthenticationController(authController);
+            // Truyền authController sang LoginController
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/LoginViewMoi.fxml")
+            );
+            Parent root = loader.load();
 
-                Stage stage = (Stage) messageLabel.getScene().getWindow();
-                stage.setScene(new Scene(root));
-                stage.show();
-            } catch (IOException ex) {
-                showError("Lỗi: Không thể tải màn hình đăng nhập.");
-            }
-        });
+            LoginControllerMoi loginController = loader.getController();
+            loginController.setAuthenticationController(authController);
 
-        task.setOnFailed(e -> {
-            showError("Lỗi: " + task.getException().getMessage());
-            buttonRegister.setDisable(false);              // ← buttonRegister
-        });
-
-        new Thread(task).start();
+            Stage stage = (Stage) messageLabel.getScene().getWindow();
+            stage.getScene().setRoot(root);
+        } catch (Exception e) {
+            showError("Lỗi: " + e.getMessage());
+        }
     }
 
     @FXML
@@ -228,13 +222,10 @@ public class RegisterControllerMoi implements Initializable {
 
     private void switchScene(String fxmlPath) {
         try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(fxmlPath)
-            );
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
             Stage stage = (Stage) messageLabel.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
+            stage.getScene().setRoot(root);
         } catch (IOException e) {
             showError("Lỗi: Không thể tải màn hình");
         }

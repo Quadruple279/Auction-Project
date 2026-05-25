@@ -199,7 +199,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
         // Đặt response listener để xử lý phản hồi từ server
         ClientSocket.getInstance().setResponseListener(msg -> {
             Platform.runLater(() -> {
-                    log("Lỗi: " + msg.getOrDefault("reason", "Không thể đặt giá"));
+                log("Lỗi: " + msg.getOrDefault("reason", "Không thể đặt giá"));
             });
         });
 
@@ -257,8 +257,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
             );
             Parent root = loader.load();
             Stage stage = (Stage) buttonBack.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
+            stage.getScene().setRoot(root);
         } catch (IOException e) {
             e.printStackTrace();
             log("Lỗi: Không thể quay về Dashboard");

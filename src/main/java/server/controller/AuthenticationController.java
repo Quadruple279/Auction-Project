@@ -3,6 +3,7 @@ package server.controller;
 import server.dao.UserDAO;
 import server.model.user.*;
 import server.exception.AuthenticationException;
+import server.model.AdminEventBus;
 import shared.dto.UserDTO;
 
 import java.util.ArrayList;
@@ -47,6 +48,9 @@ public class AuthenticationController {
             } catch (SQLException e) {
                 System.out.println("Lỗi lưu user vào DB : " + e.getMessage());
             }
+            AdminEventBus.getInstance().publish(
+                    AdminEventBus.EVENT_USER_ADDED, name + " (" + role.toUpperCase() + ")"
+            );
         }
     }
 
@@ -83,9 +87,38 @@ public class AuthenticationController {
             } catch (SQLException e) {
                 System.out.println("Lỗi xóa user ra khỏi DB: " + e.getMessage());
             }
+            AdminEventBus.getInstance().publish(
+                    AdminEventBus.EVENT_USER_DELETED, user.getName() + " (" + user.getRole() + ")"
+            );
         }
     }
     public void logout() {
         this.currentUser = null;
+    }
+
+    public void updateUser(String oldName, String newName, String newPassword) {
+        User user = users.get(oldName);
+        if (user == null) return;
+
+        // Đổi tên nếu khác
+        if (!newName.equals(oldName)) {
+            users.remove(oldName);
+            user.setName(newName);
+            users.put(newName, user);
+        }
+
+        // Đổi mật khẩu nếu có
+        if (newPassword != null && !newPassword.isEmpty()) {
+            user.setPassword(newPassword);
+        }
+
+        // Lưu vào DB
+        try {
+            userDAO.update(user);
+        } catch (SQLException e) {
+            System.out.println("Lỗi cập nhật user vào DB : " + e.getMessage());
+        }
+
+        currentUser = user;
     }
 }

@@ -17,8 +17,8 @@ public class AuctionDAO {
         String sql = "INSERT INTO auctions (" +
                 "id, item_id, current_price, owner, " +
                 "leading_bidder, is_finished, status, end_time, " +
-                "auto_bidder, max_auto_bid" +
-                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "auto_bidder, max_auto_bid, auto_bid_increment" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, auction.getAuctionId());
@@ -36,17 +36,29 @@ public class AuctionDAO {
 
             pstmt.setDouble(10,
                     auction.getMaxAutoBid());
+            pstmt.setDouble(
+                    11,
+                    auction.getAutoBidIncrement()
+            );
             pstmt.executeUpdate();
 
         }
     }
 
     public void delete(String auctionId) throws SQLException {
-        String sql = "DELETE FROM auctions WHERE id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, auctionId);
-            pstmt.executeUpdate();
+        try (Connection conn = DBConnection.getConnection()) {
+            // 1. Xóa bid_transactions trước
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "DELETE FROM bid_transactions WHERE auction_id = ?")) {
+                pstmt.setString(1, auctionId);
+                pstmt.executeUpdate();
+            }
+            // 2. Rồi mới xóa auction
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "DELETE FROM auctions WHERE id = ?")) {
+                pstmt.setString(1, auctionId);
+                pstmt.executeUpdate();
+            }
         }
     }
 
@@ -98,13 +110,15 @@ public class AuctionDAO {
     public void updateAutoBid(
             String auctionId,
             String autoBidder,
-            double maxAutoBid
+            double maxAutoBid,
+            double increment
     ) throws SQLException {
 
         String sql =
                 "UPDATE auctions " +
                         "SET auto_bidder = ?, " +
-                        "max_auto_bid = ? " +
+                        "max_auto_bid = ?, " +
+                        "auto_bid_increment = ? " +
                         "WHERE id = ?";
 
         try (
@@ -115,7 +129,8 @@ public class AuctionDAO {
 
             pstmt.setString(1, autoBidder);
             pstmt.setDouble(2, maxAutoBid);
-            pstmt.setString(3, auctionId);
+            pstmt.setDouble(3, increment);
+            pstmt.setString(4, auctionId);
 
             pstmt.executeUpdate();
         }
@@ -150,6 +165,8 @@ public class AuctionDAO {
         double currentPrice = rs.getDouble("current_price");
         String owner        = rs.getString("owner");
         String leadingBidder = rs.getString("leading_bidder");
+        double increment =
+                rs.getDouble("auto_bid_increment");
         if (leadingBidder == null) leadingBidder = "None";
         LocalDateTime endTime = rs.getTimestamp("end_time").toLocalDateTime();
         String autoBidder =
@@ -185,7 +202,8 @@ public class AuctionDAO {
 
             auction.enableAutoBid(
                     autoBidder,
-                    maxAutoBid
+                    maxAutoBid,
+                    increment
             );
         }
 

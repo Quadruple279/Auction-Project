@@ -68,6 +68,10 @@ public class AuctionService {
         catch (SQLException e){
             throw new RuntimeException("Lỗi lưu DB: "+e.getMessage());
         }
+        server.model.AdminEventBus.getInstance().publish(
+                server.model.AdminEventBus.EVENT_AUCTION_CREATED,
+                auctionId + " — " + item.getName() + " | Seller: " + currentUser.getName()
+        );
     }
     public void finishAuction(String auctionId){
         Auction auction = auctionManager.findById(auctionId);
@@ -128,7 +132,8 @@ public class AuctionService {
 
     public void enableAutoBid(
             String auctionId,
-            double maxAmount
+            double maxAmount,
+            double increment
     ) {
 
         User currentUser = auth.getCurrentUser();
@@ -148,7 +153,8 @@ public class AuctionService {
 
         auction.enableAutoBid(
                 currentUser.getName(),
-                maxAmount
+                maxAmount,
+                increment
         );
 
         try {
@@ -156,7 +162,8 @@ public class AuctionService {
             auctionDAO.updateAutoBid(
                     auctionId,
                     currentUser.getName(),
-                    maxAmount
+                    maxAmount,
+                    increment
             );
 
         } catch (SQLException e) {

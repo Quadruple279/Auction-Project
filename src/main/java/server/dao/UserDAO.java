@@ -72,4 +72,18 @@ public class UserDAO {
             pstmt.executeUpdate();
         }
     }
+
+
+    // Cập nhật tên và mật khẩu của user theo id.
+    // Được gọi bởi AdminService.updateUser() và AuthenticationController.updateUser().
+    public void update(User user) throws SQLException {
+        String sql = "UPDATE users SET name = ?, password = ? WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, user.getName());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setInt(3, user.getId());
+            pstmt.executeUpdate();
+        }
+    }
 }

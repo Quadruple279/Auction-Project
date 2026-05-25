@@ -144,6 +144,15 @@ public class ClientSocket {
                 .put("amount", String.valueOf(amount)));
     }
 
+    public void sendUpdateUser(String newName, String newPassword) {
+        Message msg = Message.of(MessageType.UPDATE_USER)
+                .put("newName", newName);
+        if (newPassword != null && !newPassword.isEmpty()) {
+            msg.put("newPassword", newPassword);
+        }
+        send(msg);
+    }
+
     public void sendGetAuctions() {
         send(Message.of(MessageType.GET_AUCTIONS));
     }
@@ -213,6 +222,18 @@ public class ClientSocket {
                 .put("newName", newName)
                 .put("newDescription", newDescription)
                 .put("newPrice", String.valueOf(newPrice)));
+    }
+
+    public void sendFinishAuction(String auctionId) {
+        send(Message.of(MessageType.FINISH_AUCTION).put("auctionId", auctionId));
+    }
+
+    public void sendCancelAuction(String auctionId) {
+        send(Message.of(MessageType.CANCEL_AUCTION).put("auctionId", auctionId));
+    }
+
+    public void sendMarkPaid(String auctionId) {
+        send(Message.of(MessageType.MARK_PAID).put("auctionId", auctionId));
     }
 
 }
