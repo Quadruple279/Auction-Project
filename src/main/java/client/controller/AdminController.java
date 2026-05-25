@@ -1,7 +1,11 @@
 package client.controller;
 
+import client.ClientSocket;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+
+import java.util.List;
 import java.util.Optional;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.*;
@@ -12,14 +16,18 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import server.controller.AuthenticationController;
-import server.model.*;
+
 import server.model.user.User;
+import shared.dto.AuctionDTO;
+import shared.protocol.AuctionEvent;
+import shared.protocol.AuctionObserver;
+import shared.protocol.MessageType;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-public class AdminController implements Initializable {
+public class AdminController implements Initializable, AuctionObserver {
 
     // ===== FXML – Sidebar & Topbar =====
     @FXML private Label adminNameLabel, pageTitle;
@@ -37,10 +45,10 @@ public class AdminController implements Initializable {
     @FXML private Label userCountLabel;   // Bổ sung
 
     // ===== FXML – Bảng Auction (trang Auctions) =====
-    @FXML private TableView<Auction> auctionTable;
-    @FXML private TableColumn<Auction, String> colAuctionId, colAuctionItem,
+    @FXML private TableView<AuctionDTO> auctionTable;
+    @FXML private TableColumn<AuctionDTO, String> colAuctionId, colAuctionItem,
             colAuctionSeller, colAuctionPrice, colAuctionStatus;
-    @FXML private TableColumn<Auction, Void> colAuctionAction;
+    @FXML private TableColumn<AuctionDTO, Void> colAuctionAction;
     @FXML private TextField auctionSearchField;
     @FXML private ComboBox<String> auctionStatusFilter;
     @FXML private Label auctionCountLabel; // Bổ sung
@@ -48,24 +56,24 @@ public class AdminController implements Initializable {
     // ===== FXML – Dashboard preview =====
     @FXML private TableView<User> dashUserTable;
     @FXML private TableColumn<User, String> dashColUserName, dashColUserRole, dashColUserId;
-    @FXML private TableView<Auction> dashAuctionTable;
-    @FXML private TableColumn<Auction, String> dashColAuctionId, dashColAuctionItem, dashColAuctionStatus;
+    @FXML private TableView<AuctionDTO> dashAuctionTable;
+    @FXML private TableColumn<AuctionDTO, String> dashColAuctionId, dashColAuctionItem, dashColAuctionStatus;
 
     // ===== FXML – Stats =====
     @FXML private Label statTotalUsers, statRunning, statFinished, statCanceled;
     @FXML private Label statBidder, statSeller, statTotalAuctions;
     @FXML private Label statSuccessRate;   // Tỉ lệ thành công
     @FXML private TextArea systemLog;      // Log hệ thống
+    @FXML private Label statUserSub;
 
     // ===== DATA =====
     private AuthenticationController authController;
     private AdminService adminService;
-    private final AuctionManager auctionManager = AuctionManager.getInstance();
 
     private ObservableList<User>    userList    = FXCollections.observableArrayList();
-    private ObservableList<Auction> auctionList = FXCollections.observableArrayList();
+    private ObservableList<AuctionDTO> auctionList = FXCollections.observableArrayList();
     private FilteredList<User>    filteredUsers;
-    private FilteredList<Auction> filteredAuctions;
+    private FilteredList<AuctionDTO> filteredAuctions;
 
     // ===== INIT =====
     @Override
@@ -88,36 +96,67 @@ public class AdminController implements Initializable {
     // ===== LOAD DATA =====
     private void loadData() {
         userList.setAll(authController.getAllUsers());
-        auctionList.setAll(auctionManager.getAuctionList());
-
         filteredUsers     = new FilteredList<>(userList,    p -> true);
-        filteredAuctions  = new FilteredList<>(auctionList, p -> true);
-
         userTable.setItems(filteredUsers);
-        auctionTable.setItems(filteredAuctions);
-
-        dashUserTable.setItems(FXCollections.observableArrayList(
-                userList.subList(0, Math.min(5, userList.size()))));
-        dashAuctionTable.setItems(FXCollections.observableArrayList(
-                auctionList.stream().filter(a -> !a.isFinished()).limit(5).toList()));
-
-        updateStats();
-        updateCountLabels();
+        ClientSocket.getInstance().setResponseListener(msg -> {
+            if (msg.getType() == MessageType.AUCTION_LIST){
+                try{
+                    String jsonData = msg.get("data");
+                    ObjectMapper mapper = new ObjectMapper();
+                    List<AuctionDTO> list = mapper.readValue(
+                            jsonData,
+                            new com.fasterxml.jackson.core.type.TypeReference<List<AuctionDTO>>() {}
+                    );
+                    Platform.runLater(() -> {
+                        auctionList.setAll(list);
+                        filteredAuctions = new FilteredList<>(auctionList, p -> true);
+                        auctionTable.setItems(filteredAuctions);
+                        refreshDashboardTables();
+                        updateStats();
+                        updateCountLabels();
+                    });
+                }
+                catch (Exception e){
+                    Platform.runLater(() -> {
+                        if (systemLog != null)
+                            systemLog.appendText("Lỗi tải phiên: " + e.getMessage() + "\n");
+                    });
+                }
+            }
+        });
+        ClientSocket.getInstance().sendGetAuctions();
     }
+    private void refreshDashboardTables() {
+        dashUserTable.setItems(FXCollections.observableArrayList(userList.subList(0, Math.min(5, userList.size()))));
+        dashAuctionTable.setItems(FXCollections.observableArrayList(
+                auctionList.stream().filter(a -> !a.isFinished()).limit(5).toList()
+        ));
+    }
+
+
 
     /** Đăng ký lắng nghe AdminEventBus – cập nhật systemLog và refresh data */
     private void registerEventBusListener() {
-        AdminEventBus.getInstance().addListener(logMsg -> Platform.runLater(() -> {
-            // 1. Ghi log vào TextArea
-            if (systemLog != null) {
-                systemLog.appendText(logMsg + "\n");
+        ClientSocket.getInstance().addObserver(this);
+    }
+    @Override
+    public void onAuctionEvent(AuctionEvent event) {
+        Platform.runLater(() -> {
+            switch (event.getType()) {
+                case NEW_AUCTION -> {
+                    if (systemLog != null)
+                        systemLog.appendText("[Phiên mới] " + event.getAuctionId() + "\n");
+                    loadData();
+                }
+                case AUCTION_ENDED -> {
+                    if (systemLog != null)
+                        systemLog.appendText("[Kết thúc] " + event.getAuctionId()
+                                + " — Người thắng: " + event.getLeadingBidder() + "\n");
+                    loadData();
+                }
+                default -> {}
             }
-            // 2. Refresh bảng và thống kê
-            userList.setAll(authController.getAllUsers());
-            auctionList.setAll(auctionManager.getAuctionList());
-            updateStats();
-            updateCountLabels();
-        }));
+        });
     }
 
     // ───────────────────────────── TABLE SETUP ─────────────────────────────
@@ -131,16 +170,11 @@ public class AdminController implements Initializable {
 
         // ----- AUCTION TABLE -----
         colAuctionId.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getAuctionId()));
-        colAuctionItem.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getItem().getName()));
+        colAuctionItem.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getItemName()));
         colAuctionSeller.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getOwner()));
         colAuctionPrice.setCellValueFactory(c  -> new SimpleStringProperty(
                 String.format("%,.0f", c.getValue().getCurrentPrice())));
-        colAuctionStatus.setCellValueFactory(c -> {
-            Auction a = c.getValue();
-            if (a.isCancelled()) return new SimpleStringProperty("CANCELED");
-            if (a.isFinished())  return new SimpleStringProperty("FINISHED");
-            return new SimpleStringProperty("RUNNING");
-        });
+        colAuctionStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getStatus()));
         setupAuctionActionColumn();
 
         // ----- DASHBOARD PREVIEW -----
@@ -148,13 +182,8 @@ public class AdminController implements Initializable {
         dashColUserRole.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getRole()));
         dashColUserId.setCellValueFactory(c   -> new SimpleStringProperty(String.valueOf(c.getValue().getId())));
         dashColAuctionId.setCellValueFactory(c     -> new SimpleStringProperty(c.getValue().getAuctionId()));
-        dashColAuctionItem.setCellValueFactory(c   -> new SimpleStringProperty(c.getValue().getItem().getName()));
-        dashColAuctionStatus.setCellValueFactory(c -> {
-            Auction a = c.getValue();
-            if (a.isCancelled()) return new SimpleStringProperty("CANCELED");
-            if (a.isFinished())  return new SimpleStringProperty("FINISHED");
-            return new SimpleStringProperty("RUNNING");
-        });
+        dashColAuctionItem.setCellValueFactory(c   -> new SimpleStringProperty(c.getValue().getItemName()));
+        dashColAuctionStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getStatus()));
     }
 
     // ===== FILTER =====
@@ -173,6 +202,9 @@ public class AdminController implements Initializable {
     }
 
     private void applyUserFilter() {
+        if (filteredUsers == null){
+            return;
+        }
         String keyword = userSearchField.getText().toLowerCase();
         String role    = userRoleFilter.getValue();
         filteredUsers.setPredicate(u ->
@@ -182,22 +214,29 @@ public class AdminController implements Initializable {
     }
 
     private void applyAuctionFilter() {
+        if (filteredAuctions == null){
+            return;
+        }
         String keyword = auctionSearchField.getText().toLowerCase();
         String status = auctionStatusFilter.getValue();
         filteredAuctions.setPredicate(a -> {
+            String statusDTO = a.getStatus();
             boolean statusMatch = status.equals("ALL") ||
-                    (status.equals("RUNNING") && !a.isFinished() && !a.isCancelled()) ||
-                    (status.equals("FINISHED") && a.isFinished() && !a.isCancelled()) ||
-                    (status.equals("CANCELED") && a.isCancelled());
-            return statusMatch && a.getItem().getName().toLowerCase().contains(keyword);
+                    (status.equals("RUNNING") && !statusDTO.equals("FINISHED") && !statusDTO.equals("CANCELED")) ||
+                    (status.equals("FINISHED") && statusDTO.equals("FINISHED") && !statusDTO.equals("CANCELED")) ||
+                    (status.equals("CANCELED") && statusDTO.equals("CANCELED"));
+            return statusMatch && a.getItemName().toLowerCase().contains(keyword);
         });
         updateCountLabels();
     }
 
     private void updateCountLabels() {
-        userCountLabel.setText("(" + filteredUsers.size() + " người)");
-        auctionCountLabel.setText("(" + filteredAuctions.size() + " phiên)");
-    }
+        if (filteredUsers != null){
+            userCountLabel.setText("(" + filteredUsers.size() + " người)");
+        }
+        if (filteredAuctions != null){
+            auctionCountLabel.setText("(" + filteredAuctions.size() + " phiên)");
+        }}
 
     // ───────────────────────────── ACTION COLUMNS ─────────────────────────────
 
@@ -256,29 +295,37 @@ public class AdminController implements Initializable {
                         " -fx-background-radius: 4; -fx-font-size: 10; -fx-padding: 3 8;");
 
                 cancelBtn.setOnAction(e -> {
-                    Auction a = getTableView().getItems().get(getIndex());
-                    if (a.isFinished() || a.isCancelled()) {
+                    AuctionDTO a = getTableView().getItems().get(getIndex());
+                    String status = a.getStatus();
+                    if (status.equals("FINISHED") || status.equals("CANCELED")) {
                         showError("Phiên đã kết thúc hoặc đã bị hủy."); return;
                     }
                     if (confirmAction("Xác nhận hủy", "Hủy phiên \"" + a.getAuctionId() + "\"?")) {
-                        try {
-                            adminService.cancelAuction(a.getAuctionId());
-                        } catch (Exception ex) {
-                            showError(ex.getMessage());
-                        }
+                        ClientSocket.getInstance().setResponseListener(msg -> {
+                            if (msg.getType() == MessageType.CANCEL_AUCTION_SUCCESS) {
+                                Platform.runLater(() -> loadData());
+                            } else if (msg.getType() == MessageType.ERROR) {
+                                Platform.runLater(() -> showError(msg.get("reason")));
+                            }
+                        });
+                        ClientSocket.getInstance().sendCancelAuction(a.getAuctionId());
                     }
                 });
                 deleteBtn.setOnAction(e -> {
-                    Auction a = getTableView().getItems().get(getIndex());
-                    if (!a.isFinished() && !a.isCancelled()) {
+                    AuctionDTO a = getTableView().getItems().get(getIndex());
+                    String status = a.getStatus();
+                    if (!status.equals("FINISHED") && !status.equals("CANCELED")) {
                         showError("Hãy hủy phiên trước khi xóa."); return;
                     }
                     if (confirmAction("Xác nhận xóa", "Xóa hoàn toàn phiên \"" + a.getAuctionId() + "\"?")) {
-                        try {
-                            adminService.deleteAuction(a.getAuctionId());
-                        } catch (Exception ex) {
-                            showError(ex.getMessage());
-                        }
+                        ClientSocket.getInstance().setResponseListener(msg -> {
+                            if (msg.getType() == MessageType.DELETE_AUCTION_SUCCESS) {
+                                Platform.runLater(() -> loadData());
+                            } else if (msg.getType() == MessageType.ERROR) {
+                                Platform.runLater(() -> showError(msg.get("reason")));
+                            }
+                        });
+                        ClientSocket.getInstance().sendDeleteAuction(a.getAuctionId());
                     }
                 });
             }
@@ -287,9 +334,10 @@ public class AdminController implements Initializable {
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty) { setGraphic(null); return; }
-                Auction a = getTableView().getItems().get(getIndex());
-                cancelBtn.setDisable(a.isFinished() || a.isCancelled());
-                deleteBtn.setDisable(!a.isFinished() && !a.isCancelled());
+                AuctionDTO a = getTableView().getItems().get(getIndex());
+                String status = a.getStatus();
+                cancelBtn.setDisable(status.equals("FINISHED") || status.equals("CANCELED"));
+                deleteBtn.setDisable(!status.equals("FINISHED") && !status.equals("CANCELED"));
                 setGraphic(box);
             }
         });
@@ -369,8 +417,8 @@ public class AdminController implements Initializable {
         dialog.getDialogPane().getButtonTypes().addAll(saveBtn, ButtonType.CANCEL);
         dialog.getDialogPane().setStyle("-fx-background-color: #0f1729;");
 
-        TextField     nameField = styledTextField(user.getName());
-        nameField.setText(user.getName());
+        TextField     nameField = styledTextField(user.getTenHienThi());
+        nameField.setText(user.getTenHienThi());
         PasswordField pwdField  = new PasswordField();
         pwdField.setPromptText("Để trống = giữ nguyên mật khẩu");
         pwdField.setStyle(nameField.getStyle());
@@ -379,7 +427,7 @@ public class AdminController implements Initializable {
         roleLabel.setStyle(roleLabel.getStyle() + "-fx-text-fill: #6b7280;");
 
         VBox form = new VBox(10,
-                styledLabel("Tên mới"),     nameField,
+                styledLabel("Tên hiển thị mới"),     nameField,
                 styledLabel("Mật khẩu mới"), pwdField,
                 roleLabel
         );
@@ -390,11 +438,11 @@ public class AdminController implements Initializable {
 
         Optional<ButtonType> result = dialog.showAndWait();
         if (result.isPresent() && result.get() == saveBtn) {
-            String newName = nameField.getText().trim();
+            String newTenHienThi = nameField.getText().trim();
             String newPwd  = pwdField.getText();
-            if (newName.isBlank()) { showError("Tên không được để trống"); return; }
+            if (newTenHienThi.isBlank()) { showError("Tên hiển thị không được để trống"); return; }
             try {
-                adminService.updateUser(user.getName(), newName,
+                adminService.updateUser(user.getName(), newTenHienThi,
                         newPwd.isBlank() ? null : newPwd);
             } catch (Exception ex) {
                 showError(ex.getMessage());
@@ -406,9 +454,9 @@ public class AdminController implements Initializable {
 
     private void updateStats() {
         long total    = auctionList.size();
-        long running  = auctionList.stream().filter(a -> !a.isFinished() && !a.isCancelled()).count();
-        long finished = auctionList.stream().filter(a ->  a.isFinished() && !a.isCancelled()).count();
-        long canceled = auctionList.stream().filter(Auction::isCancelled).count();
+        long running = auctionList.stream().filter(a -> a.getStatus().equals("RUNNING") || a.getStatus().equals("OPEN")).count();
+        long finished = auctionList.stream().filter(a -> a.getStatus().equals("FINISHED")).count();
+        long canceled = auctionList.stream().filter(a -> a.getStatus().equals("CANCELED")).count();
 
         statRunning.setText(String.valueOf(running));
         statFinished.setText(String.valueOf(finished));
@@ -418,8 +466,10 @@ public class AdminController implements Initializable {
 
         long bidder = userList.stream().filter(u -> u.getRole().equals("BIDDER")).count();
         long seller = userList.stream().filter(u -> u.getRole().equals("SELLER")).count();
+        long admin = userList.stream().filter(u -> u.getRole().equals("ADMIN")).count();
         statBidder.setText(String.valueOf(bidder));
         statSeller.setText(String.valueOf(seller));
+        statUserSub.setText(String.format("Bidder: %d · Seller: %d · Admin: %d ", bidder, seller, admin));
 
         // Tỉ lệ thành công = finished / (finished + canceled) nếu có
         long closed = finished + canceled;
@@ -437,6 +487,7 @@ public class AdminController implements Initializable {
 
     @FXML
     private void handleLogout() {
+        ClientSocket.getInstance().removeObserver(this);
         if (authController != null) authController.logout();
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/LoginViewMoi.fxml"));

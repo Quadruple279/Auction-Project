@@ -4,8 +4,8 @@ public class Bidder extends User {
 
     public Bidder() {}
 
-    public Bidder(int id, String name, String password) {
-        super(id, name, password, "BIDDER");
+    public Bidder(int id, String name,String tenHienThi, String password) {
+        super(id, name,tenHienThi, password, "BIDDER");
     }
 
     @Override

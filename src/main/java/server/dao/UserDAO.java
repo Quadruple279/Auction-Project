@@ -14,12 +14,13 @@ import java.util.List;
 
 public class UserDAO {
     public void save(User user) throws SQLException {
-        String sql = "INSERT INTO users (name,password,role) VALUES (?,?,?)";
+        String sql = "INSERT INTO users (name,tenHienThi,password,role) VALUES (?,?,?,?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, user.getName());
-            pstmt.setString(2,user.getPassword());
-            pstmt.setString(3, user.getRole());
+            pstmt.setString(2, user.getTenHienThi());
+            pstmt.setString(3,user.getPassword());
+            pstmt.setString(4, user.getRole());
             pstmt.executeUpdate();
         }
     }
@@ -54,12 +55,13 @@ public class UserDAO {
     private User mapRowToUser(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         String name = rs.getString("name");
+        String tenHienThi = rs.getString("tenHienThi");
         String password = rs.getString("password");
         String role = rs.getString("role");
         return switch (role){
-            case "BIDDER" -> new Bidder(id,name,password);
-            case "SELLER" -> new Seller(id,name,password);
-            case "ADMIN" -> new Admin(id,name,password);
+            case "BIDDER" -> new Bidder(id,name,tenHienThi,password);
+            case "SELLER" -> new Seller(id,name,tenHienThi,password);
+            case "ADMIN" -> new Admin(id,name,tenHienThi,password);
             default -> throw new SQLException("Unknown role: "+role);
         };
     }
@@ -77,10 +79,10 @@ public class UserDAO {
     // Cập nhật tên và mật khẩu của user theo id.
     // Được gọi bởi AdminService.updateUser() và AuthenticationController.updateUser().
     public void update(User user) throws SQLException {
-        String sql = "UPDATE users SET name = ?, password = ? WHERE id = ?";
+        String sql = "UPDATE users SET tenHienThi = ?, password = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, user.getName());
+            pstmt.setString(1, user.getTenHienThi());
             pstmt.setString(2, user.getPassword());
             pstmt.setInt(3, user.getId());
             pstmt.executeUpdate();

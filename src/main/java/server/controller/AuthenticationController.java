@@ -34,11 +34,11 @@ public class AuthenticationController {
         User newUser = null;
 
         if (role.equalsIgnoreCase("BIDDER")) {
-            newUser = new Bidder(0, name, password);
+            newUser = new Bidder(0, name,name, password);
         } else if (role.equalsIgnoreCase("SELLER")) {
-            newUser = new Seller(0, name, password);
+            newUser = new Seller(0, name,name, password);
         } else if (role.equalsIgnoreCase("ADMIN")) {
-            newUser = new Admin(0, name, password);
+            newUser = new Admin(0, name,name, password);
         }
 
         if (newUser != null) {
@@ -73,7 +73,7 @@ public class AuthenticationController {
         if (currentUser == null){
             return null;
         }
-        return new UserDTO(currentUser.getId(),currentUser.getName(),currentUser.getRole());
+        return new UserDTO(currentUser.getId(),currentUser.getName(),currentUser.getTenHienThi(),currentUser.getRole());
     }
     public List<User> getAllUsers() {
         return new ArrayList<>(users.values());
@@ -96,23 +96,18 @@ public class AuthenticationController {
         this.currentUser = null;
     }
 
-    public void updateUser(String oldName, String newName, String newPassword) {
-        User user = users.get(oldName);
+    public void updateUser(String targetName, String newTenHienThi, String newPassword) {
+        User user = users.get(targetName);
         if (user == null) return;
 
-        // Đổi tên nếu khác
-        if (!newName.equals(oldName)) {
-            users.remove(oldName);
-            user.setName(newName);
-            users.put(newName, user);
+        if (newTenHienThi != null && !newTenHienThi.isBlank()) {
+            user.setTenHienThi(newTenHienThi);
         }
 
-        // Đổi mật khẩu nếu có
         if (newPassword != null && !newPassword.isEmpty()) {
             user.setPassword(newPassword);
         }
 
-        // Lưu vào DB
         try {
             userDAO.update(user);
         } catch (SQLException e) {
@@ -121,4 +116,5 @@ public class AuthenticationController {
 
         currentUser = user;
     }
+
 }

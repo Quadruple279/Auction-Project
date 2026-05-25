@@ -122,6 +122,8 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case CREATE_AUCTION -> handleCreateAuction(msg);
             case DELETE_AUCTION -> handleDeleteAuction(msg);
             case UPDATE_AUCTION -> handleUpdateAuction(msg);
+            case CANCEL_AUCTION -> handleCancelAuction(msg);
+            case UPDATE_USER -> handleUpdateUser(msg);
             default -> Message.of(MessageType.ERROR)
                     .put("reason", "Lệnh không xác định: " + msg.getType());
         };
@@ -297,6 +299,15 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
+    private Message handleCancelAuction(Message msg){
+        try{
+            auctionService.cancelAuction(msg.get("auctionId"));
+            return Message.of(MessageType.CANCEL_AUCTION_SUCCESS).put("auctionId", msg.get("auctionId"));
+        }
+        catch (RuntimeException e){
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
     private Message handleUpdateAuction(Message msg) {
         try {
             auctionService.updateAuction(
@@ -318,4 +329,16 @@ public class ClientHandler implements Runnable, AuctionObserver {
             client.send(msg);
         }
     }
+    private Message handleUpdateUser(Message msg) {
+        User user = authController.getCurrentUser();
+        if (user == null)
+            return Message.of(MessageType.ERROR).put("reason", "Chưa đăng nhập");
+
+        String newTenHienThi = msg.getOrDefault("newTenHienThi", null);
+        String newPassword   = msg.getOrDefault("newPassword", null);
+
+        authController.updateUser(user.getName(), newTenHienThi, newPassword);
+        return Message.of(MessageType.UPDATE_USER_SUCCESS);
+    }
+
 }

@@ -94,27 +94,26 @@ public class ProfileController implements Initializable {
 
         // Avatar — lấy chữ cái đầu của tên
         avatarLabel.setText(
-                String.valueOf(user.getName().charAt(0)).toUpperCase()
+                String.valueOf(user.getTenHienThi().charAt(0)).toUpperCase()
         );
 
         // Tên và role hiển thị
-        displayNameLabel.setText(user.getName());
+        displayNameLabel.setText(user.getTenHienThi());
         displayRoleLabel.setText("● " + user.getRole());
 
         // Điền sẵn vào form
-        fullNameField.setText(user.getName());
+        fullNameField.setText(user.getTenHienThi());
         usernameField.setText(user.getName());
     }
 
     @FXML
     private void handleSave() {
-        String newName     = fullNameField.getText().trim();
-        String newUsername = usernameField.getText().trim();
+        String newTenHienThi = fullNameField.getText().trim();
         String newPassword = newPasswordField.getText();
         String confirmPw   = confirmPasswordField.getText();
 
-        if (newName.isEmpty() || newUsername.isEmpty()) {
-            showError("Tên và tên đăng nhập không được để trống.");
+        if (newTenHienThi.isEmpty()) {
+            showError("Tên hiển thị không được để trống.");
             return;
         }
 
@@ -132,9 +131,9 @@ public class ProfileController implements Initializable {
         ClientSocket.getInstance().setResponseListener(msg -> {
             if (msg.getType() == MessageType.UPDATE_USER_SUCCESS) {
                 javafx.application.Platform.runLater(() -> {
-                    displayNameLabel.setText(newName);
+                    displayNameLabel.setText(newTenHienThi);
                     avatarLabel.setText(
-                            String.valueOf(newName.charAt(0)).toUpperCase()
+                            String.valueOf(newTenHienThi.charAt(0)).toUpperCase()
                     );
                     showSuccess("Cập nhật thành công!");
                     newPasswordField.clear();
@@ -147,7 +146,7 @@ public class ProfileController implements Initializable {
             }
         });
 
-        ClientSocket.getInstance().sendUpdateUser(newName,
+        ClientSocket.getInstance().sendUpdateUser(newTenHienThi,
                 newPassword.isEmpty() ? null : newPassword);
     }
 
