@@ -73,7 +73,7 @@ public class AuthenticationController {
         if (currentUser == null){
             return null;
         }
-        return new UserDTO(currentUser.getId(),currentUser.getName(),currentUser.getTenHienThi(),currentUser.getRole());
+        return new UserDTO(currentUser.getId(),currentUser.getName(),currentUser.getDisplayName(),currentUser.getRole());
     }
     public List<User> getAllUsers() {
         return new ArrayList<>(users.values());
@@ -96,12 +96,12 @@ public class AuthenticationController {
         this.currentUser = null;
     }
 
-    public void updateUser(String targetName, String newTenHienThi, String newPassword) {
+    public void updateUser(String targetName, String newDisplayName, String newPassword) {
         User user = users.get(targetName);
         if (user == null) return;
 
-        if (newTenHienThi != null && !newTenHienThi.isBlank()) {
-            user.setTenHienThi(newTenHienThi);
+        if (newDisplayName != null && !newDisplayName.isBlank()) {
+            user.setDisplayName(newDisplayName);
         }
 
         // Đổi mật khẩu nếu có

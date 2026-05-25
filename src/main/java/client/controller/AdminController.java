@@ -417,8 +417,8 @@ public class AdminController implements Initializable, AuctionObserver {
         dialog.getDialogPane().getButtonTypes().addAll(saveBtn, ButtonType.CANCEL);
         dialog.getDialogPane().setStyle("-fx-background-color: #0f1729;");
 
-        TextField     nameField = styledTextField(user.getTenHienThi());
-        nameField.setText(user.getTenHienThi());
+        TextField     nameField = styledTextField(user.getDisplayName());
+        nameField.setText(user.getDisplayName());
         PasswordField pwdField  = new PasswordField();
         pwdField.setPromptText("Để trống = giữ nguyên mật khẩu");
         pwdField.setStyle(nameField.getStyle());
@@ -438,11 +438,11 @@ public class AdminController implements Initializable, AuctionObserver {
 
         Optional<ButtonType> result = dialog.showAndWait();
         if (result.isPresent() && result.get() == saveBtn) {
-            String newTenHienThi = nameField.getText().trim();
+            String newDisplayName = nameField.getText().trim();
             String newPwd  = pwdField.getText();
-            if (newTenHienThi.isBlank()) { showError("Tên hiển thị không được để trống"); return; }
+            if (newDisplayName.isBlank()) { showError("Tên hiển thị không được để trống"); return; }
             try {
-                adminService.updateUser(user.getName(), newTenHienThi,
+                adminService.updateUser(user.getName(), newDisplayName,
                         newPwd.isBlank() ? null : newPwd);
             } catch (Exception ex) {
                 showError(ex.getMessage());

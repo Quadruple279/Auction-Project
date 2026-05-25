@@ -18,7 +18,7 @@ public class UserDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, user.getName());
-            pstmt.setString(2, user.getTenHienThi());
+            pstmt.setString(2, user.getDisplayName());
             pstmt.setString(3,user.getPassword());
             pstmt.setString(4, user.getRole());
             pstmt.executeUpdate();
@@ -55,13 +55,13 @@ public class UserDAO {
     private User mapRowToUser(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         String name = rs.getString("name");
-        String tenHienThi = rs.getString("tenHienThi");
+        String displayName = rs.getString("tenHienThi");
         String password = rs.getString("password");
         String role = rs.getString("role");
         return switch (role){
-            case "BIDDER" -> new Bidder(id,name,tenHienThi,password);
-            case "SELLER" -> new Seller(id,name,tenHienThi,password);
-            case "ADMIN" -> new Admin(id,name,tenHienThi,password);
+            case "BIDDER" -> new Bidder(id,name,displayName,password);
+            case "SELLER" -> new Seller(id,name,displayName,password);
+            case "ADMIN" -> new Admin(id,name,displayName,password);
             default -> throw new SQLException("Unknown role: "+role);
         };
     }
@@ -82,7 +82,7 @@ public class UserDAO {
         String sql = "UPDATE users SET tenHienThi = ?, password = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, user.getTenHienThi());
+            pstmt.setString(1, user.getDisplayName());
             pstmt.setString(2, user.getPassword());
             pstmt.setInt(3, user.getId());
             pstmt.executeUpdate();

@@ -3,18 +3,18 @@ package shared.dto;
 public class UserDTO {
     private int id;
     private String name;
-    private String tenHienThi;
+    private String displayName;
     private String role;
-    public UserDTO(int id,String name,String tenHienThi,String role){
+    public UserDTO(int id, String name, String displayName, String role){
         this.id=id;
         this.name=name;
-        this.tenHienThi=tenHienThi;
+        this.displayName = displayName;
         this.role=role;
     }
     public int getId(){return id;}
     public String getName(){
         return name;
     }
-    public String getTenHienThi(){return tenHienThi;}
+    public String getDisplayName(){return displayName;}
     public String getRole(){return role;}
 }

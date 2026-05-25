@@ -334,10 +334,10 @@ public class ClientHandler implements Runnable, AuctionObserver {
         if (user == null)
             return Message.of(MessageType.ERROR).put("reason", "Chưa đăng nhập");
 
-        String newTenHienThi = msg.getOrDefault("newTenHienThi", null);
+        String newDisplayName = msg.getOrDefault("newDisplayName", null);
         String newPassword   = msg.getOrDefault("newPassword", null);
 
-        authController.updateUser(user.getName(), newTenHienThi, newPassword);
+        authController.updateUser(user.getName(), newDisplayName, newPassword);
         return Message.of(MessageType.UPDATE_USER_SUCCESS);
     }
 

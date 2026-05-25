@@ -5,7 +5,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import server.controller.AuthenticationController;
@@ -94,25 +93,25 @@ public class ProfileController implements Initializable {
 
         // Avatar — lấy chữ cái đầu của tên
         avatarLabel.setText(
-                String.valueOf(user.getTenHienThi().charAt(0)).toUpperCase()
+                String.valueOf(user.getDisplayName().charAt(0)).toUpperCase()
         );
 
         // Tên và role hiển thị
-        displayNameLabel.setText(user.getTenHienThi());
+        displayNameLabel.setText(user.getDisplayName());
         displayRoleLabel.setText("● " + user.getRole());
 
         // Điền sẵn vào form
-        fullNameField.setText(user.getTenHienThi());
+        fullNameField.setText(user.getDisplayName());
         usernameField.setText(user.getName());
     }
 
     @FXML
     private void handleSave() {
-        String newTenHienThi = fullNameField.getText().trim();
+        String newDisplayName = fullNameField.getText().trim();
         String newPassword = newPasswordField.getText();
         String confirmPw   = confirmPasswordField.getText();
 
-        if (newTenHienThi.isEmpty()) {
+        if (newDisplayName.isEmpty()) {
             showError("Tên hiển thị không được để trống.");
             return;
         }
@@ -131,9 +130,9 @@ public class ProfileController implements Initializable {
         ClientSocket.getInstance().setResponseListener(msg -> {
             if (msg.getType() == MessageType.UPDATE_USER_SUCCESS) {
                 javafx.application.Platform.runLater(() -> {
-                    displayNameLabel.setText(newTenHienThi);
+                    displayNameLabel.setText(newDisplayName);
                     avatarLabel.setText(
-                            String.valueOf(newTenHienThi.charAt(0)).toUpperCase()
+                            String.valueOf(newDisplayName.charAt(0)).toUpperCase()
                     );
                     showSuccess("Cập nhật thành công!");
                     newPasswordField.clear();
@@ -146,7 +145,7 @@ public class ProfileController implements Initializable {
             }
         });
 
-        ClientSocket.getInstance().sendUpdateUser(newTenHienThi,
+        ClientSocket.getInstance().sendUpdateUser(newDisplayName,
                 newPassword.isEmpty() ? null : newPassword);
     }
 
