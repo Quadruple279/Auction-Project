@@ -73,7 +73,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                 return change;
             }
             if (digits.length() > 15) return null;
-
+//hhhh
             try {
                 long value = Long.parseLong(digits);
                 String formatted = String.format(Locale.US, "%,d", value);
