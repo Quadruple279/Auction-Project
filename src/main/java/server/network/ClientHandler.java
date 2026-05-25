@@ -122,6 +122,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case CREATE_AUCTION -> handleCreateAuction(msg);
             case DELETE_AUCTION -> handleDeleteAuction(msg);
             case UPDATE_AUCTION -> handleUpdateAuction(msg);
+            case UPDATE_USER -> handleUpdateUser(msg);
             default -> Message.of(MessageType.ERROR)
                     .put("reason", "Lệnh không xác định: " + msg.getType());
         };
@@ -316,6 +317,30 @@ public class ClientHandler implements Runnable, AuctionObserver {
     public static void broadcastToAll(Message msg) {
         for (ClientHandler client : allClients) {
             client.send(msg);
+        }
+    }
+    private Message handleUpdateUser(Message msg) {
+        try {
+            // Lấy user từ session hiện tại (đã login)
+            User currentUser = authController.getCurrentUser();
+            if (currentUser == null) {
+                return Message.of(MessageType.ERROR)
+                        .put("reason", "Bạn chưa đăng nhập.");
+            }
+
+            // Đọc newName và newPassword (newPassword có thể null)
+            String newName = msg.get("newName");
+            String newPassword = msg.getOrDefault("newPassword", null);   // null nếu client không gửi
+
+            // Gọi service cập nhật, dùng username từ currentUser
+            authController.updateUser(currentUser.getName(), newName, newPassword);
+
+            System.out.println("[SERVER] Đã cập nhật user: " + currentUser.getName());
+            return Message.of(MessageType.UPDATE_USER_SUCCESS);
+
+        } catch (Exception e) {
+            return Message.of(MessageType.ERROR)
+                    .put("reason", "Lỗi cập nhật: " + e.getMessage());
         }
     }
 }

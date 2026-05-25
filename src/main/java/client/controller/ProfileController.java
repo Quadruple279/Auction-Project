@@ -12,6 +12,7 @@ import server.controller.AuthenticationController;
 import server.dao.BidTransactionDAO;
 import server.model.BidTransaction;
 import server.model.user.User;
+import shared.protocol.Message;
 import shared.protocol.MessageType;
 
 import java.io.IOException;
@@ -108,12 +109,12 @@ public class ProfileController implements Initializable {
 
     @FXML
     private void handleSave() {
-        String newName     = fullNameField.getText().trim();
-        String newUsername = usernameField.getText().trim();
+        String newDisplayName = fullNameField.getText().trim();
+        String username = usernameField.getText().trim();
         String newPassword = newPasswordField.getText();
         String confirmPw   = confirmPasswordField.getText();
 
-        if (newName.isEmpty() || newUsername.isEmpty()) {
+        if (newDisplayName.isEmpty()) {
             showError("Tên và tên đăng nhập không được để trống.");
             return;
         }
@@ -132,9 +133,9 @@ public class ProfileController implements Initializable {
         ClientSocket.getInstance().setResponseListener(msg -> {
             if (msg.getType() == MessageType.UPDATE_USER_SUCCESS) {
                 javafx.application.Platform.runLater(() -> {
-                    displayNameLabel.setText(newName);
+                    displayNameLabel.setText(newDisplayName);
                     avatarLabel.setText(
-                            String.valueOf(newName.charAt(0)).toUpperCase()
+                            String.valueOf(newDisplayName.charAt(0)).toUpperCase()
                     );
                     showSuccess("Cập nhật thành công!");
                     newPasswordField.clear();
@@ -147,7 +148,7 @@ public class ProfileController implements Initializable {
             }
         });
 
-        ClientSocket.getInstance().sendUpdateUser(newName,
+        ClientSocket.getInstance().sendUpdateUser(newDisplayName,
                 newPassword.isEmpty() ? null : newPassword);
     }
 

@@ -30,7 +30,7 @@
                   </font></Label>
                 </Pane>
                 <VBox style="-fx-spacing: 1;">
-                    <Label style="-fx-text-fill: #e8efff; -fx-font-size: 14; -fx-font-weight: bold;" text="BidNow" />
+                    <Label style="-fx-text-fill: #e8efff; -fx-font-size: 14; -fx-font-weight: bold;" text="Abstract Auction" />
                     <Label style="-fx-text-fill: #5a6a8a; -fx-font-size: 10;" text="Admin Panel" />
                 </VBox>
             </HBox>

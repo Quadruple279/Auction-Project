@@ -94,7 +94,7 @@ public class SellerController implements Initializable {
                 btnFinish.setStyle("-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-background-radius: 4;");
                 btnCancel.setStyle("-fx-background-color: #6b7280; -fx-text-fill: white; -fx-background-radius: 4;");
                 btnPaid.setStyle("-fx-background-color: #4caf50; -fx-text-fill: white; -fx-background-radius: 4;");
-                label.setStyle("-fx-text-fill: white;");
+                label.setStyle("-fx-text-fill: white; -fx-font-size: 13px;");
                 box.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
                 btnEdit.setOnAction(e -> {
@@ -183,6 +183,9 @@ public class SellerController implements Initializable {
                 super.updateItem(a, empty);
                 if (empty || a == null) {
                     setGraphic(null);
+                    setText(null); // Nên thêm dòng này cho an toàn
+                    // THÊM DÒNG NÀY: Giữ nền xám đen cho các ô rỗng bên dưới
+                    setStyle("-fx-background-color: #1d1d1d; -fx-border-color: transparent;");
                     return;
                 }
 
@@ -194,19 +197,18 @@ public class SellerController implements Initializable {
                 );
                 label.setText(text);
 
-                // Phiên kết thúc → khóa Sửa, Xóa, Kết thúc
                 boolean finished = a.isFinished();
                 btnEdit.setDisable(finished);
                 btnDelete.setDisable(finished);
                 btnFinish.setDisable(finished);
 
-                // Chỉ hiện "Đã thanh toán" khi phiên FINISHED
                 btnPaid.setVisible("FINISHED".equals(a.getStatus()));
                 btnPaid.setManaged("FINISHED".equals(a.getStatus()));
 
-                // Chỉ hiện "Hủy" khi phiên chưa kết thúc
                 btnCancel.setVisible(!finished);
                 btnCancel.setManaged(!finished);
+
+                setStyle("-fx-background-color: #1d1d1d; -fx-border-color: #333333 transparent transparent transparent; -fx-padding: 5 0;");
 
                 setGraphic(box);
             }

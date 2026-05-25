@@ -96,15 +96,15 @@ public class AuthenticationController {
         this.currentUser = null;
     }
 
-    public void updateUser(String oldName, String newName, String newPassword) {
+    public void updateUser(String oldName, String newDisplayName, String newPassword) {
         User user = users.get(oldName);
         if (user == null) return;
 
         // Đổi tên nếu khác
-        if (!newName.equals(oldName)) {
+        if (!newDisplayName.equals(oldName)) {
             users.remove(oldName);
-            user.setName(newName);
-            users.put(newName, user);
+            user.setName(newDisplayName);
+            users.put(newDisplayName, user);
         }
 
         // Đổi mật khẩu nếu có

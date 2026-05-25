@@ -147,7 +147,7 @@ public class ClientSocket {
     public void sendUpdateUser(String newName, String newPassword) {
         Message msg = Message.of(MessageType.UPDATE_USER)
                 .put("newName", newName);
-        if (newPassword != null && !newPassword.isEmpty()) {
+        if (newPassword != null) {
             msg.put("newPassword", newPassword);
         }
         send(msg);
