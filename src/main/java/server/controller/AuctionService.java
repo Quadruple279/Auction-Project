@@ -68,6 +68,10 @@ public class AuctionService {
         catch (SQLException e){
             throw new RuntimeException("Lỗi lưu DB: "+e.getMessage());
         }
+        server.model.AdminEventBus.getInstance().publish(
+                server.model.AdminEventBus.EVENT_AUCTION_CREATED,
+                auctionId + " — " + item.getName() + " | Seller: " + currentUser.getName()
+        );
     }
     public void finishAuction(String auctionId){
         Auction auction = auctionManager.findById(auctionId);
