@@ -236,6 +236,7 @@ public class AuctionListController implements Initializable, AuctionObserver {
         }
     }
 
+
     @FXML
     public void openSellerView(ActionEvent actionEvent) {
         if (authenticationController == null ||

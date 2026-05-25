@@ -16,6 +16,7 @@
 <?import javafx.scene.chart.NumberAxis?>
 
 
+<?import javafx.scene.control.Separator?>
 <AnchorPane style="-fx-background-color: #1d1d1d;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.controller.AuctionRoomController">
    <children>
       <VBox spacing="20.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -128,6 +129,24 @@
                               </Button>
                               <Label layoutX="16.0" layoutY="72.0" text="Giá tiền đặt phải cao hơn giá hiện tại" textFill="#888888" />
                               <Text fill="#888888" layoutX="16.0" layoutY="27.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Đặt giá " />
+                              <Separator style="-fx-background-color: #333;" />
+
+                              <Label text="⚡ Auto Bid" style="-fx-text-fill: #f0a500; -fx-font-weight: bold;" />
+
+                              <HBox spacing="8" alignment="CENTER_LEFT">
+                                 <children>
+                                    <TextField fx:id="maxAutoBidField" promptText="Giá tối đa..."
+                                               HBox.hgrow="ALWAYS" />
+                                    <TextField fx:id="incrementField" promptText="Bước tăng..."
+                                               prefWidth="120" />
+                                    <Button fx:id="autoBidButton" text="Bật Auto-Bid"
+                                            onAction="#handleEnableAutoBid"
+                                            style="-fx-background-color: #f0a500; -fx-text-fill: black; -fx-font-weight: bold;" />
+                                 </children>
+                              </HBox>
+
+                              <Label fx:id="autoBidStatusLabel" text=""
+                                     style="-fx-text-fill: #4caf50; -fx-font-size: 11px;" />
                            </children>
                         </AnchorPane>
                         <AnchorPane prefWidth="480.0" style="-fx-background-color: #2b2b2b; -fx-background-radius: 8;" VBox.vgrow="ALWAYS">
