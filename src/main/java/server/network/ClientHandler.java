@@ -3,9 +3,11 @@ package server.network;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import server.controller.AuctionService;
 import server.controller.AuthenticationController;
+import server.dao.BidTransactionDAO;
 import server.exception.AuthenticationException;
 import server.model.Auction;
 import server.model.AuctionManager;
+import server.model.BidTransaction;
 import server.model.item.Item;
 import server.model.item.ItemFactory;
 import server.model.user.User;
@@ -18,6 +20,7 @@ import shared.protocol.MessageType;
 import java.io.*;
 import java.net.Socket;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -130,11 +133,34 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case CREATE_AUCTION -> handleCreateAuction(msg);
             case DELETE_AUCTION -> handleDeleteAuction(msg);
             case UPDATE_AUCTION -> handleUpdateAuction(msg);
+            case CANCEL_AUCTION -> handleCancelAuction(msg);
             case UPDATE_USER -> handleUpdateUser(msg);
             case ENABLE_AUTO_BID -> handleEnableAutoBid(msg);
+            case GET_BID_HISTORY ->handleGetBidHistory(msg);
             default -> Message.of(MessageType.ERROR)
                     .put("reason", "Lệnh không xác định: " + msg.getType());
         };
+    }
+    private Message handleGetBidHistory(Message msg){
+        try{
+            String auctionId = msg.get("auctionId");
+            BidTransactionDAO dao = new BidTransactionDAO();
+            List<BidTransaction> list = dao.findByAuctionId(auctionId);
+
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM");
+            List<String> formatted = new ArrayList<>();
+            for (BidTransaction t : list) {
+                formatted.add(t.getBidderName()
+                        + " | " + String.format("%,.0f ₫", t.getBidAmount())
+                        + " | " + t.getBidTime().format(fmt));
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonData = mapper.writeValueAsString(formatted);
+            return Message.of(MessageType.GET_BID_HISTORY_SUCCESS).put("data",jsonData);
+        }
+        catch (Exception e){
+            return Message.of(MessageType.ERROR).put("reason","Không thể tải lịch sử: "+e.getMessage());
+        }
     }
 
     // Xử lý từng loại lệnh
@@ -307,6 +333,15 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
+    private Message handleCancelAuction(Message msg){
+        try{
+            auctionService.cancelAuction(msg.get("auctionId"));
+            return Message.of(MessageType.CANCEL_AUCTION_SUCCESS).put("auctionId", msg.get("auctionId"));
+        }
+        catch (RuntimeException e){
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
     private Message handleUpdateAuction(Message msg) {
         try {
             auctionService.updateAuction(
@@ -350,27 +385,15 @@ public class ClientHandler implements Runnable, AuctionObserver {
         }
     }
     private Message handleUpdateUser(Message msg) {
-        try {
-            // Lấy user từ session hiện tại (đã login)
-            User currentUser = authController.getCurrentUser();
-            if (currentUser == null) {
-                return Message.of(MessageType.ERROR)
-                        .put("reason", "Bạn chưa đăng nhập.");
-            }
+        User user = authController.getCurrentUser();
+        if (user == null)
+            return Message.of(MessageType.ERROR).put("reason", "Chưa đăng nhập");
 
-            // Đọc newName và newPassword (newPassword có thể null)
-            String newName = msg.get("newName");
-            String newPassword = msg.getOrDefault("newPassword", null);   // null nếu client không gửi
+        String newDisplayName = msg.getOrDefault("newDisplayName", null);
+        String newPassword   = msg.getOrDefault("newPassword", null);
 
-            // Gọi service cập nhật, dùng username từ currentUser
-            authController.updateUser(currentUser.getName(), newName, newPassword);
-
-            System.out.println("[SERVER] Đã cập nhật user: " + currentUser.getName());
-            return Message.of(MessageType.UPDATE_USER_SUCCESS);
-
-        } catch (Exception e) {
-            return Message.of(MessageType.ERROR)
-                    .put("reason", "Lỗi cập nhật: " + e.getMessage());
-        }
+        authController.updateUser(user.getName(), newDisplayName, newPassword);
+        return Message.of(MessageType.UPDATE_USER_SUCCESS);
     }
+
 }

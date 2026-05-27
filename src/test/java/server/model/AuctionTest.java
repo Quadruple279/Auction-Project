@@ -98,7 +98,7 @@ class AuctionTest {
         );
 
         // bật auto bid
-        auction.enableAutoBid("Nam", 1000);
+        auction.enableAutoBid("Nam",10000000, 1000);
 
         // user khác bid
         auction.placeBid("Huy", 700);
