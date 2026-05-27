@@ -1,10 +1,10 @@
 package client.controller;
 
+import client.ClientSocket;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -12,6 +12,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import server.controller.AuthenticationController;
+import shared.protocol.MessageType;
 
 import java.io.IOException;
 import java.net.URL;
@@ -173,30 +174,19 @@ public class RegisterControllerMoi implements Initializable {
             return;
         }
 
-        try {
-            // Gọi register() thật
-            authController.register(
-                    tenDangNhap,
-                    matKhau,
-                    selectedRole
-            );
-
-            showSuccess("Đăng ký thành công! Đang chuyển về đăng nhập...");
-
-            // Truyền authController sang LoginController
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/fxml/LoginViewMoi.fxml")
-            );
-            Parent root = loader.load();
-
-            LoginControllerMoi loginController = loader.getController();
-            loginController.setAuthenticationController(authController);
-
-            Stage stage = (Stage) messageLabel.getScene().getWindow();
-            stage.getScene().setRoot(root);
-        } catch (Exception e) {
-            showError("Lỗi: " + e.getMessage());
-        }
+        // Gửi REGISTER qua socket thay vì gọi trực tiếp
+        ClientSocket.getInstance().setResponseListener(msg -> {
+            javafx.application.Platform.runLater(() -> {
+                if (msg.getType() == MessageType.REGISTER_SUCCESS) {
+                    showSuccess("Đăng ký thành công! Đang chuyển về đăng nhập...");
+                    switchScene("/fxml/LoginViewMoi.fxml");
+                } else {
+                    String reason = msg.getOrDefault("reason", "Đăng ký thất bại.");
+                    showError("Lỗi: " + reason);
+                }
+            });
+        });
+        ClientSocket.getInstance().sendRegister(tenDangNhap, matKhau, selectedRole);
     }
 
     @FXML
