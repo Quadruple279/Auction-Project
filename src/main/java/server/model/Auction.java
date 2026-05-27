@@ -124,16 +124,16 @@ public class Auction implements AuctionSubject {
                 this.status = AuctionStatus.FINISHED;
             }
             throw new AuctionClosedException(
-                    "Lỗi: Phiên đấu giá cho " + item.getName() + " đã hết thời gian!");
+                    "Phiên đấu giá cho " + item.getName() + " đã hết thời gian!");
         }
 
         if (status == AuctionStatus.FINISHED || status == AuctionStatus.PAID) {
             throw new AuctionClosedException(
-                    "Lỗi: Phiên đấu giá cho " + item.getName() + " đã kết thúc!");
+                    "Phiên đấu giá cho " + item.getName() + " đã kết thúc!");
         }
         if (status == AuctionStatus.CANCELLED) {
             throw new AuctionClosedException(
-                    "Lỗi: Phiên đấu giá cho " + item.getName() + " đã bị hủy!");
+                    "Phiên đấu giá cho " + item.getName() + " đã bị hủy!");
         }
 
         if (bidAmount > currentPrice) {
