@@ -3,9 +3,11 @@ package server.network;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import server.controller.AuctionService;
 import server.controller.AuthenticationController;
+import server.dao.BidTransactionDAO;
 import server.exception.AuthenticationException;
 import server.model.Auction;
 import server.model.AuctionManager;
+import server.model.BidTransaction;
 import server.model.item.Item;
 import server.model.item.ItemFactory;
 import server.model.user.User;
@@ -18,6 +20,7 @@ import shared.protocol.MessageType;
 import java.io.*;
 import java.net.Socket;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -133,9 +136,31 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case CANCEL_AUCTION -> handleCancelAuction(msg);
             case UPDATE_USER -> handleUpdateUser(msg);
             case ENABLE_AUTO_BID -> handleEnableAutoBid(msg);
+            case GET_BID_HISTORY ->handleGetBidHistory(msg);
             default -> Message.of(MessageType.ERROR)
                     .put("reason", "Lệnh không xác định: " + msg.getType());
         };
+    }
+    private Message handleGetBidHistory(Message msg){
+        try{
+            String auctionId = msg.get("auctionId");
+            BidTransactionDAO dao = new BidTransactionDAO();
+            List<BidTransaction> list = dao.findByAuctionId(auctionId);
+
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM");
+            List<String> formatted = new ArrayList<>();
+            for (BidTransaction t : list) {
+                formatted.add(t.getBidderName()
+                        + " | " + String.format("%,.0f ₫", t.getBidAmount())
+                        + " | " + t.getBidTime().format(fmt));
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonData = mapper.writeValueAsString(formatted);
+            return Message.of(MessageType.GET_BID_HISTORY_SUCCESS).put("data",jsonData);
+        }
+        catch (Exception e){
+            return Message.of(MessageType.ERROR).put("reason","Không thể tải lịch sử: "+e.getMessage());
+        }
     }
 
     // Xử lý từng loại lệnh
