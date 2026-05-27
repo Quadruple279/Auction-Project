@@ -130,7 +130,7 @@ public class ClientSocket {
                             currentPrice
                     );
                 }
-
+                notifyObservers(event);
             } else if (msg.getType() == MessageType.NEW_AUCTION) {
                 AuctionEvent event = new AuctionEvent(
                         AuctionEvent.Type.NEW_AUCTION, msg.get("auctionId"), "", "", 0, 0);
