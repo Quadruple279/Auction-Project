@@ -105,6 +105,10 @@ public class AuctionManager {
         System.out.println("[Scheduler] Da len lich ket thuc phien " + auction.getAuctionId()
                 + " sau " + delay + " ms");
     }
+    public void rescheduleFinish(Auction auction) {
+        scheduleFinish(auction);
+    }
+
 
     private void finishAndSave(Auction auction) {
         if (auction.isFinished() || auction.isCancelled()) return;

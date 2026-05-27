@@ -11,6 +11,7 @@ import javafx.stage.Stage;
 import server.controller.AuthenticationController;
 import server.exception.AuthenticationException;
 import shared.dto.UserDTO;
+import shared.protocol.MessageType;
 
 import java.io.IOException;
 import java.net.URL;
@@ -67,18 +68,24 @@ public class LoginControllerMoi implements Initializable {
             showError("Không được để trống tên đăng nhập và mật khẩu.");
             return;
         }
-
-        try {
-            authenticationController.login(tenDangNhap, matKhau);
-            ClientSocket.getInstance().sendLogin(tenDangNhap,matKhau);
-            showSuccess("Đăng nhập thành công!");
-            openDashboard();
-
-        } catch (AuthenticationException e) {
-            showError("Sai tài khoản hoặc mật khẩu.");
-        } catch (Exception e) {
-            showError("Lỗi: " + e.getMessage());
-        }
+        ClientSocket.getInstance().setResponseListener(msg -> {
+            javafx.application.Platform.runLater(() -> {
+            if (msg.getType() == MessageType.LOGIN_SUCCESS){
+                try{
+                    authenticationController.login(tenDangNhap,matKhau);
+                }
+                catch (Exception e){}
+                showSuccess("Đăng nhập thành công!");
+                openDashboard();
+            }
+            else {
+                String reason = msg.getOrDefault("reason", "Sai tài khoản hoặc mật khẩu.");
+                showError(reason);
+            }
+            });
+        });
+        ClientSocket.getInstance().sendLogin(tenDangNhap, matKhau);
+        messageLabel.setText("Đang đăng nhập...");
     }
 
     private void openDashboard() {
@@ -93,16 +100,16 @@ public class LoginControllerMoi implements Initializable {
             switch (role) {
                 case "SELLER" -> {
                     fxmlPath = "/fxml/SellerView.fxml";
-                    title    = "BidNow — Seller Dashboard";
+                    title    = "Abstract Auction — Seller Dashboard";
                 }
                 case "ADMIN" -> {
                     fxmlPath = "/fxml/AdminView.fxml";
-                    title    = "BidNow — Admin Dashboard";
+                    title    = "Abstract Auction — Admin Dashboard";
                 }
                 default -> {
                     // BIDDER hoặc role khác → vào AuctionView
                     fxmlPath = "/fxml/AuctionView.fxml";
-                    title    = "BidNow — Danh sách đấu giá";
+                    title    = "Abstract Auction — Danh sách đấu giá";
                 }
             }
 

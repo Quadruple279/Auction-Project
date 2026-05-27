@@ -101,11 +101,36 @@ public class ClientSocket {
                 String bidderName = msg.getOrDefault("bidderName", "");
                 double bidAmount = Double.parseDouble(msg.getOrDefault("bidAmount", "0"));
 
-                AuctionEvent.Type type = AuctionEvent.Type.valueOf(eventType);
-                AuctionEvent event = new AuctionEvent(
-                        type, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
-                notifyObservers(event);
+                AuctionEvent.Type type =
+                        AuctionEvent.Type.valueOf(eventType);
 
+                AuctionEvent event;
+
+                if (type == AuctionEvent.Type.TIME_EXTENDED) {
+
+                    long newEndTimeEpoch =
+                            Long.parseLong(
+                                    msg.get("newEndTimeEpoch")
+                            );
+
+                    event = new AuctionEvent(
+                            type,
+                            auctionId,
+                            newEndTimeEpoch
+                    );
+
+                } else {
+
+                    event = new AuctionEvent(
+                            type,
+                            auctionId,
+                            bidderName,
+                            leadingBidder,
+                            bidAmount,
+                            currentPrice
+                    );
+                }
+                notifyObservers(event);
             } else if (msg.getType() == MessageType.NEW_AUCTION) {
                 AuctionEvent event = new AuctionEvent(
                         AuctionEvent.Type.NEW_AUCTION, msg.get("auctionId"), "", "", 0, 0);
@@ -144,14 +169,15 @@ public class ClientSocket {
                 .put("amount", String.valueOf(amount)));
     }
 
-    public void sendUpdateUser(String newName, String newPassword) {
+    public void sendUpdateUser(String newDisplayName, String newPassword) {
         Message msg = Message.of(MessageType.UPDATE_USER)
-                .put("newName", newName);
+                .put("newDisplayName", newDisplayName);
         if (newPassword != null && !newPassword.isEmpty()) {
             msg.put("newPassword", newPassword);
         }
         send(msg);
     }
+
 
     public void sendGetAuctions() {
         send(Message.of(MessageType.GET_AUCTIONS));
@@ -230,6 +256,9 @@ public class ClientSocket {
 
     public void sendCancelAuction(String auctionId) {
         send(Message.of(MessageType.CANCEL_AUCTION).put("auctionId", auctionId));
+    }
+    public void sendGetBidHistory(String auctionId){
+        send(Message.of(MessageType.GET_BID_HISTORY).put("auctionId",auctionId));
     }
 
     public void sendMarkPaid(String auctionId) {

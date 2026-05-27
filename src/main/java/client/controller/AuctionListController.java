@@ -231,9 +231,11 @@ public class AuctionListController implements Initializable, AuctionObserver {
             Stage stage = (Stage) tableView.getScene().getWindow();
             stage.getScene().setRoot(root);
         } catch (IOException e) {
-            log("Lỗi: Không thể mở Seller Dashboard.");
+            e.printStackTrace();
+            log("Lỗi: Không thể mở Profile Dashboard.");
         }
     }
+
 
     @FXML
     public void openSellerView(ActionEvent actionEvent) {
@@ -263,6 +265,7 @@ public class AuctionListController implements Initializable, AuctionObserver {
             stage.getScene().setRoot(root);
 
         } catch (IOException e) {
+            e.printStackTrace();
             log("Lỗi: Không thể mở Seller Dashboard.");
         }
     }

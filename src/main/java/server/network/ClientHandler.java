@@ -3,9 +3,11 @@ package server.network;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import server.controller.AuctionService;
 import server.controller.AuthenticationController;
+import server.dao.BidTransactionDAO;
 import server.exception.AuthenticationException;
 import server.model.Auction;
 import server.model.AuctionManager;
+import server.model.BidTransaction;
 import server.model.item.Item;
 import server.model.item.ItemFactory;
 import server.model.user.User;
@@ -18,6 +20,7 @@ import shared.protocol.MessageType;
 import java.io.*;
 import java.net.Socket;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -89,6 +92,14 @@ public class ClientHandler implements Runnable, AuctionObserver {
                             .put("bidderName", event.getBidderName())
                             .put("bidAmount", String.valueOf(event.getBidAmount()))
             );
+            case TIME_EXTENDED -> send(
+                    Message.of(MessageType.AUCTION_UPDATE)
+                            .put("auctionId", event.getAuctionId())
+                            .put("eventType", "TIME_EXTENDED")
+                            .put("currentPrice", "0")
+                            .put("leadingBidder", "")
+                            .put("newEndTimeEpoch", String.valueOf(event.getNewEndTimeEpoch()))
+            );
             case AUCTION_ENDED -> send(
                     Message.of(MessageType.AUCTION_UPDATE)
                             .put("auctionId", event.getAuctionId())
@@ -122,9 +133,34 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case CREATE_AUCTION -> handleCreateAuction(msg);
             case DELETE_AUCTION -> handleDeleteAuction(msg);
             case UPDATE_AUCTION -> handleUpdateAuction(msg);
+            case CANCEL_AUCTION -> handleCancelAuction(msg);
+            case UPDATE_USER -> handleUpdateUser(msg);
+            case ENABLE_AUTO_BID -> handleEnableAutoBid(msg);
+            case GET_BID_HISTORY ->handleGetBidHistory(msg);
             default -> Message.of(MessageType.ERROR)
                     .put("reason", "Lệnh không xác định: " + msg.getType());
         };
+    }
+    private Message handleGetBidHistory(Message msg){
+        try{
+            String auctionId = msg.get("auctionId");
+            BidTransactionDAO dao = new BidTransactionDAO();
+            List<BidTransaction> list = dao.findByAuctionId(auctionId);
+
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM");
+            List<String> formatted = new ArrayList<>();
+            for (BidTransaction t : list) {
+                formatted.add(t.getBidderName()
+                        + " | " + String.format("%,.0f ₫", t.getBidAmount())
+                        + " | " + t.getBidTime().format(fmt));
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonData = mapper.writeValueAsString(formatted);
+            return Message.of(MessageType.GET_BID_HISTORY_SUCCESS).put("data",jsonData);
+        }
+        catch (Exception e){
+            return Message.of(MessageType.ERROR).put("reason","Không thể tải lịch sử: "+e.getMessage());
+        }
     }
 
     // Xử lý từng loại lệnh
@@ -297,6 +333,15 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
+    private Message handleCancelAuction(Message msg){
+        try{
+            auctionService.cancelAuction(msg.get("auctionId"));
+            return Message.of(MessageType.CANCEL_AUCTION_SUCCESS).put("auctionId", msg.get("auctionId"));
+        }
+        catch (RuntimeException e){
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
     private Message handleUpdateAuction(Message msg) {
         try {
             auctionService.updateAuction(
@@ -305,6 +350,27 @@ public class ClientHandler implements Runnable, AuctionObserver {
                     msg.get("newDescription"),
                     Double.parseDouble(msg.get("newPrice")));
             return Message.of(MessageType.UPDATE_AUCTION_SUCCESS);
+        } catch (RuntimeException e) {
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
+    private Message handleEnableAutoBid(Message msg) {
+        try {
+            String auctionId = msg.get("auctionId");
+            double maxBid    = Double.parseDouble(msg.get("maxBid"));
+            double increment = Double.parseDouble(msg.getOrDefault("increment", "10"));
+
+            Auction auction = AuctionManager.getInstance().findById(auctionId);
+            if (auction == null)
+                return Message.of(MessageType.ERROR).put("reason", "Không tìm thấy phiên: " + auctionId);
+
+            auction.enableAutoBid(authController.getCurrentUser().getName(), maxBid, increment);
+            return Message.of(MessageType.AUCTION_UPDATE)
+                    .put("auctionId", auctionId)
+                    .put("eventType", "AUTO_BID_ENABLED")
+                    .put("currentPrice", String.valueOf(auction.getCurrentPrice()))
+                    .put("leadingBidder", auction.getLeadingBidder());
+
         } catch (RuntimeException e) {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
@@ -318,4 +384,16 @@ public class ClientHandler implements Runnable, AuctionObserver {
             client.send(msg);
         }
     }
+    private Message handleUpdateUser(Message msg) {
+        User user = authController.getCurrentUser();
+        if (user == null)
+            return Message.of(MessageType.ERROR).put("reason", "Chưa đăng nhập");
+
+        String newDisplayName = msg.getOrDefault("newDisplayName", null);
+        String newPassword   = msg.getOrDefault("newPassword", null);
+
+        authController.updateUser(user.getName(), newDisplayName, newPassword);
+        return Message.of(MessageType.UPDATE_USER_SUCCESS);
+    }
+
 }
