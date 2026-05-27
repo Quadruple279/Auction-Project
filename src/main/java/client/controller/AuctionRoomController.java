@@ -62,6 +62,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     @FXML private TextField incrementField;
     @FXML private Button autoBidButton;
     @FXML private Label autoBidStatusLabel;
+    @FXML private Label currentUserLabel;
 
     private XYChart.Series<String, Number> priceSeries;
     private int bidCounter = 0;
@@ -76,6 +77,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
 
     // Phiên đấu giá hiện tại (dữ liệu ban đầu lấy từ AuctionManager)
     private AuctionDTO currentAuction;
+    private AuthenticationController authController;
 
     // ─── Khởi tạo ────────────────────────────────────────────────────────────
 
@@ -342,6 +344,10 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
             AuctionListController listController = loader.getController();
             listController.setAuthenticationController(authenticationController);
 
+            if (authController != null) {
+                listController.setAuthenticationController(authController);
+            }
+
             Stage stage = (Stage) buttonBack.getScene().getWindow();
             stage.getScene().setRoot(root);
         } catch (IOException e) {
@@ -532,5 +538,8 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     }
     public void setCurrentUsername(String username) {
         this.currentUsername = username;
+        if (currentUserLabel != null) {
+            currentUserLabel.setText("Người dùng: " + (username != null ? username : "Khách"));
+        }
     }
 }

@@ -75,6 +75,11 @@ public class AuctionListController implements Initializable, AuctionObserver {
 
             AuctionRoomController roomController = loader.getController();
             roomController.setAuction(auction);
+            roomController.setCurrentUsername(
+                    authenticationController.getCurrentUser() != null
+                            ? authenticationController.getCurrentUser().getName()
+                            : "Khách"
+            );
 
             roomController.setAuthController(authenticationController);
 

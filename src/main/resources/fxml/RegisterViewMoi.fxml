@@ -6,9 +6,10 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
@@ -21,15 +22,11 @@
                     <children>
                         <HBox alignment="CENTER_LEFT" spacing="14.0">
                             <children>
-                                <Pane prefHeight="56.0" prefWidth="56.0" style="-fx-background-color: #2563eb; -fx-background-radius: 14;">
-                                    <children>
-                                        <Label layoutX="20.0" layoutY="2.0" text="⚡" textFill="#f97316">
-                                            <font>
-                                                <Font size="36.0" />
-                                            </font>
-                                        </Label>
-                                    </children>
-                                </Pane>
+                        <ImageView fitHeight="56.0" fitWidth="56.0" pickOnBounds="true" preserveRatio="true">
+                           <image>
+                              <Image url="@../image/LogoApp.png" />
+                           </image>
+                        </ImageView>
                                 <VBox>
                                     <children>
                                         <Label style="-fx-font-weight: bold;" text="Abstract Auction" textFill="WHITE">
