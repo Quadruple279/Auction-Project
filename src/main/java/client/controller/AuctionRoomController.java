@@ -1,6 +1,8 @@
 package client.controller;
 
 import client.ClientSocket;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -24,6 +26,7 @@ import shared.protocol.MessageType;
 import java.io.IOException;
 import java.net.URL;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import javafx.scene.chart.LineChart;
@@ -93,7 +96,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                 return change;
             }
             if (digits.length() > 15) return null;
-
+//hhhh
             try {
                 long value = Long.parseLong(digits);
                 String formatted = String.format(Locale.US, "%,d", value);
@@ -162,6 +165,30 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
         bidHistoryList.getItems().clear();
         bidHistoryList.getItems().add("Chưa có ai đặt giá.");
         // Lịch sử sẽ được cập nhật realtime khi nhận BID_PLACED event
+        ClientSocket.getInstance().setResponseListener(msg ->{
+            if (msg.getType() == MessageType.GET_BID_HISTORY_SUCCESS){
+                try{
+                    List<String> history = new ObjectMapper().readValue(
+                            msg.get("data"), new TypeReference<List<String>>() {}
+                    );
+                    Platform.runLater(() -> {
+                        bidHistoryList.getItems().clear();
+                        if (history.isEmpty()){
+                            bidHistoryList.getItems().add("Chưa có ai đặt giá.");
+                        }
+                        else {
+                            for (int i = history.size() -1 ; i>=0;i--){
+                                bidHistoryList.getItems().add(history.get(i));
+                            }
+                        }
+                    });
+                }
+                catch (Exception e) {
+                    Platform.runLater(() -> log("Lỗi tải lịch sử: " + e.getMessage()));
+                }
+            }
+        });
+        ClientSocket.getInstance().sendGetBidHistory(currentAuction.getAuctionId());
     }
 
 

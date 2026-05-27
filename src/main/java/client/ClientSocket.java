@@ -130,7 +130,7 @@ public class ClientSocket {
                             currentPrice
                     );
                 }
-
+                notifyObservers(event);
             } else if (msg.getType() == MessageType.NEW_AUCTION) {
                 AuctionEvent event = new AuctionEvent(
                         AuctionEvent.Type.NEW_AUCTION, msg.get("auctionId"), "", "", 0, 0);
@@ -256,6 +256,9 @@ public class ClientSocket {
 
     public void sendCancelAuction(String auctionId) {
         send(Message.of(MessageType.CANCEL_AUCTION).put("auctionId", auctionId));
+    }
+    public void sendGetBidHistory(String auctionId){
+        send(Message.of(MessageType.GET_BID_HISTORY).put("auctionId",auctionId));
     }
 
     public void sendMarkPaid(String auctionId) {
