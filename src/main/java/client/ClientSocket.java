@@ -131,6 +131,8 @@ public class ClientSocket {
                     );
                 }
 
+                notifyObservers(event); // FIX: event was created but never dispatched to observers
+
             } else if (msg.getType() == MessageType.NEW_AUCTION) {
                 AuctionEvent event = new AuctionEvent(
                         AuctionEvent.Type.NEW_AUCTION, msg.get("auctionId"), "", "", 0, 0);
@@ -259,6 +261,14 @@ public class ClientSocket {
 
     public void sendMarkPaid(String auctionId) {
         send(Message.of(MessageType.MARK_PAID).put("auctionId", auctionId));
+    }
+
+    // FIX: method was missing — server has handleEnableAutoBid() but client had no way to call it
+    public void sendEnableAutoBid(String auctionId, double maxBid, double increment) {
+        send(Message.of(MessageType.ENABLE_AUTO_BID)
+                .put("auctionId", auctionId)
+                .put("maxBid", String.valueOf(maxBid))
+                .put("increment", String.valueOf(increment)));
     }
 
 }
