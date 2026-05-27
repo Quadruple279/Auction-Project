@@ -18,6 +18,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
 
+import server.controller.AuthenticationController;
 import shared.dto.AuctionDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
@@ -68,6 +69,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     private long maxAutoBidPrice = 0;
     private long autoBidIncrement = 0;
     private String currentUsername;
+    private AuthenticationController authenticationController;
     private javafx.animation.Timeline autoBidTimeline;
 
     private javafx.animation.Timeline countdownTimer;
@@ -139,6 +141,9 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
         // Đăng ký nhận thông báo realtime
         ClientSocket.getInstance().addObserver(this);
         ClientSocket.getInstance().subscribe(auctionDTO.getAuctionId());
+    }
+    public void setAuthController(AuthenticationController auth){
+        this.authenticationController=auth;
     }
 
     // ─── Hiển thị thông tin ───────────────────────────────────────────────────
@@ -333,6 +338,10 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                     getClass().getResource("/fxml/AuctionView.fxml")
             );
             Parent root = loader.load();
+
+            AuctionListController listController = loader.getController();
+            listController.setAuthenticationController(authenticationController);
+
             Stage stage = (Stage) buttonBack.getScene().getWindow();
             stage.getScene().setRoot(root);
         } catch (IOException e) {

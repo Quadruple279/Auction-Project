@@ -76,6 +76,8 @@ public class AuctionListController implements Initializable, AuctionObserver {
             AuctionRoomController roomController = loader.getController();
             roomController.setAuction(auction);
 
+            roomController.setAuthController(authenticationController);
+
             Stage stage = (Stage) tableView.getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.show();
