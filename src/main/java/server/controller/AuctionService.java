@@ -113,6 +113,7 @@ public class AuctionService {
         auction.getItem().setName(newName);
         auction.getItem().setDescription(newDescription);
         auction.getItem().setPrice(newPrice);
+        auction.setPrice(newPrice);
         try {
             new ItemDAO().update(auction.getItem());
         } catch (SQLException e) {
