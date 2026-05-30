@@ -18,6 +18,7 @@ public enum MessageType {
     CANCEL_AUCTION,      // payload: auctionId
     MARK_PAID,           // payload: auctionId
     GET_BID_HISTORY,
+    DELETE_USER,
 
 
     // ── Server → Client ──────────────────────────
@@ -32,6 +33,7 @@ public enum MessageType {
     UPDATE_AUCTION_SUCCESS,  // (không cần payload)
     NEW_AUCTION,             // broadcast đến tất cả client: payload: auctionId
     GET_BID_HISTORY_SUCCESS,
+    USER_DELETED,
     // payload: reason
     UPDATE_USER_SUCCESS,
     FINISH_AUCTION_SUCCESS,

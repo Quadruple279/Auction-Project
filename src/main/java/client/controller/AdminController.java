@@ -154,6 +154,13 @@ public class AdminController implements Initializable, AuctionObserver {
                                 + " — Người thắng: " + event.getLeadingBidder() + "\n");
                     loadData();
                 }
+                case USER_DELETED -> {
+                    String deletedName = event.getAuctionId(); // dùng auctionId field để truyền username
+                    userList.removeIf(u -> u.getName().equals(deletedName));
+                    refreshDashboardTables();
+                    updateStats();
+                    updateCountLabels();
+                }
                 default -> {}
             }
         });
@@ -261,10 +268,9 @@ public class AdminController implements Initializable, AuctionObserver {
                 deleteBtn.setOnAction(e -> {
                     User u = getTableView().getItems().get(getIndex());
                     if (u.getRole().equals("ADMIN")) return;
-                    authController.removeUser(u);
-                    userList.remove(u);
-                    updateStats();
-                    updateCountLabels();
+                    if (confirmAction("Xác nhận xóa", "Xóa user \"" + u.getName() + "\"?")) {
+                        ClientSocket.getInstance().sendDeleteUser(u.getName());
+                    }
                 });
             }
 

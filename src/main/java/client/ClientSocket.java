@@ -137,6 +137,10 @@ public class ClientSocket {
                 AuctionEvent event = new AuctionEvent(
                         AuctionEvent.Type.NEW_AUCTION, msg.get("auctionId"), "", "", 0, 0);
                 notifyObservers(event);
+            } else if (msg.getType() == MessageType.USER_DELETED) {
+                AuctionEvent event = new AuctionEvent(
+                        AuctionEvent.Type.USER_DELETED, msg.get("username"), "", "", 0, 0);
+                notifyObservers(event);
             } else if (responseListener != null) {
                 responseListener.onResponse(msg);
             }
@@ -261,6 +265,9 @@ public class ClientSocket {
     }
     public void sendGetBidHistory(String auctionId){
         send(Message.of(MessageType.GET_BID_HISTORY).put("auctionId",auctionId));
+    }
+    public void sendDeleteUser(String username){
+        send(Message.of(MessageType.DELETE_USER).put("username",username));
     }
 
     public void sendMarkPaid(String auctionId) {

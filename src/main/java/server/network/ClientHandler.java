@@ -136,13 +136,39 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case CANCEL_AUCTION -> handleCancelAuction(msg);
             case UPDATE_USER -> handleUpdateUser(msg);
             case ENABLE_AUTO_BID -> handleEnableAutoBid(msg);
-            case GET_BID_HISTORY ->handleGetBidHistory(msg);
+            case GET_BID_HISTORY -> handleGetBidHistory(msg);
+            case DELETE_USER -> handleDeleteUser(msg);
             default -> Message.of(MessageType.ERROR)
                     .put("reason", "Lệnh không xác định: " + msg.getType());
         };
     }
-    private Message handleGetBidHistory(Message msg){
-        try{
+
+    private Message handleDeleteUser(Message msg) {
+        try {
+            String username = msg.get("username");
+            User target = authController.getAllUsers().stream()
+                    .filter(u -> u.getName().equals(username))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user: " + username));
+
+            if (target.getRole().equals("ADMIN"))
+                return Message.of(MessageType.ERROR).put("reason", "Không thể xóa tài khoản Admin");
+
+            authController.removeUser(target);
+
+            // Broadcast tới tất cả client đang kết nối
+            Message broadcast = Message.of(MessageType.USER_DELETED).put("username", username);
+            for (ClientHandler client : allClients) {
+                client.send(broadcast);
+            }
+            return null;
+        } catch (Exception e) {
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+
+    }
+    private Message handleGetBidHistory(Message msg) {
+        try {
             String auctionId = msg.get("auctionId");
             BidTransactionDAO dao = new BidTransactionDAO();
             List<BidTransaction> list = dao.findByAuctionId(auctionId);
@@ -156,10 +182,9 @@ public class ClientHandler implements Runnable, AuctionObserver {
             }
             ObjectMapper mapper = new ObjectMapper();
             String jsonData = mapper.writeValueAsString(formatted);
-            return Message.of(MessageType.GET_BID_HISTORY_SUCCESS).put("data",jsonData);
-        }
-        catch (Exception e){
-            return Message.of(MessageType.ERROR).put("reason","Không thể tải lịch sử: "+e.getMessage());
+            return Message.of(MessageType.GET_BID_HISTORY_SUCCESS).put("data", jsonData);
+        } catch (Exception e) {
+            return Message.of(MessageType.ERROR).put("reason", "Không thể tải lịch sử: " + e.getMessage());
         }
     }
 
@@ -288,22 +313,23 @@ public class ClientHandler implements Runnable, AuctionObserver {
         }
         System.out.println("[SERVER] Đã giải phóng tài nguyên cho client.");
     }
+
     private Message handleCreateAuction(Message msg) {
         try {
             User currentUser = authController.getCurrentUser();
             if (currentUser == null)
                 return Message.of(MessageType.ERROR).put("reason", "Chưa đăng nhập");
 
-            String itemType      = msg.get("itemType");
-            String itemName      = msg.get("itemName");
-            String description   = msg.get("description");
-            double price         = Double.parseDouble(msg.get("price"));
-            int    durationMins  = Integer.parseInt(msg.get("durationMinutes"));
-            String info1         = msg.get("info1");
-            String info2         = msg.getOrDefault("info2", "");
+            String itemType = msg.get("itemType");
+            String itemName = msg.get("itemName");
+            String description = msg.get("description");
+            double price = Double.parseDouble(msg.get("price"));
+            int durationMins = Integer.parseInt(msg.get("durationMinutes"));
+            String info1 = msg.get("info1");
+            String info2 = msg.getOrDefault("info2", "");
 
-            String itemId    = "ITEM" + System.currentTimeMillis();
-            String auctionId = "AU"   + System.currentTimeMillis();
+            String itemId = "ITEM" + System.currentTimeMillis();
+            String auctionId = "AU" + System.currentTimeMillis();
 
             Item item = ItemFactory.createItem(
                     itemType, itemId, itemName, price, description,
@@ -325,6 +351,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
+
     private Message handleDeleteAuction(Message msg) {
         try {
             auctionService.deleteAuction(msg.get("auctionId"));
@@ -333,15 +360,16 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
-    private Message handleCancelAuction(Message msg){
-        try{
+
+    private Message handleCancelAuction(Message msg) {
+        try {
             auctionService.cancelAuction(msg.get("auctionId"));
             return Message.of(MessageType.CANCEL_AUCTION_SUCCESS).put("auctionId", msg.get("auctionId"));
-        }
-        catch (RuntimeException e){
+        } catch (RuntimeException e) {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
+
     private Message handleUpdateAuction(Message msg) {
         try {
             auctionService.updateAuction(
@@ -354,10 +382,11 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
+
     private Message handleEnableAutoBid(Message msg) {
         try {
             String auctionId = msg.get("auctionId");
-            double maxBid    = Double.parseDouble(msg.get("maxBid"));
+            double maxBid = Double.parseDouble(msg.get("maxBid"));
             double increment = Double.parseDouble(msg.getOrDefault("increment", "10"));
 
             Auction auction = AuctionManager.getInstance().findById(auctionId);
@@ -375,6 +404,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
+
     /**
      * Broadcast AUCTION_ENDED tới tất cả các client đang kết nối
      * Đc gọi bỏi AuctionManager.finishAndSave() thông qua broadcaster callback.
@@ -384,13 +414,14 @@ public class ClientHandler implements Runnable, AuctionObserver {
             client.send(msg);
         }
     }
+
     private Message handleUpdateUser(Message msg) {
         User user = authController.getCurrentUser();
         if (user == null)
             return Message.of(MessageType.ERROR).put("reason", "Chưa đăng nhập");
 
         String newDisplayName = msg.getOrDefault("newDisplayName", null);
-        String newPassword   = msg.getOrDefault("newPassword", null);
+        String newPassword = msg.getOrDefault("newPassword", null);
 
         authController.updateUser(user.getName(), newDisplayName, newPassword);
         return Message.of(MessageType.UPDATE_USER_SUCCESS);
