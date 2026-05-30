@@ -14,8 +14,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
-import server.controller.AuthenticationController;
 import shared.dto.AuctionDTO;
+import shared.dto.UserDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
 import shared.protocol.MessageType;
@@ -40,7 +40,7 @@ public class AuctionListController implements Initializable, AuctionObserver {
     @FXML private MenuItem openProfile;
     @FXML private MenuItem openSellerView;
 
-    private AuthenticationController authenticationController = new AuthenticationController();
+    private UserDTO currentUser;
 
     private ObservableList<AuctionDTO> danhSach = FXCollections.observableArrayList();
 
@@ -75,13 +75,9 @@ public class AuctionListController implements Initializable, AuctionObserver {
 
             AuctionRoomController roomController = loader.getController();
             roomController.setAuction(auction);
-            roomController.setCurrentUsername(
-                    authenticationController.getCurrentUser() != null
-                            ? authenticationController.getCurrentUser().getName()
-                            : "Khách"
-            );
+            roomController.setCurrentUsername(currentUser != null ? currentUser.getName() : "Khách");
+            roomController.setCurrentUser(currentUser);
 
-            roomController.setAuthController(authenticationController);
 
             Stage stage = (Stage) tableView.getScene().getWindow();
             stage.setScene(new Scene(root));
@@ -214,17 +210,17 @@ public class AuctionListController implements Initializable, AuctionObserver {
         }
     }
 
-    public void setAuthenticationController(AuthenticationController auth) {
-        this.authenticationController = auth;
+    public void setCurrentUser(UserDTO user) {
+        this.currentUser = user;
     }
 
     @FXML
     public void openProfile(ActionEvent actionEvent) {
-        if (authenticationController == null ||
-                authenticationController.getCurrentUser() == null) {
+        if (currentUser == null) {
             log("Lỗi: Không có thông tin user.");
             return;
         }
+
 
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -233,9 +229,10 @@ public class AuctionListController implements Initializable, AuctionObserver {
             Parent root = loader.load();
 
             ProfileController profileController = loader.getController();
-            profileController.setAuthController(authenticationController);
+            profileController.setCurrentUser(currentUser);
 
             Stage stage = (Stage) tableView.getScene().getWindow();
+            ClientSocket.getInstance().removeObserver(this);
             stage.getScene().setRoot(root);
         } catch (IOException e) {
             e.printStackTrace();
@@ -246,13 +243,12 @@ public class AuctionListController implements Initializable, AuctionObserver {
 
     @FXML
     public void openSellerView(ActionEvent actionEvent) {
-        if (authenticationController == null ||
-                authenticationController.getCurrentUser() == null) {
+        if (currentUser == null) {
             log("Lỗi: Không có thông tin user.");
             return;
         }
+        String role = currentUser.getRole();
 
-        String role = authenticationController.getCurrentUser().getRole();
 
         if (!"SELLER".equals(role)) {
             log("Bạn không có quyền truy cập Seller Dashboard.");
@@ -266,9 +262,10 @@ public class AuctionListController implements Initializable, AuctionObserver {
             Parent root = loader.load();
 
             SellerController sellerController = loader.getController();
-            sellerController.setAuthController(authenticationController);
+            sellerController.setCurrentUser(currentUser);
 
             Stage stage = (Stage) tableView.getScene().getWindow();
+            ClientSocket.getInstance().removeObserver(this);
             stage.getScene().setRoot(root);
 
         } catch (IOException e) {

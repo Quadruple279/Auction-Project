@@ -11,7 +11,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import server.controller.AuthenticationController;
+
 import shared.protocol.MessageType;
 
 import java.io.IOException;
@@ -48,8 +48,6 @@ public class RegisterControllerMoi implements Initializable {
 
     // Mã bí mật để đăng ký Admin
     private static final String ADMIN_SECRET = "ADMIN2024";
-
-    private AuthenticationController authController = new AuthenticationController();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {

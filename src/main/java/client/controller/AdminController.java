@@ -1,6 +1,7 @@
 package client.controller;
 
 import client.ClientSocket;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -15,10 +16,11 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
-import server.controller.AuthenticationController;
 
-import server.model.user.User;
+
+
 import shared.dto.AuctionDTO;
+import shared.dto.UserDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
 import shared.protocol.MessageType;
@@ -37,9 +39,9 @@ public class AdminController implements Initializable, AuctionObserver {
     @FXML private VBox pageDashboard, pageUsers, pageAuctions, pageStats;
 
     // ===== FXML – Bảng User (trang Users) =====
-    @FXML private TableView<User> userTable;
-    @FXML private TableColumn<User, String> colUserId, colUserName, colUserRole;
-    @FXML private TableColumn<User, Void> colUserAction;
+    @FXML private TableView<UserDTO> userTable;
+    @FXML private TableColumn<UserDTO, String> colUserId, colUserName, colUserRole;
+    @FXML private TableColumn<UserDTO, Void> colUserAction;
     @FXML private TextField userSearchField;
     @FXML private ComboBox<String> userRoleFilter;
     @FXML private Label userCountLabel;   // Bổ sung
@@ -54,8 +56,8 @@ public class AdminController implements Initializable, AuctionObserver {
     @FXML private Label auctionCountLabel; // Bổ sung
 
     // ===== FXML – Dashboard preview =====
-    @FXML private TableView<User> dashUserTable;
-    @FXML private TableColumn<User, String> dashColUserName, dashColUserRole, dashColUserId;
+    @FXML private TableView<UserDTO> dashUserTable;
+    @FXML private TableColumn<UserDTO, String> dashColUserName, dashColUserRole, dashColUserId;
     @FXML private TableView<AuctionDTO> dashAuctionTable;
     @FXML private TableColumn<AuctionDTO, String> dashColAuctionId, dashColAuctionItem, dashColAuctionStatus;
 
@@ -67,12 +69,11 @@ public class AdminController implements Initializable, AuctionObserver {
     @FXML private Label statUserSub;
 
     // ===== DATA =====
-    private AuthenticationController authController;
-    private AdminService adminService;
+    private UserDTO currentAdmin;
+    private ObservableList<UserDTO> userList = FXCollections.observableArrayList();
 
-    private ObservableList<User>    userList    = FXCollections.observableArrayList();
     private ObservableList<AuctionDTO> auctionList = FXCollections.observableArrayList();
-    private FilteredList<User>    filteredUsers;
+    private FilteredList<UserDTO>    filteredUsers;
     private FilteredList<AuctionDTO> filteredAuctions;
 
     // ===== INIT =====
@@ -84,20 +85,18 @@ public class AdminController implements Initializable, AuctionObserver {
         showDashboard();
     }
 
-    /** Gọi từ LoginController sau khi xác thực ADMIN thành công */
-    public void setAuthController(AuthenticationController auth) {
-        this.authController = auth;
-        this.adminService   = new AdminService(auth);
-        adminNameLabel.setText(auth.getCurrentUser().getName());
+
+    public void setCurrentAdmin(UserDTO admin) {
+        this.currentAdmin = admin;
+        adminNameLabel.setText(admin.getDisplayName());
         loadData();
         registerEventBusListener();
     }
 
+
     // ===== LOAD DATA =====
     private void loadData() {
-        userList.setAll(authController.getAllUsers());
-        filteredUsers     = new FilteredList<>(userList,    p -> true);
-        userTable.setItems(filteredUsers);
+        
         ClientSocket.getInstance().setResponseListener(msg -> {
             if (msg.getType() == MessageType.AUCTION_LIST){
                 try{
@@ -122,9 +121,31 @@ public class AdminController implements Initializable, AuctionObserver {
                             systemLog.appendText("Lỗi tải phiên: " + e.getMessage() + "\n");
                     });
                 }
+            } else if (msg.getType() == MessageType.USER_LIST) {
+                try {
+                    String jsonData = msg.get("data");
+                    ObjectMapper mapper = new ObjectMapper();
+                    List<UserDTO> list = mapper.readValue(
+                            jsonData,
+                            new TypeReference<List<UserDTO>>() {});
+                    Platform.runLater(() -> {
+                        userList.setAll(list);
+                        filteredUsers = new FilteredList<>(userList, p -> true);
+                        userTable.setItems(filteredUsers);
+                        refreshDashboardTables();
+                        updateStats();
+                        updateCountLabels();
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        if (systemLog != null)
+                            systemLog.appendText("Lỗi tải users: " + e.getMessage() + "\n");
+                    });
+                }
             }
         });
         ClientSocket.getInstance().sendGetAuctions();
+        ClientSocket.getInstance().sendGetUsers();
     }
     private void refreshDashboardTables() {
         dashUserTable.setItems(FXCollections.observableArrayList(userList.subList(0, Math.min(5, userList.size()))));
@@ -170,7 +191,7 @@ public class AdminController implements Initializable, AuctionObserver {
 
     private void setupTables() {
         // ----- USER TABLE -----
-        colUserId.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getId())));  // Đã sửa: getId() thay vì getName()
+        colUserId.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getId())));
         colUserName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getName()));
         colUserRole.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getRole()));
         setupUserActionColumn();
@@ -262,11 +283,11 @@ public class AdminController implements Initializable, AuctionObserver {
                         " -fx-background-radius: 4; -fx-font-size: 10; -fx-padding: 3 8;");
 
                 editBtn.setOnAction(e -> {
-                    User u = getTableView().getItems().get(getIndex());
+                    UserDTO u = getTableView().getItems().get(getIndex());
                     showEditUserDialog(u);
                 });
                 deleteBtn.setOnAction(e -> {
-                    User u = getTableView().getItems().get(getIndex());
+                    UserDTO u = getTableView().getItems().get(getIndex());
                     if (u.getRole().equals("ADMIN")) return;
                     if (confirmAction("Xác nhận xóa", "Xóa user \"" + u.getName() + "\"?")) {
                         ClientSocket.getInstance().sendDeleteUser(u.getName());
@@ -278,7 +299,7 @@ public class AdminController implements Initializable, AuctionObserver {
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty) { setGraphic(null); return; }
-                User u = getTableView().getItems().get(getIndex());
+                UserDTO u = getTableView().getItems().get(getIndex());
                 // Ẩn nút Xóa với Admin
                 deleteBtn.setDisable(u.getRole().equals("ADMIN"));
                 setGraphic(box);
@@ -404,7 +425,15 @@ public class AdminController implements Initializable, AuctionObserver {
         Optional<ButtonType> result = dialog.showAndWait();
         if (result.isPresent() && result.get() == addBtn) {
             try {
-                adminService.addUser(nameField.getText().trim(),
+                ClientSocket.getInstance().setResponseListener(msg -> {
+                    if (msg.getType() == MessageType.ADD_USER_SUCCESS) {
+                        Platform.runLater(() -> loadData());
+                    } else if (msg.getType() == MessageType.ERROR) {
+                        Platform.runLater(() -> showError(msg.get("reason")));
+                    }
+                });
+                ClientSocket.getInstance().sendAddUser(
+                        nameField.getText().trim(),
                         pwdField.getText(),
                         roleBox.getValue());
             } catch (Exception ex) {
@@ -414,7 +443,7 @@ public class AdminController implements Initializable, AuctionObserver {
     }
 
     /** Dialog sửa tên / mật khẩu user */
-    private void showEditUserDialog(User user) {
+    private void showEditUserDialog(UserDTO user) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Sửa User: " + user.getName());
         dialog.setHeaderText(null);
@@ -448,7 +477,16 @@ public class AdminController implements Initializable, AuctionObserver {
             String newPwd  = pwdField.getText();
             if (newDisplayName.isBlank()) { showError("Tên hiển thị không được để trống"); return; }
             try {
-                adminService.updateUser(user.getName(), newDisplayName,
+                ClientSocket.getInstance().setResponseListener(msg -> {
+                    if (msg.getType() == MessageType.UPDATE_USER_ADMIN_SUCCESS) {
+                        Platform.runLater(() -> loadData());
+                    } else if (msg.getType() == MessageType.ERROR) {
+                        Platform.runLater(() -> showError(msg.get("reason")));
+                    }
+                });
+                ClientSocket.getInstance().sendUpdateUserAdmin(
+                        user.getName(),
+                        newDisplayName,
                         newPwd.isBlank() ? null : newPwd);
             } catch (Exception ex) {
                 showError(ex.getMessage());
@@ -494,7 +532,6 @@ public class AdminController implements Initializable, AuctionObserver {
     @FXML
     private void handleLogout() {
         ClientSocket.getInstance().removeObserver(this);
-        if (authController != null) authController.logout();
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/LoginViewMoi.fxml"));
             Parent root = loader.load();

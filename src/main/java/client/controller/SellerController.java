@@ -8,11 +8,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
-import server.controller.AuthenticationController;
+import shared.dto.UserDTO;
+
 import shared.dto.AuctionDTO;
 import shared.protocol.MessageType;
 
@@ -44,14 +44,10 @@ public class SellerController implements Initializable {
     private boolean isEditing = false;
 
     // ── Dependencies ──────────────────────────────────────────
-    private AuthenticationController authController;
-    // ── Nhận authController từ LoginController ────────────────
-    public void setAuthController(AuthenticationController auth) {
-        this.authController = auth;
-        if (authController != null) {
-            loadMyAuctions();
-            updateStats();
-        }
+    private UserDTO currentUser;
+    public void setCurrentUser(UserDTO user) {
+        this.currentUser = user;
+        if (currentUser != null) { loadMyAuctions(); updateStats(); }
     }
 
     // ════════════════════════════════════════════════════════════
@@ -300,7 +296,7 @@ public class SellerController implements Initializable {
     //  LOAD DỮ LIỆU
     // ════════════════════════════════════════════════════════════
     private void loadMyAuctions() {
-        String currentUser = authController.getCurrentUser().getName();
+        String currentUsername = currentUser.getName();
         ClientSocket.getInstance().setResponseListener(msg -> {
             if (msg.getType() == MessageType.AUCTION_LIST) {
                 try {
@@ -312,7 +308,7 @@ public class SellerController implements Initializable {
                         myAuctions.clear();
                         myAuctionList.getItems().clear();
                         for (AuctionDTO dto : list) {
-                            if (currentUser.equals(dto.getOwner())) {
+                            if (currentUsername.equals(dto.getOwner())) {
                                 myAuctions.add(dto);
                                 myAuctionList.getItems().add(dto);
                             }
@@ -349,7 +345,7 @@ public class SellerController implements Initializable {
             Parent root = loader.load();
 
             AuctionListController dashboardController = loader.getController();
-            dashboardController.setAuthenticationController(authController);
+            dashboardController.setCurrentUser(currentUser);
 
             Stage stage = (Stage) buttonBack.getScene().getWindow();
             stage.getScene().setRoot(root);

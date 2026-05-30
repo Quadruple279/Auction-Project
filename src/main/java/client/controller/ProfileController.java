@@ -7,16 +7,16 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
-import server.controller.AuthenticationController;
-import server.dao.BidTransactionDAO;
-import server.model.BidTransaction;
-import server.model.user.User;
+import shared.dto.BidHistoryDTO;
+import shared.dto.UserDTO;
 import shared.protocol.MessageType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.List;
+
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.SQLException;
-import java.util.List;
 import java.util.ResourceBundle;
 
 public class ProfileController implements Initializable {
@@ -30,28 +30,26 @@ public class ProfileController implements Initializable {
     @FXML private PasswordField newPasswordField;
     @FXML private PasswordField confirmPasswordField;
     @FXML private Label        messageLabel;
-    @FXML private TableView<BidTransaction>           historyTable;
-    @FXML private TableColumn<BidTransaction, String> colAuctionId;
-    @FXML private TableColumn<BidTransaction, String> colBidAmount;
-    @FXML private TableColumn<BidTransaction, String> colBidTime;
+    @FXML private TableView<BidHistoryDTO>           historyTable;
+    @FXML private TableColumn<BidHistoryDTO, String> colAuctionId;
+    @FXML private TableColumn<BidHistoryDTO, String> colBidAmount;
+    @FXML private TableColumn<BidHistoryDTO, String> colBidTime;
 
-    private final BidTransactionDAO bidDAO = new BidTransactionDAO();
-    private AuthenticationController authController;
+    private UserDTO currentUser;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Sẽ load data sau khi setAuthController() được gọi
+        // Sẽ load data sau khi setCurrentUser() được gọi
     }
 
-    public void setAuthController(AuthenticationController auth) {
-        this.authController = auth;
+    public void setCurrentUser(UserDTO user) {
+        this.currentUser = user;
         loadUserInfo();
         loadHistory();
     }
 
     private void loadHistory() {
-        User user = authController.getCurrentUser();
-        if (user == null) return;
+        if (currentUser == null) return;
 
         colAuctionId.setCellValueFactory(data ->
                 new javafx.beans.property.SimpleStringProperty(
@@ -65,44 +63,47 @@ public class ProfileController implements Initializable {
 
         colBidTime.setCellValueFactory(data ->
                 new javafx.beans.property.SimpleStringProperty(
-                        data.getValue().getBidTime().toString()
+                        data.getValue().getBidTime()
                 ));
 
-        try {
-            List<BidTransaction> history =
-                    bidDAO.findByBidderName(user.getName());
-
-            historyTable.setItems(
-                    javafx.collections.FXCollections.observableArrayList(history)
-            );
-
-            if (history.isEmpty()) {
-                historyTable.setPlaceholder(
-                        new Label("Chưa có lịch sử đấu giá nào.")
-                );
+        ClientSocket.getInstance().setResponseListener(msg -> {
+            if (msg.getType() == MessageType.GET_BID_HISTORY_BY_USER_SUCCESS) {
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    List<BidHistoryDTO> list = mapper.readValue(
+                            msg.get("data"),
+                            new TypeReference<List<BidHistoryDTO>>() {});
+                    javafx.application.Platform.runLater(() -> {
+                        historyTable.setItems(
+                                javafx.collections.FXCollections.observableArrayList(list));
+                        if (list.isEmpty())
+                            historyTable.setPlaceholder(new Label("Chưa có lịch sử đấu giá nào."));
+                    });
+                } catch (Exception e) {
+                    javafx.application.Platform.runLater(() -> showError("Lỗi tải lịch sử: " + e.getMessage()));
+                }
+            } else if (msg.getType() == MessageType.ERROR) {
+                javafx.application.Platform.runLater(() -> showError(msg.get("reason")));
             }
-
-        } catch (SQLException e) {
-            showError("Lỗi tải lịch sử: " + e.getMessage());
-        }
+        });
+        ClientSocket.getInstance().sendGetBidHistoryByUser(currentUser.getName());
     }
 
     private void loadUserInfo() {
-        User user = authController.getCurrentUser();
-        if (user == null) return;
+        if (currentUser == null) return;
 
         // Avatar — lấy chữ cái đầu của tên
         avatarLabel.setText(
-                String.valueOf(user.getDisplayName().charAt(0)).toUpperCase()
+                String.valueOf(currentUser.getDisplayName().charAt(0)).toUpperCase()
         );
 
         // Tên và role hiển thị
-        displayNameLabel.setText(user.getDisplayName());
-        displayRoleLabel.setText("● " + user.getRole());
+        displayNameLabel.setText(currentUser.getDisplayName());
+        displayRoleLabel.setText("● " + currentUser.getRole());
 
         // Điền sẵn vào form
-        fullNameField.setText(user.getDisplayName());
-        usernameField.setText(user.getName());
+        fullNameField.setText(currentUser.getDisplayName());
+        usernameField.setText(currentUser.getName());
     }
 
     @FXML
@@ -158,7 +159,7 @@ public class ProfileController implements Initializable {
             Parent root = loader.load();
 
             AuctionListController listController = loader.getController();
-            listController.setAuthenticationController(authController);
+            listController.setCurrentUser(currentUser);
 
             Stage stage = (Stage) avatarLabel.getScene().getWindow();
             stage.getScene().setRoot(root);

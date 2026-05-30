@@ -12,6 +12,8 @@ import server.model.item.Item;
 import server.model.item.ItemFactory;
 import server.model.user.User;
 import shared.dto.AuctionDTO;
+import shared.dto.BidHistoryDTO;
+import shared.dto.UserDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
 import shared.protocol.Message;
@@ -138,10 +140,98 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case ENABLE_AUTO_BID -> handleEnableAutoBid(msg);
             case GET_BID_HISTORY -> handleGetBidHistory(msg);
             case DELETE_USER -> handleDeleteUser(msg);
+            case GET_USERS              -> handleGetUsers();
+            case ADD_USER               -> handleAddUser(msg);
+            case UPDATE_USER_ADMIN      -> handleUpdateUserAdmin(msg);
+            case GET_BID_HISTORY_BY_USER -> handleGetBidHistoryByUser(msg);
             default -> Message.of(MessageType.ERROR)
                     .put("reason", "Lệnh không xác định: " + msg.getType());
         };
     }
+    private Message handleGetUsers() {
+        try {
+            List<UserDTO> dtoList = new ArrayList<>();
+            for (User u : authController.getAllUsers()) {
+                dtoList.add(new UserDTO(
+                        u.getId(), u.getName(), u.getDisplayName(), u.getRole()));
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonData = mapper.writeValueAsString(dtoList);
+            return Message.of(MessageType.USER_LIST).put("data", jsonData);
+        } catch (Exception e) {
+            return Message.of(MessageType.ERROR).put("reason", "Không thể lấy danh sách user: " + e.getMessage());
+        }
+    }
+    private Message handleAddUser(Message msg) {
+        try {
+            String username = msg.get("username");
+            String password = msg.get("password");
+            String role     = msg.get("role");
+
+            if (!role.equalsIgnoreCase("BIDDER") && !role.equalsIgnoreCase("SELLER"))
+                return Message.of(MessageType.ERROR).put("reason", "Role phải là BIDDER hoặc SELLER");
+
+            boolean exists = authController.getAllUsers().stream()
+                    .anyMatch(u -> u.getName().equalsIgnoreCase(username));
+            if (exists)
+                return Message.of(MessageType.ERROR).put("reason", "Username '" + username + "' đã tồn tại");
+
+            authController.register(username, password, role.toUpperCase());
+            return Message.of(MessageType.ADD_USER_SUCCESS).put("username", username);
+        } catch (Exception e) {
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
+    private Message handleUpdateUserAdmin(Message msg) {
+        try {
+            server.model.user.User admin = authController.getCurrentUser();
+            if (admin == null || !admin.getRole().equals("ADMIN"))
+                return Message.of(MessageType.ERROR).put("reason", "Không có quyền thực hiện");
+
+            String targetUsername  = msg.get("targetUsername");
+            String newDisplayName  = msg.getOrDefault("newDisplayName", null);
+            String newPassword     = msg.getOrDefault("newPassword", null);
+
+            server.model.user.User target = authController.getAllUsers().stream()
+                    .filter(u -> u.getName().equals(targetUsername))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user: " + targetUsername));
+
+            if (target.getRole().equals("ADMIN"))
+                return Message.of(MessageType.ERROR).put("reason", "Không thể sửa tài khoản Admin khác");
+
+            authController.updateUser(targetUsername, newDisplayName, newPassword);
+            return Message.of(MessageType.UPDATE_USER_ADMIN_SUCCESS);
+        } catch (Exception e) {
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
+
+    private Message handleGetBidHistoryByUser(Message msg) {
+        try {
+            String username = msg.get("username");
+            BidTransactionDAO dao = new BidTransactionDAO();
+            List<BidTransaction> list = dao.findByBidderName(username);
+
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM");
+            List<BidHistoryDTO> dtoList = new ArrayList<>();
+            for (BidTransaction t : list) {
+                dtoList.add(new BidHistoryDTO(
+                        t.getAuctionId(),
+                        t.getBidAmount(),
+                        t.getBidTime().format(fmt)
+                ));
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonData = mapper.writeValueAsString(dtoList);
+            return Message.of(MessageType.GET_BID_HISTORY_BY_USER_SUCCESS).put("data", jsonData);
+        } catch (Exception e) {
+            return Message.of(MessageType.ERROR).put("reason", "Không thể tải lịch sử: " + e.getMessage());
+        }
+    }
+
+
+
 
     private Message handleDeleteUser(Message msg) {
         try {
@@ -196,6 +286,8 @@ public class ClientHandler implements Runnable, AuctionObserver {
             User user = authController.login(username, password);
             System.out.println("[SERVER] Đăng nhập thành công: " + user.getName());
             return Message.of(MessageType.LOGIN_SUCCESS)
+                    .put("id", String.valueOf(user.getId()))
+                    .put("displayName", user.getDisplayName())
                     .put("username", user.getName())
                     .put("role", user.getRole());
         } catch (AuthenticationException e) {

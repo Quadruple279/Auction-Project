@@ -8,7 +8,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.HBox;
@@ -18,8 +17,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
 
-import server.controller.AuthenticationController;
 import shared.dto.AuctionDTO;
+import shared.dto.UserDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
 import shared.protocol.MessageType;
@@ -70,15 +69,14 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     private long maxAutoBidPrice = 0;
     private long autoBidIncrement = 0;
     private String currentUsername;
-    private AuthenticationController authenticationController;
+    private UserDTO currentUser;
+
     private javafx.animation.Timeline autoBidTimeline;
 
     private javafx.animation.Timeline countdownTimer;
 
     // Phiên đấu giá hiện tại (dữ liệu ban đầu lấy từ AuctionManager)
     private AuctionDTO currentAuction;
-    private AuthenticationController authController;
-
     // ─── Khởi tạo ────────────────────────────────────────────────────────────
 
     @Override
@@ -144,8 +142,8 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
         ClientSocket.getInstance().addObserver(this);
         ClientSocket.getInstance().subscribe(auctionDTO.getAuctionId());
     }
-    public void setAuthController(AuthenticationController auth){
-        this.authenticationController=auth;
+    public void setCurrentUser(UserDTO user) {
+        this.currentUser = user;
     }
 
     // ─── Hiển thị thông tin ───────────────────────────────────────────────────
@@ -342,11 +340,8 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
             Parent root = loader.load();
 
             AuctionListController listController = loader.getController();
-            listController.setAuthenticationController(authenticationController);
+            listController.setCurrentUser(currentUser);
 
-            if (authController != null) {
-                listController.setAuthenticationController(authController);
-            }
 
             Stage stage = (Stage) buttonBack.getScene().getWindow();
             stage.getScene().setRoot(root);

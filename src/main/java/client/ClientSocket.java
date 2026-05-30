@@ -13,8 +13,19 @@ import java.net.Socket;
 import java.util.List;
 
 public class ClientSocket {
-    private static final String HOST = "localhost";
-    private static final int PORT = 8080;
+    private static final String HOST;
+    private static final int PORT;
+
+    static {
+        java.util.Properties props = new java.util.Properties();
+        try (java.io.InputStream is = ClientSocket.class.getResourceAsStream("/server.properties")) {
+            if (is != null) props.load(is);
+        } catch (Exception e) {
+            System.out.println("[CLIENT] Không đọc được server.properties, dùng mặc định.");
+        }
+        HOST = props.getProperty("server.host", "localhost");
+        PORT = Integer.parseInt(props.getProperty("server.port", "8080"));
+    }
 
     private Socket socket;
     private BufferedReader in;
@@ -141,7 +152,8 @@ public class ClientSocket {
                 AuctionEvent event = new AuctionEvent(
                         AuctionEvent.Type.USER_DELETED, msg.get("username"), "", "", 0, 0);
                 notifyObservers(event);
-            } else if (responseListener != null) {
+            }
+            else if (responseListener != null) {
                 responseListener.onResponse(msg);
             }
 
@@ -281,5 +293,27 @@ public class ClientSocket {
                 .put("maxBid", String.valueOf(maxBid))
                 .put("increment", String.valueOf(increment)));
     }
+    public void sendGetUsers() {
+        send(Message.of(MessageType.GET_USERS));
+    }
+    public void sendAddUser(String username, String password, String role) {
+        send(Message.of(MessageType.ADD_USER)
+                .put("username", username)
+                .put("password", password)
+                .put("role", role));
+    }
 
+    public void sendUpdateUserAdmin(String targetUsername, String newDisplayName, String newPassword) {
+        Message msg = Message.of(MessageType.UPDATE_USER_ADMIN)
+                .put("targetUsername", targetUsername)
+                .put("newDisplayName", newDisplayName);
+        if (newPassword != null && !newPassword.isEmpty()) {
+            msg.put("newPassword", newPassword);
+        }
+        send(msg);
+    }
+
+    public void sendGetBidHistoryByUser(String username) {
+        send(Message.of(MessageType.GET_BID_HISTORY_BY_USER).put("username", username));
+    }
 }

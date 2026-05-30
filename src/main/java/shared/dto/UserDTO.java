@@ -5,6 +5,7 @@ public class UserDTO {
     private String name;
     private String displayName;
     private String role;
+    public UserDTO(){}
     public UserDTO(int id, String name, String displayName, String role){
         this.id=id;
         this.name=name;

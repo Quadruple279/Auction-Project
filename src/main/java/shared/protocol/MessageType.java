@@ -18,8 +18,11 @@ public enum MessageType {
     CANCEL_AUCTION,      // payload: auctionId
     MARK_PAID,           // payload: auctionId
     GET_BID_HISTORY,
-    DELETE_USER,
-
+    GET_USERS,              // Admin lấy danh sách tất cả users
+    DELETE_USER,            // payload: username
+    ADD_USER,               // payload: username, password, role
+    UPDATE_USER_ADMIN,      // payload: targetUsername, newDisplayName, newPassword
+    GET_BID_HISTORY_BY_USER, // payload: username (dùng cho ProfileController)
 
     // ── Server → Client ──────────────────────────
     LOGIN_SUCCESS,  // payload: username, role
@@ -33,7 +36,13 @@ public enum MessageType {
     UPDATE_AUCTION_SUCCESS,  // (không cần payload)
     NEW_AUCTION,             // broadcast đến tất cả client: payload: auctionId
     GET_BID_HISTORY_SUCCESS,
-    USER_DELETED,
+    USER_LIST,                   // payload: data (JSON array UserDTO)
+    USER_DELETED,                // broadcast — payload: username
+    ADD_USER_SUCCESS,            // payload: username
+    UPDATE_USER_ADMIN_SUCCESS,   // không cần payload
+    GET_BID_HISTORY_BY_USER_SUCCESS, // payload: data (JSON array)
+
+
     // payload: reason
     UPDATE_USER_SUCCESS,
     FINISH_AUCTION_SUCCESS,

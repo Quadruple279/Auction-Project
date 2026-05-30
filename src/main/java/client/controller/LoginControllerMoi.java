@@ -5,11 +5,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
+
 import javafx.scene.control.*;
 import javafx.stage.Stage;
-import server.controller.AuthenticationController;
-import server.exception.AuthenticationException;
+
 import shared.dto.UserDTO;
 import shared.protocol.MessageType;
 
@@ -25,8 +24,6 @@ public class LoginControllerMoi implements Initializable {
     @FXML private PasswordField password;
     @FXML private Label         messageLabel;
 
-    private AuthenticationController authenticationController
-            = new AuthenticationController();
 
 
     @Override
@@ -71,12 +68,13 @@ public class LoginControllerMoi implements Initializable {
         ClientSocket.getInstance().setResponseListener(msg -> {
             javafx.application.Platform.runLater(() -> {
             if (msg.getType() == MessageType.LOGIN_SUCCESS){
-                try{
-                    authenticationController.login(tenDangNhap,matKhau);
-                }
-                catch (Exception e){}
+                int id                 = Integer.parseInt(msg.getOrDefault("id", "0"));
+                String username        = msg.get("username");
+                String displayName     = msg.getOrDefault("displayName", username);
+                String role            = msg.get("role");
+                UserDTO loggedInUser   = new UserDTO(id, username, displayName, role);
                 showSuccess("Đăng nhập thành công!");
-                openDashboard();
+                openDashboard(loggedInUser);   // truyền userDTO vào
             }
             else {
                 String reason = msg.getOrDefault("reason", "Sai tài khoản hoặc mật khẩu.");
@@ -88,10 +86,9 @@ public class LoginControllerMoi implements Initializable {
         messageLabel.setText("Đang đăng nhập...");
     }
 
-    private void openDashboard() {
+    private void openDashboard(UserDTO userDTO) {
         try {
             // Lấy role của user hiện tại
-            UserDTO userDTO = authenticationController.getCurrentUserDTO();
             String role = userDTO.getRole();
 
             String fxmlPath;
@@ -122,15 +119,15 @@ public class LoginControllerMoi implements Initializable {
             switch (role) {
                 case "SELLER" -> {
                     SellerController sellerController = loader.getController();
-                    sellerController.setAuthController(authenticationController);
+                    sellerController.setCurrentUser(userDTO);   // ← đổi từ setAuthController
                 }
                 case "ADMIN" -> {
                     AdminController adminController = loader.getController();
-                    adminController.setAuthController(authenticationController);
+                    adminController.setCurrentAdmin(userDTO);
                 }
                 default -> {
                     AuctionListController dashboardController = loader.getController();
-                    dashboardController.setAuthenticationController(authenticationController);
+                    dashboardController.setCurrentUser(userDTO); // ← đổi từ setAuthenticationController
                 }
             }
 
@@ -153,9 +150,6 @@ public class LoginControllerMoi implements Initializable {
         switchScene("/fxml/RegisterViewMoi.fxml");
     }
 
-    public void setAuthenticationController(AuthenticationController auth) {
-        this.authenticationController = auth;
-    }
 
     private void showError(String msg) {
         messageLabel.setStyle("-fx-text-fill: #fa5656;");
