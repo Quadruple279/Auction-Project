@@ -121,5 +121,14 @@ public class AuthenticationController {
 
         currentUser = user;
     }
-
+    public void reloadUsers() {
+        users.clear();
+        try {
+            for (User user : userDAO.findAll()) {
+                users.put(user.getName(), user);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }
