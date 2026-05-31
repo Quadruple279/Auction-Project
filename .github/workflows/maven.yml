@@ -22,7 +22,7 @@ jobs:
           cache: maven
 
       - name: Run unit tests
-        run: mvn test --batch-mode
+        run: mvn test --batch-mode -Djava.awt.headless=true
 
       - name: Build & run Checkstyle
         run: mvn -B package -DskipTests --file pom.xml

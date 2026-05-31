@@ -17,12 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * DAO integration tests chạy trên H2 in-memory database.
+ * db.properties trong src/test/resources/ override MySQL → H2 khi chạy mvn test.
  * Không cần MySQL – CI/CD chạy được hoàn toàn offline.
  */
 class DBTest {
 
     // ─────────────────────────────────────────────────────────────
-    //  Schema setup (chạy một lần trước toàn bộ test)
+    //  Schema setup (chạy một lần trước toàn bộ test suite)
     // ─────────────────────────────────────────────────────────────
 
     @BeforeAll
@@ -76,19 +77,16 @@ class DBTest {
                     bid_amount  DOUBLE,
                     bid_time    TIMESTAMP
                 )""");
+
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS system_logs (
+                    id          INT AUTO_INCREMENT PRIMARY KEY,
+                    timestamp   TIMESTAMP,
+                    level       VARCHAR(20),
+                    message     VARCHAR(1000)
+                )""");
         }
     }
-
-    /*@AfterAll
-    static void dropSchema() throws SQLException {
-        try (Connection conn = DBConnection.getConnection();
-             Statement st = conn.createStatement()) {
-            st.execute("DROP TABLE IF EXISTS bid_transactions");
-            st.execute("DROP TABLE IF EXISTS auctions");
-            st.execute("DROP TABLE IF EXISTS items");
-            st.execute("DROP TABLE IF EXISTS users");
-        }
-    }*/
 
     /** Xóa dữ liệu test sau mỗi test case để tránh ảnh hưởng lẫn nhau. */
     @BeforeEach
@@ -103,20 +101,22 @@ class DBTest {
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Test cases
+    //  DBConnection
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    void testDatabaseConnection() throws SQLException {
+    void testDatabaseConnection_isValid() throws SQLException {
         Connection conn = DBConnection.getConnection();
         assertNotNull(conn, "DBConnection.getConnection() phải trả về connection hợp lệ");
         assertFalse(conn.isClosed(), "Connection không được đóng ngay sau khi lấy");
     }
 
-    // ── UserDAO ──────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    //  UserDAO
+    // ─────────────────────────────────────────────────────────────
 
     @Test
-    void testUserDAO_saveAndFindById() throws SQLException {
+    void testUserDAO_saveAndFindAll_bidder() throws SQLException {
         UserDAO userDAO = new UserDAO();
         Bidder user = new Bidder(0, "TEST-Nguyen", "Nguyễn Test", "pass123");
 
@@ -134,7 +134,7 @@ class DBTest {
     }
 
     @Test
-    void testUserDAO_findAll_returnsNonEmptyAfterSave() throws SQLException {
+    void testUserDAO_saveMultiple_allFoundInFindAll() throws SQLException {
         UserDAO userDAO = new UserDAO();
         userDAO.save(new Bidder(0, "TEST-Alice", "Alice", "pw"));
         userDAO.save(new Seller(0, "TEST-Bob", "Bob", "pw"));
@@ -145,13 +145,44 @@ class DBTest {
                 .count();
 
         assertTrue(testUsers >= 2,
-                "Sau khi lưu 2 user TEST- phải có ít nhất 2 bản ghi TEST- trong findAll()");
+                "Sau khi lưu 2 user TEST- phải có ít nhất 2 bản ghi trong findAll()");
     }
 
-    // ── ItemDAO ──────────────────────────────────────────────────
+    @Test
+    void testUserDAO_checkPassword_correct() throws SQLException {
+        UserDAO userDAO = new UserDAO();
+        Bidder user = new Bidder(0, "TEST-PassCheck", "Test User", "secret123");
+        userDAO.save(user);
+
+        List<User> all = userDAO.findAll();
+        User found = all.stream()
+                .filter(u -> "TEST-PassCheck".equals(u.getName()))
+                .findFirst().orElse(null);
+
+        assertNotNull(found);
+        assertTrue(found.checkPassword("secret123"), "Mật khẩu đúng phải trả về true");
+        assertFalse(found.checkPassword("wrongpass"), "Mật khẩu sai phải trả về false");
+    }
 
     @Test
-    void testItemDAO_saveAndFindById_Art() throws SQLException {
+    void testUserDAO_delete_removesUser() throws SQLException {
+        UserDAO userDAO = new UserDAO();
+        Bidder user = new Bidder(0, "TEST-Delete", "To Delete", "pw");
+        userDAO.save(user);
+
+        // id đã được set bởi save()
+        userDAO.delete(user.getId());
+
+        User found = userDAO.findById(user.getId());
+        assertNull(found, "User đã xóa không được tìm thấy qua findById()");
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  ItemDAO
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void testItemDAO_saveAndFindById_art() throws SQLException {
         ItemDAO itemDAO = new ItemDAO();
         Art art = new Art("ITEM-TEST-001", "Tranh Test", 5_000_000, "Mô tả", "seller1", "Picasso");
 
@@ -164,7 +195,7 @@ class DBTest {
     }
 
     @Test
-    void testItemDAO_saveAndFindById_Electronics() throws SQLException {
+    void testItemDAO_saveAndFindById_electronics() throws SQLException {
         ItemDAO itemDAO = new ItemDAO();
         Electronics e = new Electronics("ITEM-TEST-002", "Laptop X", 20_000_000, "Laptop mới", "seller1", 24);
 
@@ -174,9 +205,19 @@ class DBTest {
         assertNotNull(found);
         assertInstanceOf(Electronics.class, found);
         assertEquals("Laptop X", found.getName());
+        assertEquals(20_000_000, found.getBasePrice(), 0.01);
     }
 
-    // ── AuctionDAO ───────────────────────────────────────────────
+    @Test
+    void testItemDAO_findById_returnsNull_whenNotExist() throws SQLException {
+        ItemDAO itemDAO = new ItemDAO();
+        Item found = itemDAO.findById("ITEM-NOT-EXISTS-9999");
+        assertNull(found, "findById() phải trả về null khi item không tồn tại");
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  AuctionDAO
+    // ─────────────────────────────────────────────────────────────
 
     @Test
     void testAuctionDAO_saveAndFindAll() throws SQLException {
@@ -195,6 +236,25 @@ class DBTest {
         List<Auction> all = auctionDAO.findAll();
         boolean found = all.stream().anyMatch(a -> "AU-TEST-001".equals(a.getAuctionId()));
         assertTrue(found, "Auction vừa lưu phải xuất hiện trong findAll()");
+    }
+
+    @Test
+    void testAuctionDAO_findById_returnsCorrectAuction() throws SQLException {
+        ItemDAO itemDAO = new ItemDAO();
+        AuctionDAO auctionDAO = new AuctionDAO();
+
+        Art art = new Art("ITEM-TEST-006", "Tranh FindById", 2_000_000, "...", "seller1", "Raphael");
+        itemDAO.save(art);
+        Auction auction = new Auction(
+                "AU-TEST-005", art,
+                LocalDateTime.now().plusHours(1), "seller1"
+        );
+        auctionDAO.save(auction);
+
+        Auction found = auctionDAO.findById("AU-TEST-005");
+        assertNotNull(found, "findById() phải trả về auction đúng");
+        assertEquals("AU-TEST-005", found.getAuctionId());
+        assertEquals(2_000_000, found.getCurrentPrice(), 0.01);
     }
 
     @Test
@@ -237,7 +297,9 @@ class DBTest {
         Auction finished = auctionDAO.findById("AU-TEST-003");
 
         assertNotNull(finished);
-        assertTrue(finished.isFinished() || finished.getStatus() == AuctionStatus.FINISHED,
-                "Auction phải được đánh dấu FINISHED sau khi gọi finish()");
+        assertTrue(
+            finished.isFinished() || finished.getStatus() == AuctionStatus.FINISHED,
+            "Auction phải được đánh dấu FINISHED sau khi gọi finish()"
+        );
     }
 }
