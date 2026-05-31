@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DBTest {
 
+
+    // SCREW YOU
     // ─────────────────────────────────────────────────────────────
     //  Schema setup (chạy một lần trước toàn bộ test)
     // ─────────────────────────────────────────────────────────────
