@@ -79,9 +79,8 @@ public class AuctionListController implements Initializable, AuctionObserver {
             roomController.setCurrentUser(currentUser);
 
 
-            Stage stage = (Stage) tableView.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
+            Scene scene = tableView.getScene();
+            scene.setRoot(root);
 
         } catch (IOException e) {
             e.printStackTrace();
