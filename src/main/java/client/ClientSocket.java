@@ -11,6 +11,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ClientSocket {
     private static final String HOST = "localhost";
@@ -21,17 +23,16 @@ public class ClientSocket {
     private PrintWriter out;
     private boolean running = false;
 
-    // Observer nhận AuctionEvent realtime
-    private List<AuctionObserver> observers = new java.util.concurrent.CopyOnWriteArrayList<>();
+    // Observer nhận AuctionEvent realtime (BID_PLACED, AUCTION_ENDED, ...)
+    private final List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
 
-    // Listener nhận phản hồi một lần (LOGIN_SUCCESS, LOGIN_FAILED, ERROR, …)
-    private ResponseListener responseListener;
+    // Map MessageType → danh sách listener
+    // Dùng List để hỗ trợ nhiều window/controller đăng ký cùng 1 type cùng lúc
+    private final ConcurrentHashMap<MessageType, CopyOnWriteArrayList<ResponseListener>> listenerMap
+            = new ConcurrentHashMap<>();
 
     private static ClientSocket instance;
 
-    /**
-     * Callback nhận phản hồi không phải AUCTION_UPDATE (login, register, lỗi…).
-     */
     public interface ResponseListener {
         void onResponse(Message message);
     }
@@ -43,8 +44,7 @@ public class ClientSocket {
         return instance;
     }
 
-    private ClientSocket() {
-    }
+    private ClientSocket() {}
 
     // ─── Kết nối ─────────────────────────────────────────────────────────────
 
@@ -63,9 +63,6 @@ public class ClientSocket {
         }
     }
 
-    /**
-     * Background thread lắng nghe liên tục, tự động cập nhật UI qua Observer.
-     */
     private void startListening() {
         Thread bgThread = new Thread(() -> {
             System.out.println("[CLIENT] Background Thread đang lắng nghe");
@@ -86,57 +83,43 @@ public class ClientSocket {
         bgThread.start();
     }
 
-    /**
-     * Phân loại Message nhận được: AUCTION_UPDATE → notifyObservers, còn lại → responseListener.
-     */
     private void handleMessage(String json) {
         try {
             Message msg = Message.fromJson(json);
 
             if (msg.getType() == MessageType.AUCTION_UPDATE) {
-                String auctionId = msg.get("auctionId");
-                String eventType = msg.get("eventType");
+                String auctionId    = msg.get("auctionId");
+                String eventType    = msg.get("eventType");
                 double currentPrice = Double.parseDouble(msg.get("currentPrice"));
                 String leadingBidder = msg.get("leadingBidder");
-                String bidderName = msg.getOrDefault("bidderName", "");
-                double bidAmount = Double.parseDouble(msg.getOrDefault("bidAmount", "0"));
+                String bidderName   = msg.getOrDefault("bidderName", "");
+                double bidAmount    = Double.parseDouble(msg.getOrDefault("bidAmount", "0"));
 
-                AuctionEvent.Type type =
-                        AuctionEvent.Type.valueOf(eventType);
-
+                AuctionEvent.Type type = AuctionEvent.Type.valueOf(eventType);
                 AuctionEvent event;
 
                 if (type == AuctionEvent.Type.TIME_EXTENDED) {
-
-                    long newEndTimeEpoch =
-                            Long.parseLong(
-                                    msg.get("newEndTimeEpoch")
-                            );
-
-                    event = new AuctionEvent(
-                            type,
-                            auctionId,
-                            newEndTimeEpoch
-                    );
-
+                    long newEndTimeEpoch = Long.parseLong(msg.get("newEndTimeEpoch"));
+                    event = new AuctionEvent(type, auctionId, newEndTimeEpoch);
                 } else {
-
-                    event = new AuctionEvent(
-                            type,
-                            auctionId,
-                            bidderName,
-                            leadingBidder,
-                            bidAmount,
-                            currentPrice
-                    );
+                    event = new AuctionEvent(type, auctionId, bidderName,
+                            leadingBidder, bidAmount, currentPrice);
                 }
                 notifyObservers(event);
+
             } else if (msg.getType() == MessageType.NEW_AUCTION) {
                 AuctionEvent event = new AuctionEvent(
                         AuctionEvent.Type.NEW_AUCTION, msg.get("auctionId"), "", "", 0, 0);
                 notifyObservers(event);
-            } else if (responseListener != null) {
-                responseListener.onResponse(msg);
+
+            } else {
+                // Gọi tất cả listener đã đăng ký cho type này
+                CopyOnWriteArrayList<ResponseListener> listeners = listenerMap.get(msg.getType());
+                if (listeners != null) {
+                    for (ResponseListener listener : listeners) {
+                        listener.onResponse(msg);
+                    }
+                }
             }
 
         } catch (Exception e) {
@@ -144,11 +127,62 @@ public class ClientSocket {
         }
     }
 
-    // ─── API gửi lệnh ─────────────────────────────────────────────────────────
+    // ─── Quản lý listener ────────────────────────────────────────────────────
 
-    public void setResponseListener(ResponseListener listener) {
-        this.responseListener = listener;
+    /**
+     * Đăng ký listener cho một MessageType.
+     * Nhiều listener có thể đăng ký cùng 1 type (hỗ trợ nhiều window/tab cùng lúc).
+     */
+    public void addResponseListener(MessageType type, ResponseListener listener) {
+        listenerMap.computeIfAbsent(type, k -> new CopyOnWriteArrayList<>()).add(listener);
     }
+
+    /**
+     * Hủy đăng ký một listener cụ thể khỏi một MessageType.
+     * Chỉ xóa đúng instance đó, không ảnh hưởng listener khác cùng type.
+     */
+    public void removeResponseListener(MessageType type, ResponseListener listener) {
+        CopyOnWriteArrayList<ResponseListener> listeners = listenerMap.get(type);
+        if (listeners != null) {
+            listeners.remove(listener);
+        }
+    }
+
+    /**
+     * Xóa toàn bộ listener của một type (dùng khi đóng cửa sổ/controller).
+     */
+    public void clearResponseListeners(MessageType type) {
+        listenerMap.remove(type);
+    }
+
+    /**
+     * @deprecated Dùng addResponseListener(MessageType, ResponseListener) thay thế.
+     * Giữ lại để không break AdminController, SellerController, ProfileController chưa sửa.
+     * CẢNH BÁO: mỗi lần gọi sẽ THÊM listener mới vào tất cả type — có thể gây duplicate.
+     * Nên migrate sang addResponseListener từng type cụ thể.
+     */
+    @Deprecated
+    public void setResponseListener(ResponseListener listener) {
+        MessageType[] commonTypes = {
+                MessageType.LOGIN_SUCCESS, MessageType.LOGIN_FAILED,
+                MessageType.REGISTER_SUCCESS, MessageType.REGISTER_FAILED,
+                MessageType.AUCTION_LIST,
+                MessageType.CREATE_AUCTION_SUCCESS, MessageType.DELETE_AUCTION_SUCCESS,
+                MessageType.UPDATE_AUCTION_SUCCESS, MessageType.CANCEL_AUCTION_SUCCESS,
+                MessageType.FINISH_AUCTION_SUCCESS, MessageType.MARK_PAID_SUCCESS,
+                MessageType.GET_BID_HISTORY_SUCCESS, MessageType.UPDATE_USER_SUCCESS,
+                MessageType.ERROR
+        };
+        // Xóa listener cũ trước để tránh duplicate khi gọi lại
+        for (MessageType t : commonTypes) {
+            clearResponseListeners(t);
+        }
+        for (MessageType t : commonTypes) {
+            addResponseListener(t, listener);
+        }
+    }
+
+    // ─── API gửi lệnh ─────────────────────────────────────────────────────────
 
     public void sendLogin(String username, String password) {
         send(Message.of(MessageType.LOGIN)
@@ -178,7 +212,6 @@ public class ClientSocket {
         send(msg);
     }
 
-
     public void sendGetAuctions() {
         send(Message.of(MessageType.GET_AUCTIONS));
     }
@@ -199,8 +232,7 @@ public class ClientSocket {
         try {
             if (socket != null) socket.close();
             System.out.println("[CLIENT] Đã ngắt kết nối.");
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) {}
     }
 
     private void send(Message msg) {
@@ -257,12 +289,20 @@ public class ClientSocket {
     public void sendCancelAuction(String auctionId) {
         send(Message.of(MessageType.CANCEL_AUCTION).put("auctionId", auctionId));
     }
-    public void sendGetBidHistory(String auctionId){
-        send(Message.of(MessageType.GET_BID_HISTORY).put("auctionId",auctionId));
+
+    public void sendGetBidHistory(String auctionId) {
+        send(Message.of(MessageType.GET_BID_HISTORY).put("auctionId", auctionId));
     }
 
     public void sendMarkPaid(String auctionId) {
         send(Message.of(MessageType.MARK_PAID).put("auctionId", auctionId));
     }
 
+    public void sendEnableAutoBid(String auctionId, double maxBid, double increment) {
+        send(Message.of(MessageType.ENABLE_AUTO_BID)
+                .put("auctionId", auctionId)
+                .put("maxBid", String.valueOf(maxBid))
+                .put("increment", String.valueOf(increment)));
+    }
 }
+

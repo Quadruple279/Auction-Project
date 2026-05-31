@@ -75,6 +75,7 @@ public class AuctionListController implements Initializable, AuctionObserver {
 
             AuctionRoomController roomController = loader.getController();
             roomController.setAuction(auction);
+            roomController.setCurrentUsername(client.AppContext.getLoggedInUsername());
 
             Stage stage = (Stage) tableView.getScene().getWindow();
             stage.setScene(new Scene(root));
@@ -120,31 +121,32 @@ public class AuctionListController implements Initializable, AuctionObserver {
         tableView.setItems(danhSach);
     }
 
+    // Listener AUCTION_LIST — giữ reference để remove đúng instance
+    private ClientSocket.ResponseListener auctionListListener;
+
     public void loadDuLieu() {
         log("Đang tải dữ liệu phiên đấu giá...");
-        ClientSocket.getInstance().setResponseListener(msg -> {
-            if (msg.getType() == MessageType.AUCTION_LIST) {
-                try {
-                    String jsonData = msg.get("data");
-                    // Deserialize chuỗi JSON → List<AuctionDTO>
-                    // TypeReference cần thiết vì Java xóa generic type lúc runtime
-                    ObjectMapper mapper = new ObjectMapper();
-                    List<AuctionDTO> list = mapper.readValue(
-                            jsonData,
-                            new com.fasterxml.jackson.core.type.TypeReference<List<AuctionDTO>>() {}
-                    );
-
-                    // Cập nhật UI phải chạy trên JavaFX Thread
-                    Platform.runLater(() -> {
-                        danhSach.setAll(list);
-                        log("Đã tải " + list.size() + " phiên đấu giá.");
-                    });
-
-                } catch (Exception e) {
-                    Platform.runLater(() -> log("Lỗi parse dữ liệu: " + e.getMessage()));
-                }
+        // Xóa listener cũ nếu đang tải lại (tránh duplicate)
+        if (auctionListListener != null) {
+            ClientSocket.getInstance().removeResponseListener(MessageType.AUCTION_LIST, auctionListListener);
+        }
+        auctionListListener = msg -> {
+            try {
+                String jsonData = msg.get("data");
+                ObjectMapper mapper = new ObjectMapper();
+                List<AuctionDTO> list = mapper.readValue(
+                        jsonData,
+                        new com.fasterxml.jackson.core.type.TypeReference<List<AuctionDTO>>() {}
+                );
+                Platform.runLater(() -> {
+                    danhSach.setAll(list);
+                    log("Đã tải " + list.size() + " phiên đấu giá.");
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> log("Lỗi parse dữ liệu: " + e.getMessage()));
             }
-        });
+        };
+        ClientSocket.getInstance().addResponseListener(MessageType.AUCTION_LIST, auctionListListener);
         ClientSocket.getInstance().sendGetAuctions();
     }
 
@@ -281,3 +283,4 @@ public class AuctionListController implements Initializable, AuctionObserver {
         }
     }
 }
+

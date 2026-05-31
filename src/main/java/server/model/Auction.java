@@ -154,11 +154,20 @@ public class Auction implements AuctionSubject {
             notifyObservers(event); // thay thế cho displayTransaction (để đảm bảo Auction chỉ thực hiện 1 task placeBid( SRP ))
 
             // ===== AUTO BIDDING với PriorityQueue =====
-            // Lấy người đứng đầu queue mà không phải người vừa bid
+            // FIX: PriorityQueue iterator không đảm bảo thứ tự heap — phải poll() để lấy đúng top entry
+            // Lấy entry cao nhất mà không phải người vừa bid
             AutoBidEntry top = null;
-            for (AutoBidEntry e : autoBidQueue) {
-                if (!e.bidderName.equals(bidderName)) { top = e; break; }
+            List<AutoBidEntry> skipped = new ArrayList<>();
+            while (!autoBidQueue.isEmpty()) {
+                AutoBidEntry candidate = autoBidQueue.poll();
+                if (!candidate.bidderName.equals(bidderName)) {
+                    top = candidate;
+                    autoBidQueue.add(candidate); // đưa lại vào queue
+                    break;
+                }
+                skipped.add(candidate);
             }
+            autoBidQueue.addAll(skipped); // đưa lại các entry đã skip
 
             if (top != null
                     && currentPrice + top.increment <= top.maxBid
