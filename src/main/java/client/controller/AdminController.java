@@ -177,6 +177,7 @@ public class AdminController implements Initializable, AuctionObserver {
                 case USER_DELETED -> {
                     String deletedName = event.getAuctionId(); // dùng auctionId field để truyền username
                     userList.removeIf(u -> u.getName().equals(deletedName));
+                    systemLog.appendText("[Xóa user] " + deletedName + "\n");
                     refreshDashboardTables();
                     updateStats();
                     updateCountLabels();
@@ -330,6 +331,10 @@ public class AdminController implements Initializable, AuctionObserver {
                         ClientSocket.getInstance().setResponseListener(msg -> {
                             if (msg.getType() == MessageType.CANCEL_AUCTION_SUCCESS) {
                                 Platform.runLater(() -> loadData());
+                                Platform.runLater(() -> {
+                                    systemLog.appendText("[Hủy phiên] " + a.getAuctionId() + "\n");
+                                    loadData();
+                                });
                             } else if (msg.getType() == MessageType.ERROR) {
                                 Platform.runLater(() -> showError(msg.get("reason")));
                             }
@@ -347,6 +352,10 @@ public class AdminController implements Initializable, AuctionObserver {
                         ClientSocket.getInstance().setResponseListener(msg -> {
                             if (msg.getType() == MessageType.DELETE_AUCTION_SUCCESS) {
                                 Platform.runLater(() -> loadData());
+                                Platform.runLater(() -> {
+                                    systemLog.appendText("[Xóa phiên] " + a.getAuctionId() + "\n");
+                                    loadData();
+                                });
                             } else if (msg.getType() == MessageType.ERROR) {
                                 Platform.runLater(() -> showError(msg.get("reason")));
                             }
@@ -427,6 +436,10 @@ public class AdminController implements Initializable, AuctionObserver {
                 ClientSocket.getInstance().setResponseListener(msg -> {
                     if (msg.getType() == MessageType.ADD_USER_SUCCESS) {
                         Platform.runLater(() -> loadData());
+                        Platform.runLater(() -> {
+                            systemLog.appendText("[Thêm user] " + nameField.getText().trim() + "\n");
+                            loadData();
+                        });
                     } else if (msg.getType() == MessageType.ERROR) {
                         Platform.runLater(() -> showError(msg.get("reason")));
                     }
