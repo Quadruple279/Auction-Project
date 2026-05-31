@@ -295,9 +295,10 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                 case TIME_EXTENDED -> {
                     // Cập nhật endTime nội bộ để countdown timer tự khớp
                     if (event.getNewEndTimeEpoch() > 0) {
+                        // Server lưu endTime bằng ZoneOffset.UTC — phải parse đúng UTC
                         java.time.LocalDateTime newEnd = java.time.LocalDateTime
                                 .ofEpochSecond(event.getNewEndTimeEpoch(), 0,
-                                        java.time.ZoneOffset.of("+00:00:10"));
+                                        java.time.ZoneOffset.UTC);
                         currentAuction = new shared.dto.AuctionDTO(
                                 currentAuction.getAuctionId(),
                                 currentAuction.getItemName(),

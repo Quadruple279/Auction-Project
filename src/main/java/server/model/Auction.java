@@ -190,7 +190,7 @@ public class Auction implements AuctionSubject {
                 System.out.println("Auto-bid by " + top.bidderName + ": " + autoBidPrice);
             }
 
-            if (getRemainingSeconds() <= 5) {
+            if (getRemainingSeconds() <= 30) {
                 extendAuctionTime();
             }
         }
