@@ -23,6 +23,7 @@ public enum MessageType {
     ADD_USER,               // payload: username, password, role
     UPDATE_USER_ADMIN,      // payload: targetUsername, newDisplayName, newPassword
     GET_BID_HISTORY_BY_USER, // payload: username (dùng cho ProfileController)
+    GET_SYSTEM_LOG,
 
     // ── Server → Client ──────────────────────────
     LOGIN_SUCCESS,  // payload: username, role
@@ -41,6 +42,7 @@ public enum MessageType {
     ADD_USER_SUCCESS,            // payload: username
     UPDATE_USER_ADMIN_SUCCESS,   // không cần payload
     GET_BID_HISTORY_BY_USER_SUCCESS, // payload: data (JSON array)
+    GET_SYSTEM_LOG_SUCCESS,   // payload: data (JSON array SystemLogDTO)
 
 
     // payload: reason

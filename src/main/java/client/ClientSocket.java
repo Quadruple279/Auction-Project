@@ -207,6 +207,10 @@ public class ClientSocket {
     public void sendGetAuctions() {
         send(Message.of(MessageType.GET_AUCTIONS));
     }
+    public void sendGetSystemLog() {
+        send(Message.of(MessageType.GET_SYSTEM_LOG));
+    }
+
 
     public void subscribe(String auctionId) {
         send(Message.of(MessageType.SUBSCRIBE).put("auctionId", auctionId));

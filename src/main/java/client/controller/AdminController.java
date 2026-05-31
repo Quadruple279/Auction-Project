@@ -20,6 +20,7 @@ import javafx.stage.Stage;
 
 
 import shared.dto.AuctionDTO;
+import shared.dto.SystemLogDTO;
 import shared.dto.UserDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
@@ -539,7 +540,7 @@ public class AdminController implements Initializable, AuctionObserver {
     @FXML private void showDashboard() { setActivePage(pageDashboard); setActiveNav(navDashboard); pageTitle.setText("Dashboard"); }
     @FXML private void showUsers()     { setActivePage(pageUsers);     setActiveNav(navUsers);     pageTitle.setText("Quản lý User"); }
     @FXML private void showAuctions()  { setActivePage(pageAuctions);  setActiveNav(navAuctions);  pageTitle.setText("Quản lý Phiên đấu giá"); }
-    @FXML private void showStats()     { setActivePage(pageStats);     setActiveNav(navStats);     pageTitle.setText("Thống kê hệ thống"); }
+    @FXML private void showStats()     { setActivePage(pageStats);     setActiveNav(navStats);     pageTitle.setText("Thống kê hệ thống");       loadSystemLog();   }
 
     @FXML
     private void handleLogout() {
@@ -574,6 +575,26 @@ public class AdminController implements Initializable, AuctionObserver {
         for (Button btn : new Button[]{navDashboard, navUsers, navAuctions, navStats}) {
             btn.setStyle(btn == activeBtn ? activeStyle : defaultStyle);
         }
+    }
+    private void loadSystemLog() {
+        ClientSocket.getInstance().setResponseListener(msg -> {
+            if (msg.getType() != MessageType.GET_SYSTEM_LOG_SUCCESS) return;
+            try {
+                List<SystemLogDTO> logs = new ObjectMapper().readValue(
+                        msg.get("data"), new TypeReference<List<SystemLogDTO>>() {});
+                Platform.runLater(() -> {
+                    systemLog.clear();
+                    for (SystemLogDTO log : logs) {
+                        systemLog.appendText(
+                                "[" + log.getCreatedAt() + "] [" + log.getAdminName() + "] "
+                                        + log.getAction() + " — " + log.getDetail() + "\n");
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> systemLog.appendText("Lỗi tải log: " + e.getMessage() + "\n"));
+            }
+        });
+        ClientSocket.getInstance().sendGetSystemLog();
     }
 
     // ───────────────────────────── HELPERS ─────────────────────────────
