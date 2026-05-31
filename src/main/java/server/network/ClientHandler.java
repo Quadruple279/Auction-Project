@@ -4,15 +4,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import server.controller.AuctionService;
 import server.controller.AuthenticationController;
 import server.dao.BidTransactionDAO;
+import server.dao.SystemLogDAO;
 import server.exception.AuthenticationException;
 import server.model.Auction;
 import server.model.AuctionManager;
 import server.model.BidTransaction;
+import server.model.SystemLog;
 import server.model.item.Item;
 import server.model.item.ItemFactory;
 import server.model.user.User;
 import shared.dto.AuctionDTO;
 import shared.dto.BidHistoryDTO;
+import shared.dto.SystemLogDTO;
 import shared.dto.UserDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
@@ -146,10 +149,21 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case ADD_USER               -> handleAddUser(msg);
             case UPDATE_USER_ADMIN      -> handleUpdateUserAdmin(msg);
             case GET_BID_HISTORY_BY_USER -> handleGetBidHistoryByUser(msg);
+            case GET_SYSTEM_LOG -> handleGetSystemLog();
             default -> Message.of(MessageType.ERROR)
                     .put("reason", "Lệnh không xác định: " + msg.getType());
         };
     }
+    private Message handleGetSystemLog() {
+        try {
+            List<SystemLogDTO> logs = new SystemLogDAO().findAll();
+            String json = new ObjectMapper().writeValueAsString(logs);
+            return Message.of(MessageType.GET_SYSTEM_LOG_SUCCESS).put("data", json);
+        } catch (Exception e) {
+            return Message.of(MessageType.ERROR).put("reason", "Không thể tải log: " + e.getMessage());
+        }
+    }
+
     private Message handleGetUsers() {
         try {
             List<UserDTO> dtoList = new ArrayList<>();
@@ -179,6 +193,9 @@ public class ClientHandler implements Runnable, AuctionObserver {
                 return Message.of(MessageType.ERROR).put("reason", "Username '" + username + "' đã tồn tại");
 
             authController.register(username, password, role.toUpperCase());
+            try { new SystemLogDAO().save(new SystemLog(
+                    authController.getCurrentUser() != null ? authController.getCurrentUser().getName() : "SYSTEM",
+                    "ADD_USER", username + " [" + role + "]")); } catch (Exception ignored) {}
             return Message.of(MessageType.ADD_USER_SUCCESS).put("username", username);
         } catch (Exception e) {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
@@ -203,6 +220,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
                 return Message.of(MessageType.ERROR).put("reason", "Không thể sửa tài khoản Admin khác");
 
             authController.updateUser(targetUsername, newDisplayName, newPassword);
+            try { new SystemLogDAO().save(new SystemLog(admin.getName(), "EDIT_USER", targetUsername)); } catch (Exception ignored) {}
             return Message.of(MessageType.UPDATE_USER_ADMIN_SUCCESS);
         } catch (Exception e) {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
@@ -247,6 +265,9 @@ public class ClientHandler implements Runnable, AuctionObserver {
                 return Message.of(MessageType.ERROR).put("reason", "Không thể xóa tài khoản Admin");
 
             authController.removeUser(target);
+            try { new SystemLogDAO().save(new SystemLog(
+                    authController.getCurrentUser() != null ? authController.getCurrentUser().getName() : "SYSTEM",
+                    "DELETE_USER", username)); } catch (Exception ignored) {}
 
             // Broadcast tới tất cả client đang kết nối
             Message broadcast = Message.of(MessageType.USER_DELETED).put("username", username);
@@ -449,6 +470,9 @@ public class ClientHandler implements Runnable, AuctionObserver {
     private Message handleDeleteAuction(Message msg) {
         try {
             auctionService.deleteAuction(msg.get("auctionId"));
+            try { new SystemLogDAO().save(new SystemLog(
+                    authController.getCurrentUser() != null ? authController.getCurrentUser().getName() : "SYSTEM",
+                    "DELETE_AUCTION", msg.get("auctionId"))); } catch (Exception ignored) {}
             return Message.of(MessageType.DELETE_AUCTION_SUCCESS).put("auctionId", msg.get("auctionId"));
         } catch (RuntimeException e) {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
@@ -458,6 +482,9 @@ public class ClientHandler implements Runnable, AuctionObserver {
     private Message handleCancelAuction(Message msg) {
         try {
             auctionService.cancelAuction(msg.get("auctionId"));
+            try { new SystemLogDAO().save(new SystemLog(
+                    authController.getCurrentUser() != null ? authController.getCurrentUser().getName() : "SYSTEM",
+                    "CANCEL_AUCTION", msg.get("auctionId"))); } catch (Exception ignored) {}
             return Message.of(MessageType.CANCEL_AUCTION_SUCCESS).put("auctionId", msg.get("auctionId"));
         } catch (RuntimeException e) {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
