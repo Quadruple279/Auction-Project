@@ -45,8 +45,14 @@ public abstract class User implements Serializable {
     public int getId() {
         return id;
     }
-    public String getPassword() {return password;}
-    public String getDisplayName(){return displayName;}
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
 
     public String getRole() {
         return role;
@@ -56,12 +62,18 @@ public abstract class User implements Serializable {
         return this.password.equals(password);
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public void setName(String newName) {
         this.name = newName;
     }
-    public void setDisplayName(String displayName){
+
+    public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
+
     public void setPassword(String newPassword) {
         this.password = newPassword;
     }

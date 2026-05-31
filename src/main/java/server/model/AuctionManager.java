@@ -19,7 +19,7 @@ public class AuctionManager {
 
     // Scheduler tự động kết thúc phiên khi hết giờ
     private final ScheduledExecutorService scheduler =
-            Executors.newScheduledThreadPool(1);
+            Executors.newScheduledThreadPool(5);
 
     // Callback để broadcast AUCTION_ENDED đến tất cả client
     // Được ClientHandler đăng ký sau khi server khởi động

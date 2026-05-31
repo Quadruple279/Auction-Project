@@ -136,6 +136,8 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case DELETE_AUCTION -> handleDeleteAuction(msg);
             case UPDATE_AUCTION -> handleUpdateAuction(msg);
             case CANCEL_AUCTION -> handleCancelAuction(msg);
+            case FINISH_AUCTION -> handleFinishAuction(msg);
+            case MARK_PAID       -> handleMarkPaid(msg);
             case UPDATE_USER -> handleUpdateUser(msg);
             case ENABLE_AUTO_BID -> handleEnableAutoBid(msg);
             case GET_BID_HISTORY -> handleGetBidHistory(msg);
@@ -461,6 +463,26 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
+    private Message handleFinishAuction(Message msg) {
+        try {
+            auctionService.finishAuction(msg.get("auctionId"));
+            return Message.of(MessageType.FINISH_AUCTION_SUCCESS)
+                    .put("auctionId", msg.get("auctionId"));
+        } catch (RuntimeException e) {
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
+
+    private Message handleMarkPaid(Message msg) {
+        try {
+            auctionService.markPaid(msg.get("auctionId"));
+            return Message.of(MessageType.MARK_PAID_SUCCESS)
+                    .put("auctionId", msg.get("auctionId"));
+        } catch (RuntimeException e) {
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
+
 
     private Message handleUpdateAuction(Message msg) {
         try {
@@ -484,8 +506,10 @@ public class ClientHandler implements Runnable, AuctionObserver {
             Auction auction = AuctionManager.getInstance().findById(auctionId);
             if (auction == null)
                 return Message.of(MessageType.ERROR).put("reason", "Không tìm thấy phiên: " + auctionId);
-
-            auction.enableAutoBid(authController.getCurrentUser().getName(), maxBid, increment);
+            User currentUser = authController.getCurrentUser();
+            if (currentUser == null)
+                return Message.of(MessageType.ERROR).put("reason", "Chưa đăng nhập");
+            auction.enableAutoBid(currentUser.getName(), maxBid, increment);
             return Message.of(MessageType.AUCTION_UPDATE)
                     .put("auctionId", auctionId)
                     .put("eventType", "AUTO_BID_ENABLED")

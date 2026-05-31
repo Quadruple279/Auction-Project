@@ -15,6 +15,10 @@ public class UserDTO {
     public void setDisplayName(String displayName){
         this.displayName= displayName;
     }
+    public void setId(int id)       { this.id = id; }
+    public void setName(String name){ this.name = name; }
+    public void setRole(String role){ this.role = role; }
+
     public int getId(){return id;}
     public String getName(){
         return name;

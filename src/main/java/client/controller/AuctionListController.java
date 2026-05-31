@@ -80,6 +80,7 @@ public class AuctionListController implements Initializable, AuctionObserver {
 
 
             Stage stage = (Stage) tableView.getScene().getWindow();
+            ClientSocket.getInstance().removeObserver(this);   // ← thêm dòng này
             stage.setScene(new Scene(root));
             stage.show();
 
@@ -98,7 +99,7 @@ public class AuctionListController implements Initializable, AuctionObserver {
         auction.setCellValueFactory(new PropertyValueFactory<>("auctionId"));
         itemName.setCellValueFactory(new PropertyValueFactory<>("itemName"));
         description.setCellValueFactory(new PropertyValueFactory<>("description"));
-        owner.setCellValueFactory(new PropertyValueFactory<>("leadingBidder"));
+        owner.setCellValueFactory(new PropertyValueFactory<>("owner"));
 
         price.setCellValueFactory(new PropertyValueFactory<>("price"));
         price.setCellFactory(col -> new TableCell<AuctionDTO, Double>() {

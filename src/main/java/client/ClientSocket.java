@@ -38,7 +38,7 @@ public class ClientSocket {
     // Listener nhận phản hồi một lần (LOGIN_SUCCESS, LOGIN_FAILED, ERROR, …)
     private ResponseListener responseListener;
 
-    private static ClientSocket instance;
+    private static volatile ClientSocket instance;
 
     /**
      * Callback nhận phản hồi không phải AUCTION_UPDATE (login, register, lỗi…).
@@ -49,10 +49,15 @@ public class ClientSocket {
 
     public static ClientSocket getInstance() {
         if (instance == null) {
-            instance = new ClientSocket();
+            synchronized (ClientSocket.class) {
+                if (instance == null) {
+                    instance = new ClientSocket();
+                }
+            }
         }
         return instance;
     }
+
 
     private ClientSocket() {
     }
@@ -154,7 +159,9 @@ public class ClientSocket {
                 notifyObservers(event);
             }
             else if (responseListener != null) {
-                responseListener.onResponse(msg);
+                ResponseListener r = responseListener;
+                responseListener = null;     // xóa trước khi gọi, tránh stale listener tích lũy
+                r.onResponse(msg);
             }
 
         } catch (Exception e) {

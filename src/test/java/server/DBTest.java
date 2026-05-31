@@ -79,7 +79,7 @@ class DBTest {
         }
     }
 
-    @AfterAll
+    /*@AfterAll
     static void dropSchema() throws SQLException {
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement()) {
@@ -88,7 +88,7 @@ class DBTest {
             st.execute("DROP TABLE IF EXISTS items");
             st.execute("DROP TABLE IF EXISTS users");
         }
-    }
+    }*/
 
     /** Xóa dữ liệu test sau mỗi test case để tránh ảnh hưởng lẫn nhau. */
     @BeforeEach

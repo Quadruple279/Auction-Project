@@ -207,7 +207,13 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                         javafx.util.Duration.seconds(1),
                         e -> {
                             java.time.LocalDateTime now = java.time.LocalDateTime.now();
-                            java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(currentAuction.getEndTime());
+                            java.time.LocalDateTime endTime;
+                            try {
+                                endTime = java.time.LocalDateTime.parse(currentAuction.getEndTime());
+                            } catch (Exception ex) {
+                                timeLabel.setText("--:--:--");
+                                return;  // bỏ qua tick này, đợi tick tiếp theo
+                            }
                             java.time.Duration timeLeft = java.time.Duration.between(now, endTime);
 
                             if (timeLeft.isNegative() || timeLeft.isZero()) {
@@ -247,12 +253,23 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
             log("Số tiền không hợp lệ. Vui lòng nhập lại.");
             return;
         }
+        // Thêm validation tại đây:
+        if (soTien <= 0) {
+            log("Số tiền đặt giá phải lớn hơn 0.");
+            return;
+        }
+
+        if (soTien <= (long) currentAuction.getCurrentPrice()) {
+            log("Số tiền phải cao hơn giá hiện tại: "
+                    + String.format("%,.0f ₫", currentAuction.getCurrentPrice()));
+            return;
+        }
 
         // Đặt response listener để xử lý phản hồi từ server
         ClientSocket.getInstance().setResponseListener(msg -> {
-            Platform.runLater(() -> {
-                log("Lỗi: " + msg.getOrDefault("reason", "Không thể đặt giá"));
-            });
+            if (msg.getType() == MessageType.ERROR) {
+                Platform.runLater(() -> log("Lỗi: " + msg.getOrDefault("reason", "Không thể đặt giá")));
+            }
         });
 
         // Gửi lệnh BID qua socket — ClientHandler trên server xử lý và broadcast

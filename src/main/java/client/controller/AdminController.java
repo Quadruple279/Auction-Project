@@ -96,40 +96,39 @@ public class AdminController implements Initializable, AuctionObserver {
 
     // ===== LOAD DATA =====
     private void loadData() {
-        
+        // Bước 1: load danh sách phiên đấu giá
         ClientSocket.getInstance().setResponseListener(msg -> {
-            if (msg.getType() == MessageType.AUCTION_LIST){
-                try{
-                    String jsonData = msg.get("data");
-                    ObjectMapper mapper = new ObjectMapper();
-                    List<AuctionDTO> list = mapper.readValue(
-                            jsonData,
-                            new com.fasterxml.jackson.core.type.TypeReference<List<AuctionDTO>>() {}
-                    );
-                    Platform.runLater(() -> {
-                        auctionList.setAll(list);
-                        filteredAuctions = new FilteredList<>(auctionList, p -> true);
-                        auctionTable.setItems(filteredAuctions);
-                        refreshDashboardTables();
-                        updateStats();
-                        updateCountLabels();
-                    });
-                }
-                catch (Exception e){
-                    Platform.runLater(() -> {
-                        if (systemLog != null)
-                            systemLog.appendText("Lỗi tải phiên: " + e.getMessage() + "\n");
-                    });
-                }
-            } else if (msg.getType() == MessageType.USER_LIST) {
+            if (msg.getType() != MessageType.AUCTION_LIST) return;
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                List<AuctionDTO> list = mapper.readValue(
+                        msg.get("data"),
+                        new com.fasterxml.jackson.core.type.TypeReference<List<AuctionDTO>>() {});
+                Platform.runLater(() -> {
+                    auctionList.setAll(list);
+                    filteredAuctions = new FilteredList<>(auctionList, p -> true);
+                    auctionTable.setItems(filteredAuctions);
+                    refreshDashboardTables();
+                    updateStats();
+                    updateCountLabels();
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    if (systemLog != null)
+                        systemLog.appendText("Lỗi tải phiên: " + e.getMessage() + "\n");
+                });
+            }
+
+            // Bước 2: sau khi nhận AUCTION_LIST xong, mới gửi GET_USERS
+            ClientSocket.getInstance().setResponseListener(msg2 -> {
+                if (msg2.getType() != MessageType.USER_LIST) return;
                 try {
-                    String jsonData = msg.get("data");
-                    ObjectMapper mapper = new ObjectMapper();
-                    List<UserDTO> list = mapper.readValue(
-                            jsonData,
-                            new TypeReference<List<UserDTO>>() {});
+                    ObjectMapper mapper2 = new ObjectMapper();
+                    List<UserDTO> list2 = mapper2.readValue(
+                            msg2.get("data"),
+                            new com.fasterxml.jackson.core.type.TypeReference<List<UserDTO>>() {});
                     Platform.runLater(() -> {
-                        userList.setAll(list);
+                        userList.setAll(list2);
                         filteredUsers = new FilteredList<>(userList, p -> true);
                         userTable.setItems(filteredUsers);
                         refreshDashboardTables();
@@ -142,10 +141,10 @@ public class AdminController implements Initializable, AuctionObserver {
                             systemLog.appendText("Lỗi tải users: " + e.getMessage() + "\n");
                     });
                 }
-            }
+            });
+            ClientSocket.getInstance().sendGetUsers();
         });
         ClientSocket.getInstance().sendGetAuctions();
-        ClientSocket.getInstance().sendGetUsers();
     }
     private void refreshDashboardTables() {
         dashUserTable.setItems(FXCollections.observableArrayList(userList.subList(0, Math.min(5, userList.size()))));
