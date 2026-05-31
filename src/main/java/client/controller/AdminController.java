@@ -98,8 +98,11 @@ public class AdminController implements Initializable, AuctionObserver {
     // ===== LOAD DATA =====
     private void loadData() {
         // Bước 1: load danh sách phiên đấu giá
-        ClientSocket.getInstance().setResponseListener(msg -> {
+        // Bước 1: load phiên đấu giá
+        ClientSocket.ResponseListener[] auctionListRef = new ClientSocket.ResponseListener[1];
+        auctionListRef[0] = msg -> {
             if (msg.getType() != MessageType.AUCTION_LIST) return;
+            ClientSocket.getInstance().removeResponseListener(MessageType.AUCTION_LIST, auctionListRef[0]);
             try {
                 ObjectMapper mapper = new ObjectMapper();
                 List<AuctionDTO> list = mapper.readValue(
@@ -121,8 +124,10 @@ public class AdminController implements Initializable, AuctionObserver {
             }
 
             // Bước 2: sau khi nhận AUCTION_LIST xong, mới gửi GET_USERS
-            ClientSocket.getInstance().setResponseListener(msg2 -> {
+            ClientSocket.ResponseListener[] userListRef = new ClientSocket.ResponseListener[1];
+            userListRef[0] = msg2 -> {
                 if (msg2.getType() != MessageType.USER_LIST) return;
+                ClientSocket.getInstance().removeResponseListener(MessageType.USER_LIST, userListRef[0]);
                 try {
                     ObjectMapper mapper2 = new ObjectMapper();
                     List<UserDTO> list2 = mapper2.readValue(
@@ -142,9 +147,11 @@ public class AdminController implements Initializable, AuctionObserver {
                             systemLog.appendText("Lỗi tải users: " + e.getMessage() + "\n");
                     });
                 }
-            });
+            };
+            ClientSocket.getInstance().addResponseListener(MessageType.USER_LIST, userListRef[0]);
             ClientSocket.getInstance().sendGetUsers();
-        });
+        };
+        ClientSocket.getInstance().addResponseListener(MessageType.AUCTION_LIST, auctionListRef[0]);
         ClientSocket.getInstance().sendGetAuctions();
     }
     private void refreshDashboardTables() {
@@ -329,17 +336,21 @@ public class AdminController implements Initializable, AuctionObserver {
                         showError("Phiên đã kết thúc hoặc đã bị hủy."); return;
                     }
                     if (confirmAction("Xác nhận hủy", "Hủy phiên \"" + a.getAuctionId() + "\"?")) {
-                        ClientSocket.getInstance().setResponseListener(msg -> {
-                            if (msg.getType() == MessageType.CANCEL_AUCTION_SUCCESS) {
-                                Platform.runLater(() -> loadData());
+                        ClientSocket.ResponseListener[] cancelRef = new ClientSocket.ResponseListener[1];
+                        cancelRef[0] = msg2 -> {
+                            ClientSocket.getInstance().removeResponseListener(MessageType.CANCEL_AUCTION_SUCCESS, cancelRef[0]);
+                            ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, cancelRef[0]);
+                            if (msg2.getType() == MessageType.CANCEL_AUCTION_SUCCESS) {
                                 Platform.runLater(() -> {
                                     systemLog.appendText("[Hủy phiên] " + a.getAuctionId() + "\n");
                                     loadData();
                                 });
-                            } else if (msg.getType() == MessageType.ERROR) {
-                                Platform.runLater(() -> showError(msg.get("reason")));
+                            } else if (msg2.getType() == MessageType.ERROR) {
+                                Platform.runLater(() -> showError(msg2.get("reason")));
                             }
-                        });
+                        };
+                        ClientSocket.getInstance().addResponseListener(MessageType.CANCEL_AUCTION_SUCCESS, cancelRef[0]);
+                        ClientSocket.getInstance().addResponseListener(MessageType.ERROR, cancelRef[0]);
                         ClientSocket.getInstance().sendCancelAuction(a.getAuctionId());
                     }
                 });
@@ -350,17 +361,21 @@ public class AdminController implements Initializable, AuctionObserver {
                         showError("Hãy hủy phiên trước khi xóa."); return;
                     }
                     if (confirmAction("Xác nhận xóa", "Xóa hoàn toàn phiên \"" + a.getAuctionId() + "\"?")) {
-                        ClientSocket.getInstance().setResponseListener(msg -> {
-                            if (msg.getType() == MessageType.DELETE_AUCTION_SUCCESS) {
-                                Platform.runLater(() -> loadData());
+                        ClientSocket.ResponseListener[] deleteRef = new ClientSocket.ResponseListener[1];
+                        deleteRef[0] = msg2 -> {
+                            ClientSocket.getInstance().removeResponseListener(MessageType.DELETE_AUCTION_SUCCESS, deleteRef[0]);
+                            ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, deleteRef[0]);
+                            if (msg2.getType() == MessageType.DELETE_AUCTION_SUCCESS) {
                                 Platform.runLater(() -> {
                                     systemLog.appendText("[Xóa phiên] " + a.getAuctionId() + "\n");
                                     loadData();
                                 });
-                            } else if (msg.getType() == MessageType.ERROR) {
-                                Platform.runLater(() -> showError(msg.get("reason")));
+                            } else if (msg2.getType() == MessageType.ERROR) {
+                                Platform.runLater(() -> showError(msg2.get("reason")));
                             }
-                        });
+                        };
+                        ClientSocket.getInstance().addResponseListener(MessageType.DELETE_AUCTION_SUCCESS, deleteRef[0]);
+                        ClientSocket.getInstance().addResponseListener(MessageType.ERROR, deleteRef[0]);
                         ClientSocket.getInstance().sendDeleteAuction(a.getAuctionId());
                     }
                 });
@@ -434,17 +449,21 @@ public class AdminController implements Initializable, AuctionObserver {
         Optional<ButtonType> result = dialog.showAndWait();
         if (result.isPresent() && result.get() == addBtn) {
             try {
-                ClientSocket.getInstance().setResponseListener(msg -> {
-                    if (msg.getType() == MessageType.ADD_USER_SUCCESS) {
-                        Platform.runLater(() -> loadData());
+                ClientSocket.ResponseListener[] addUserRef = new ClientSocket.ResponseListener[1];
+                addUserRef[0] = msg2 -> {
+                    ClientSocket.getInstance().removeResponseListener(MessageType.ADD_USER_SUCCESS, addUserRef[0]);
+                    ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, addUserRef[0]);
+                    if (msg2.getType() == MessageType.ADD_USER_SUCCESS) {
                         Platform.runLater(() -> {
                             systemLog.appendText("[Thêm user] " + nameField.getText().trim() + "\n");
                             loadData();
                         });
-                    } else if (msg.getType() == MessageType.ERROR) {
-                        Platform.runLater(() -> showError(msg.get("reason")));
+                    } else if (msg2.getType() == MessageType.ERROR) {
+                        Platform.runLater(() -> showError(msg2.get("reason")));
                     }
-                });
+                };
+                ClientSocket.getInstance().addResponseListener(MessageType.ADD_USER_SUCCESS, addUserRef[0]);
+                ClientSocket.getInstance().addResponseListener(MessageType.ERROR, addUserRef[0]);
                 ClientSocket.getInstance().sendAddUser(
                         nameField.getText().trim(),
                         pwdField.getText(),
@@ -490,13 +509,18 @@ public class AdminController implements Initializable, AuctionObserver {
             String newPwd  = pwdField.getText();
             if (newDisplayName.isBlank()) { showError("Tên hiển thị không được để trống"); return; }
             try {
-                ClientSocket.getInstance().setResponseListener(msg -> {
-                    if (msg.getType() == MessageType.UPDATE_USER_ADMIN_SUCCESS) {
+                ClientSocket.ResponseListener[] editUserRef = new ClientSocket.ResponseListener[1];
+                editUserRef[0] = msg2 -> {
+                    ClientSocket.getInstance().removeResponseListener(MessageType.UPDATE_USER_ADMIN_SUCCESS, editUserRef[0]);
+                    ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, editUserRef[0]);
+                    if (msg2.getType() == MessageType.UPDATE_USER_ADMIN_SUCCESS) {
                         Platform.runLater(() -> loadData());
-                    } else if (msg.getType() == MessageType.ERROR) {
-                        Platform.runLater(() -> showError(msg.get("reason")));
+                    } else if (msg2.getType() == MessageType.ERROR) {
+                        Platform.runLater(() -> showError(msg2.get("reason")));
                     }
-                });
+                };
+                ClientSocket.getInstance().addResponseListener(MessageType.UPDATE_USER_ADMIN_SUCCESS, editUserRef[0]);
+                ClientSocket.getInstance().addResponseListener(MessageType.ERROR, editUserRef[0]);
                 ClientSocket.getInstance().sendUpdateUserAdmin(
                         user.getName(),
                         newDisplayName,
@@ -577,8 +601,10 @@ public class AdminController implements Initializable, AuctionObserver {
         }
     }
     private void loadSystemLog() {
-        ClientSocket.getInstance().setResponseListener(msg -> {
+        ClientSocket.ResponseListener[] logRef = new ClientSocket.ResponseListener[1];
+        logRef[0] = msg -> {
             if (msg.getType() != MessageType.GET_SYSTEM_LOG_SUCCESS) return;
+            ClientSocket.getInstance().removeResponseListener(MessageType.GET_SYSTEM_LOG_SUCCESS, logRef[0]);
             try {
                 List<SystemLogDTO> logs = new ObjectMapper().readValue(
                         msg.get("data"), new TypeReference<List<SystemLogDTO>>() {});
@@ -593,7 +619,8 @@ public class AdminController implements Initializable, AuctionObserver {
             } catch (Exception e) {
                 Platform.runLater(() -> systemLog.appendText("Lỗi tải log: " + e.getMessage() + "\n"));
             }
-        });
+        };
+        ClientSocket.getInstance().addResponseListener(MessageType.GET_SYSTEM_LOG_SUCCESS, logRef[0]);
         ClientSocket.getInstance().sendGetSystemLog();
     }
 

@@ -173,8 +173,11 @@ public class RegisterControllerMoi implements Initializable {
         }
 
         // Gửi REGISTER qua socket thay vì gọi trực tiếp
-        ClientSocket.getInstance().setResponseListener(msg -> {
+        ClientSocket.ResponseListener[] registerRef = new ClientSocket.ResponseListener[1];
+        registerRef[0] = msg -> {
             javafx.application.Platform.runLater(() -> {
+                ClientSocket.getInstance().removeResponseListener(MessageType.REGISTER_SUCCESS, registerRef[0]);
+                ClientSocket.getInstance().removeResponseListener(MessageType.REGISTER_FAILED, registerRef[0]);
                 if (msg.getType() == MessageType.REGISTER_SUCCESS) {
                     showSuccess("Đăng ký thành công! Đang chuyển về đăng nhập...");
                     switchScene("/fxml/LoginViewMoi.fxml");
@@ -183,7 +186,9 @@ public class RegisterControllerMoi implements Initializable {
                     showError("Lỗi: " + reason);
                 }
             });
-        });
+        };
+        ClientSocket.getInstance().addResponseListener(MessageType.REGISTER_SUCCESS, registerRef[0]);
+        ClientSocket.getInstance().addResponseListener(MessageType.REGISTER_FAILED, registerRef[0]);
         ClientSocket.getInstance().sendRegister(tenDangNhap, matKhau, selectedRole);
     }
 

@@ -39,8 +39,11 @@ public class LoginController {
         }
 
         // 2. Đăng ký callback nhận phản hồi LOGIN_SUCCESS / LOGIN_FAILED
-        ClientSocket.getInstance().setResponseListener(msg -> {
+        ClientSocket.ResponseListener[] loginRef = new ClientSocket.ResponseListener[1];
+        loginRef[0] = msg -> {
             Platform.runLater(() -> {
+                ClientSocket.getInstance().removeResponseListener(MessageType.LOGIN_SUCCESS, loginRef[0]);
+                ClientSocket.getInstance().removeResponseListener(MessageType.LOGIN_FAILED, loginRef[0]);
                 if (msg.getType() == MessageType.LOGIN_SUCCESS) {
                     messageLabel.setText("Đăng nhập thành công.");
                     openDashboard();
@@ -52,7 +55,9 @@ public class LoginController {
                     ClientSocket.getInstance().disconnect();
                 }
             });
-        });
+        };
+        ClientSocket.getInstance().addResponseListener(MessageType.LOGIN_SUCCESS, loginRef[0]);
+        ClientSocket.getInstance().addResponseListener(MessageType.LOGIN_FAILED, loginRef[0]);
 
         // 3. Gửi lệnh LOGIN qua socket — ClientHandler trên server sẽ xử lý
         ClientSocket.getInstance().sendLogin(tenDangNhap, matKhau);

@@ -107,14 +107,19 @@ public class SellerController implements Initializable {
                 btnDelete.setOnAction(e -> {
                     AuctionDTO a = getItem();
                     if (a != null) {
-                        ClientSocket.getInstance().setResponseListener(msg -> {
-                            if (msg.getType() == MessageType.DELETE_AUCTION_SUCCESS) {
+                        ClientSocket.ResponseListener[] deleteRef = new ClientSocket.ResponseListener[1];
+                        deleteRef[0] = msg2 -> {
+                            ClientSocket.getInstance().removeResponseListener(MessageType.DELETE_AUCTION_SUCCESS, deleteRef[0]);
+                            ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, deleteRef[0]);
+                            if (msg2.getType() == MessageType.DELETE_AUCTION_SUCCESS) {
                                 javafx.application.Platform.runLater(() -> loadMyAuctions());
-                            } else if (msg.getType() == MessageType.ERROR) {
+                            } else if (msg2.getType() == MessageType.ERROR) {
                                 javafx.application.Platform.runLater(() ->
-                                        showError("Lỗi xóa: " + msg.get("reason")));
+                                        showError("Lỗi xóa: " + msg2.get("reason")));
                             }
-                        });
+                        };
+                        ClientSocket.getInstance().addResponseListener(MessageType.DELETE_AUCTION_SUCCESS, deleteRef[0]);
+                        ClientSocket.getInstance().addResponseListener(MessageType.ERROR, deleteRef[0]);
                         ClientSocket.getInstance().sendDeleteAuction(a.getAuctionId());
                     }
                 });
@@ -122,17 +127,22 @@ public class SellerController implements Initializable {
                 btnFinish.setOnAction(e -> {
                     AuctionDTO a = getItem();
                     if (a != null) {
-                        ClientSocket.getInstance().setResponseListener(msg -> {
-                            if (msg.getType() == MessageType.FINISH_AUCTION_SUCCESS) {
+                        ClientSocket.ResponseListener[] finishRef = new ClientSocket.ResponseListener[1];
+                        finishRef[0] = msg2 -> {
+                            ClientSocket.getInstance().removeResponseListener(MessageType.FINISH_AUCTION_SUCCESS, finishRef[0]);
+                            ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, finishRef[0]);
+                            if (msg2.getType() == MessageType.FINISH_AUCTION_SUCCESS) {
                                 javafx.application.Platform.runLater(() -> {
                                     showSuccess("Đã kết thúc phiên!");
                                     loadMyAuctions();
                                 });
-                            } else if (msg.getType() == MessageType.ERROR) {
+                            } else if (msg2.getType() == MessageType.ERROR) {
                                 javafx.application.Platform.runLater(() ->
-                                        showError("Lỗi: " + msg.get("reason")));
+                                        showError("Lỗi: " + msg2.get("reason")));
                             }
-                        });
+                        };
+                        ClientSocket.getInstance().addResponseListener(MessageType.FINISH_AUCTION_SUCCESS, finishRef[0]);
+                        ClientSocket.getInstance().addResponseListener(MessageType.ERROR, finishRef[0]);
                         ClientSocket.getInstance().sendFinishAuction(a.getAuctionId());
                     }
                 });
@@ -140,17 +150,22 @@ public class SellerController implements Initializable {
                 btnCancel.setOnAction(e -> {
                     AuctionDTO a = getItem();
                     if (a != null) {
-                        ClientSocket.getInstance().setResponseListener(msg -> {
-                            if (msg.getType() == MessageType.CANCEL_AUCTION_SUCCESS) {
+                        ClientSocket.ResponseListener[] cancelRef = new ClientSocket.ResponseListener[1];
+                        cancelRef[0] = msg2 -> {
+                            ClientSocket.getInstance().removeResponseListener(MessageType.CANCEL_AUCTION_SUCCESS, cancelRef[0]);
+                            ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, cancelRef[0]);
+                            if (msg2.getType() == MessageType.CANCEL_AUCTION_SUCCESS) {
                                 javafx.application.Platform.runLater(() -> {
                                     showSuccess("Đã hủy phiên!");
                                     loadMyAuctions();
                                 });
-                            } else if (msg.getType() == MessageType.ERROR) {
+                            } else if (msg2.getType() == MessageType.ERROR) {
                                 javafx.application.Platform.runLater(() ->
-                                        showError("Lỗi: " + msg.get("reason")));
+                                        showError("Lỗi: " + msg2.get("reason")));
                             }
-                        });
+                        };
+                        ClientSocket.getInstance().addResponseListener(MessageType.CANCEL_AUCTION_SUCCESS, cancelRef[0]);
+                        ClientSocket.getInstance().addResponseListener(MessageType.ERROR, cancelRef[0]);
                         ClientSocket.getInstance().sendCancelAuction(a.getAuctionId());
                     }
                 });
@@ -158,17 +173,22 @@ public class SellerController implements Initializable {
                 btnPaid.setOnAction(e -> {
                     AuctionDTO a = getItem();
                     if (a != null) {
-                        ClientSocket.getInstance().setResponseListener(msg -> {
-                            if (msg.getType() == MessageType.MARK_PAID_SUCCESS) {
+                        ClientSocket.ResponseListener[] paidRef = new ClientSocket.ResponseListener[1];
+                        paidRef[0] = msg2 -> {
+                            ClientSocket.getInstance().removeResponseListener(MessageType.MARK_PAID_SUCCESS, paidRef[0]);
+                            ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, paidRef[0]);
+                            if (msg2.getType() == MessageType.MARK_PAID_SUCCESS) {
                                 javafx.application.Platform.runLater(() -> {
                                     showSuccess("Đã xác nhận thanh toán!");
                                     loadMyAuctions();
                                 });
-                            } else if (msg.getType() == MessageType.ERROR) {
+                            } else if (msg2.getType() == MessageType.ERROR) {
                                 javafx.application.Platform.runLater(() ->
-                                        showError("Lỗi: " + msg.get("reason")));
+                                        showError("Lỗi: " + msg2.get("reason")));
                             }
-                        });
+                        };
+                        ClientSocket.getInstance().addResponseListener(MessageType.MARK_PAID_SUCCESS, paidRef[0]);
+                        ClientSocket.getInstance().addResponseListener(MessageType.ERROR, paidRef[0]);
                         ClientSocket.getInstance().sendMarkPaid(a.getAuctionId());
                     }
                 });
@@ -241,7 +261,10 @@ public class SellerController implements Initializable {
 
             // Gửi qua socket — server tự tạo item và auction
             String finalTen = ten;
-            ClientSocket.getInstance().setResponseListener(msg -> {
+            ClientSocket.ResponseListener[] createRef = new ClientSocket.ResponseListener[1];
+            createRef[0] = msg -> {
+                ClientSocket.getInstance().removeResponseListener(MessageType.CREATE_AUCTION_SUCCESS, createRef[0]);
+                ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, createRef[0]);
                 if (msg.getType() == MessageType.CREATE_AUCTION_SUCCESS) {
                     Platform.runLater(() -> {
                         showSuccess("Đăng sản phẩm \"" + finalTen + "\" thành công!");
@@ -251,7 +274,9 @@ public class SellerController implements Initializable {
                 } else if (msg.getType() == MessageType.ERROR) {
                     Platform.runLater(() -> showError("Lỗi: " + msg.get("reason")));
                 }
-            });
+            };
+            ClientSocket.getInstance().addResponseListener(MessageType.CREATE_AUCTION_SUCCESS, createRef[0]);
+            ClientSocket.getInstance().addResponseListener(MessageType.ERROR, createRef[0]);
             ClientSocket.getInstance().sendCreateAuction(loai, ten, moTa, giaKD, phut, info1, info2);
 
         } catch (Exception e) {
@@ -297,8 +322,10 @@ public class SellerController implements Initializable {
     // ════════════════════════════════════════════════════════════
     private void loadMyAuctions() {
         String currentUsername = currentUser.getName();
-        ClientSocket.getInstance().setResponseListener(msg -> {
+        ClientSocket.ResponseListener[] auctionListRef = new ClientSocket.ResponseListener[1];
+        auctionListRef[0] = msg -> {
             if (msg.getType() == MessageType.AUCTION_LIST) {
+                ClientSocket.getInstance().removeResponseListener(MessageType.AUCTION_LIST, auctionListRef[0]);
                 try {
                     ObjectMapper mapper = new ObjectMapper();
                     List<AuctionDTO> list = mapper.readValue(
@@ -319,7 +346,8 @@ public class SellerController implements Initializable {
                     Platform.runLater(() -> showError("Lỗi tải dữ liệu: " + e.getMessage()));
                 }
             }
-        });
+        };
+        ClientSocket.getInstance().addResponseListener(MessageType.AUCTION_LIST, auctionListRef[0]);
         ClientSocket.getInstance().sendGetAuctions();
     }
 
@@ -382,7 +410,10 @@ public class SellerController implements Initializable {
             String newName = itemNameField.getText();
             String newDesc = descriptionField.getText();
             double newPrice = Double.parseDouble(basePriceField.getText().replace(",", ""));
-            ClientSocket.getInstance().setResponseListener(msg -> {
+            ClientSocket.ResponseListener[] updateRef = new ClientSocket.ResponseListener[1];
+            updateRef[0] = msg -> {
+                ClientSocket.getInstance().removeResponseListener(MessageType.UPDATE_AUCTION_SUCCESS, updateRef[0]);
+                ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, updateRef[0]);
                 if (msg.getType() == MessageType.UPDATE_AUCTION_SUCCESS) {
                     Platform.runLater(() -> {
                         showSuccess("Cập nhật thành công");
@@ -394,7 +425,9 @@ public class SellerController implements Initializable {
                 } else if (msg.getType() == MessageType.ERROR) {
                     Platform.runLater(() -> showError("Lỗi: " + msg.get("reason")));
                 }
-            });
+            };
+            ClientSocket.getInstance().addResponseListener(MessageType.UPDATE_AUCTION_SUCCESS, updateRef[0]);
+            ClientSocket.getInstance().addResponseListener(MessageType.ERROR, updateRef[0]);
             ClientSocket.getInstance().sendUpdateAuction(
                     selectedAuction.getAuctionId(), newName, newDesc, newPrice);
         } catch (NumberFormatException e) {
