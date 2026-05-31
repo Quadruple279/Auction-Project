@@ -68,22 +68,29 @@ public class LoginControllerMoi implements Initializable {
             showError("Không được để trống tên đăng nhập và mật khẩu.");
             return;
         }
-        ClientSocket.getInstance().setResponseListener(msg -> {
+        // Dùng array để giữ reference listener → remove đúng instance sau khi fire
+        ClientSocket.ResponseListener[] successRef = new ClientSocket.ResponseListener[1];
+        ClientSocket.ResponseListener[] failedRef  = new ClientSocket.ResponseListener[1];
+
+        successRef[0] = msg -> {
             javafx.application.Platform.runLater(() -> {
-            if (msg.getType() == MessageType.LOGIN_SUCCESS){
-                try{
-                    authenticationController.login(tenDangNhap,matKhau);
-                }
-                catch (Exception e){}
+                ClientSocket.getInstance().removeResponseListener(MessageType.LOGIN_SUCCESS, successRef[0]);
+                ClientSocket.getInstance().removeResponseListener(MessageType.LOGIN_FAILED,  failedRef[0]);
+                try { authenticationController.login(tenDangNhap, matKhau); } catch (Exception e) {}
+                client.AppContext.setLoggedInUsername(tenDangNhap);
                 showSuccess("Đăng nhập thành công!");
                 openDashboard();
-            }
-            else {
-                String reason = msg.getOrDefault("reason", "Sai tài khoản hoặc mật khẩu.");
-                showError(reason);
-            }
             });
-        });
+        };
+        failedRef[0] = msg -> {
+            javafx.application.Platform.runLater(() -> {
+                ClientSocket.getInstance().removeResponseListener(MessageType.LOGIN_SUCCESS, successRef[0]);
+                ClientSocket.getInstance().removeResponseListener(MessageType.LOGIN_FAILED,  failedRef[0]);
+                showError(msg.getOrDefault("reason", "Sai tài khoản hoặc mật khẩu."));
+            });
+        };
+        ClientSocket.getInstance().addResponseListener(MessageType.LOGIN_SUCCESS, successRef[0]);
+        ClientSocket.getInstance().addResponseListener(MessageType.LOGIN_FAILED,  failedRef[0]);
         ClientSocket.getInstance().sendLogin(tenDangNhap, matKhau);
         messageLabel.setText("Đang đăng nhập...");
     }
