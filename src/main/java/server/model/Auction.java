@@ -131,7 +131,7 @@ public class Auction implements AuctionSubject {
             throw new AuctionClosedException(
                     "Phiên đấu giá cho " + item.getName() + " đã kết thúc!");
         }
-        if (status == AuctionStatus.CANCELLED) {
+        if (status == AuctionStatus.CANCELED) {
             throw new AuctionClosedException(
                     "Phiên đấu giá cho " + item.getName() + " đã bị hủy!");
         }
@@ -172,7 +172,7 @@ public class Auction implements AuctionSubject {
             if (top != null
                     && currentPrice + top.increment <= top.maxBid
                     && status != AuctionStatus.FINISHED
-                    && status != AuctionStatus.CANCELLED) {
+                    && status != AuctionStatus.CANCELED) {
 
                 double autoBidPrice = currentPrice + top.increment;
                 currentPrice  = autoBidPrice;
@@ -208,7 +208,7 @@ public class Auction implements AuctionSubject {
     // Kết thúc phiên: OPEN/RUNNING -> FINISHED
     public synchronized void finishAuction() {
         if (status == AuctionStatus.FINISHED || status == AuctionStatus.PAID
-                || status == AuctionStatus.CANCELLED) return;
+                || status == AuctionStatus.CANCELED) return;
 
         this.status = AuctionStatus.FINISHED;
 
@@ -223,7 +223,7 @@ public class Auction implements AuctionSubject {
     // Hủy phiên: OPEN/RUNNING -> CANCELED
     public synchronized boolean cancelAuction() {
         if (status == AuctionStatus.OPEN || status == AuctionStatus.RUNNING) {
-            this.status = AuctionStatus.CANCELLED;
+            this.status = AuctionStatus.CANCELED;
             autoBidQueue.clear();
 
             AuctionEvent event = new AuctionEvent(
@@ -280,7 +280,7 @@ public class Auction implements AuctionSubject {
 
     // return true nếu trạng thái là CANCELED
     public boolean isCancelled() {
-        return status == AuctionStatus.CANCELLED;
+        return status == AuctionStatus.CANCELED;
     }
 
     // return true nếu phiên vẫn đang nhận bid mới
@@ -324,7 +324,7 @@ public class Auction implements AuctionSubject {
     // Dùng cancelAuction() thay thế
     @Deprecated
     public void setCancelled(boolean cancelled) {
-        if (cancelled) this.status = AuctionStatus.CANCELLED;
+        if (cancelled) this.status = AuctionStatus.CANCELED;
     }
     public double getAutoBidIncrement() {
         AutoBidEntry top = autoBidQueue.peek();

@@ -297,7 +297,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                     if (event.getNewEndTimeEpoch() > 0) {
                         java.time.LocalDateTime newEnd = java.time.LocalDateTime
                                 .ofEpochSecond(event.getNewEndTimeEpoch(), 0,
-                                        java.time.ZoneOffset.of("+07:00"));
+                                        java.time.ZoneOffset.of("+00:00:10"));
                         currentAuction = new shared.dto.AuctionDTO(
                                 currentAuction.getAuctionId(),
                                 currentAuction.getItemName(),
