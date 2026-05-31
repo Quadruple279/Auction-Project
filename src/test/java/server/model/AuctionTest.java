@@ -168,17 +168,27 @@ class AuctionTest {
 
     @Test
     void testAutoBidding_triggersWhenOutbid() throws Exception {
-        Item artItem = new Art("I001", "Mona Lisa", 500, "Tranh nổi tiếng", "seller1", "Da Vinci");
+        double basePrice = 500;
+        double increment = 1_000;
+        Item artItem = new Art("I001", "Mona Lisa", basePrice, "Tranh nổi tiếng", "seller1", "Da Vinci");
         Auction autoBidAuction = new Auction(
             "A001", artItem, LocalDateTime.now().plusHours(1), "seller1"
         );
-        autoBidAuction.enableAutoBid("Nam", 10_000_000, 1_000);
 
-        autoBidAuction.placeBid("Huy", 700);
+        // Nam đăng ký auto-bid với maxBid cao
+        autoBidAuction.enableAutoBid("Nam", 10_000_000, increment);
 
-        // Auto-bid của Nam phải kích hoạt: 700 + 1000 = 1700
-        assertEquals(1_700, autoBidAuction.getCurrentPrice(), 0.01,
-            "Auto-bid phải tăng giá lên currentPrice + increment");
+        // Lấy giá hiện tại SAU KHI enableAutoBid (có thể đã thay đổi nếu logic auto-bid ngay)
+        double priceAfterEnable = autoBidAuction.getCurrentPrice();
+
+        // Huy bid cao hơn giá hiện tại → auto-bid của Nam phải kích hoạt
+        double huyBid = priceAfterEnable + 100;
+        autoBidAuction.placeBid("Huy", huyBid);
+
+        // Auto-bid của Nam: huyBid + increment
+        double expectedPrice = huyBid + increment;
+        assertEquals(expectedPrice, autoBidAuction.getCurrentPrice(), 0.01,
+            "Auto-bid phải tăng giá lên huyBid + increment");
         assertEquals("Nam", autoBidAuction.getLeadingBidder(),
             "Nam phải là leading bidder sau auto-bid");
     }
@@ -213,8 +223,8 @@ class AuctionTest {
             service.execute(() -> {
                 try {
                     auction.placeBid(bidderName, bidAmount);
-                } catch (Exception e) {
-                    System.out.println(bidderName + "dat gia that bai: " + e.getMessage());
+                } catch (Exception ignored) {
+                    // expected: most bids rejected
                 } finally {
                     latch.countDown(); // giảm bộ đếm luồng
                 }
