@@ -11,6 +11,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ClientSocket {
     private static final String HOST;
@@ -33,10 +35,13 @@ public class ClientSocket {
     private boolean running = false;
 
     // Observer nhận AuctionEvent realtime
-    private List<AuctionObserver> observers = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
 
-    // Listener nhận phản hồi một lần (LOGIN_SUCCESS, LOGIN_FAILED, ERROR, …)
-    private ResponseListener responseListener;
+    // Listener map: mỗi MessageType có thể có nhiều listener — không bị đè nhau
+    private final ConcurrentHashMap<
+            MessageType,
+            CopyOnWriteArrayList<ResponseListener>
+            > listenerMap = new ConcurrentHashMap<>();
 
     private static volatile ClientSocket instance;
 
@@ -57,7 +62,6 @@ public class ClientSocket {
         }
         return instance;
     }
-
 
     private ClientSocket() {
     }
@@ -103,7 +107,8 @@ public class ClientSocket {
     }
 
     /**
-     * Phân loại Message nhận được: AUCTION_UPDATE → notifyObservers, còn lại → responseListener.
+     * Phân loại Message nhận được: AUCTION_UPDATE → notifyObservers,
+     * còn lại → dispatch tới tất cả listener đăng ký cho MessageType đó.
      */
     private void handleMessage(String json) {
         try {
@@ -117,37 +122,17 @@ public class ClientSocket {
                 String bidderName = msg.getOrDefault("bidderName", "");
                 double bidAmount = Double.parseDouble(msg.getOrDefault("bidAmount", "0"));
 
-                AuctionEvent.Type type =
-                        AuctionEvent.Type.valueOf(eventType);
-
+                AuctionEvent.Type type = AuctionEvent.Type.valueOf(eventType);
                 AuctionEvent event;
 
                 if (type == AuctionEvent.Type.TIME_EXTENDED) {
-
-                    long newEndTimeEpoch =
-                            Long.parseLong(
-                                    msg.get("newEndTimeEpoch")
-                            );
-
-                    event = new AuctionEvent(
-                            type,
-                            auctionId,
-                            newEndTimeEpoch
-                    );
-
+                    long newEndTimeEpoch = Long.parseLong(msg.get("newEndTimeEpoch"));
+                    event = new AuctionEvent(type, auctionId, newEndTimeEpoch);
                 } else {
-
-                    event = new AuctionEvent(
-                            type,
-                            auctionId,
-                            bidderName,
-                            leadingBidder,
-                            bidAmount,
-                            currentPrice
-                    );
+                    event = new AuctionEvent(type, auctionId, bidderName, leadingBidder, bidAmount, currentPrice);
                 }
 
-                notifyObservers(event); // FIX: event was created but never dispatched to observers
+                notifyObservers(event);
 
             } else if (msg.getType() == MessageType.NEW_AUCTION) {
                 AuctionEvent event = new AuctionEvent(
@@ -157,11 +142,14 @@ public class ClientSocket {
                 AuctionEvent event = new AuctionEvent(
                         AuctionEvent.Type.USER_DELETED, msg.get("username"), "", "", 0, 0);
                 notifyObservers(event);
-            }
-            else if (responseListener != null) {
-                ResponseListener r = responseListener;
-                responseListener = null;     // xóa trước khi gọi, tránh stale listener tích lũy
-                r.onResponse(msg);
+            } else {
+                // Dispatch tới tất cả listener đã đăng ký cho type này
+                CopyOnWriteArrayList<ResponseListener> listeners = listenerMap.get(msg.getType());
+                if (listeners != null) {
+                    for (ResponseListener listener : listeners) {
+                        listener.onResponse(msg);
+                    }
+                }
             }
 
         } catch (Exception e) {
@@ -169,11 +157,24 @@ public class ClientSocket {
         }
     }
 
-    // ─── API gửi lệnh ─────────────────────────────────────────────────────────
+    // ─── Listener management ──────────────────────────────────────────────────
 
-    public void setResponseListener(ResponseListener listener) {
-        this.responseListener = listener;
+    public void addResponseListener(MessageType type, ResponseListener listener) {
+        listenerMap.computeIfAbsent(type, k -> new CopyOnWriteArrayList<>()).add(listener);
     }
+
+    public void removeResponseListener(MessageType type, ResponseListener listener) {
+        CopyOnWriteArrayList<ResponseListener> listeners = listenerMap.get(type);
+        if (listeners != null) {
+            listeners.remove(listener);
+        }
+    }
+
+    public void clearResponseListeners(MessageType type) {
+        listenerMap.remove(type);
+    }
+
+    // ─── API gửi lệnh ─────────────────────────────────────────────────────────
 
     public void sendLogin(String username, String password) {
         send(Message.of(MessageType.LOGIN)
@@ -202,7 +203,6 @@ public class ClientSocket {
         }
         send(msg);
     }
-
 
     public void sendGetAuctions() {
         send(Message.of(MessageType.GET_AUCTIONS));
@@ -282,27 +282,30 @@ public class ClientSocket {
     public void sendCancelAuction(String auctionId) {
         send(Message.of(MessageType.CANCEL_AUCTION).put("auctionId", auctionId));
     }
-    public void sendGetBidHistory(String auctionId){
-        send(Message.of(MessageType.GET_BID_HISTORY).put("auctionId",auctionId));
+
+    public void sendGetBidHistory(String auctionId) {
+        send(Message.of(MessageType.GET_BID_HISTORY).put("auctionId", auctionId));
     }
-    public void sendDeleteUser(String username){
-        send(Message.of(MessageType.DELETE_USER).put("username",username));
+
+    public void sendDeleteUser(String username) {
+        send(Message.of(MessageType.DELETE_USER).put("username", username));
     }
 
     public void sendMarkPaid(String auctionId) {
         send(Message.of(MessageType.MARK_PAID).put("auctionId", auctionId));
     }
 
-    // FIX: method was missing — server has handleEnableAutoBid() but client had no way to call it
     public void sendEnableAutoBid(String auctionId, double maxBid, double increment) {
         send(Message.of(MessageType.ENABLE_AUTO_BID)
                 .put("auctionId", auctionId)
                 .put("maxBid", String.valueOf(maxBid))
                 .put("increment", String.valueOf(increment)));
     }
+
     public void sendGetUsers() {
         send(Message.of(MessageType.GET_USERS));
     }
+
     public void sendAddUser(String username, String password, String role) {
         send(Message.of(MessageType.ADD_USER)
                 .put("username", username)

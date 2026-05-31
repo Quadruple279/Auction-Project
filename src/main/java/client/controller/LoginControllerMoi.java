@@ -1,5 +1,6 @@
 package client.controller;
 
+import client.AppContext;
 import client.ClientSocket;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -24,8 +25,6 @@ public class LoginControllerMoi implements Initializable {
     @FXML private TextField     userName;
     @FXML private PasswordField password;
     @FXML private Label         messageLabel;
-
-
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -66,30 +65,50 @@ public class LoginControllerMoi implements Initializable {
             showError("Không được để trống tên đăng nhập và mật khẩu.");
             return;
         }
-        ClientSocket.getInstance().setResponseListener(msg -> {
+
+        // Dùng ref array để có thể remove listener bên trong lambda
+        ClientSocket.ResponseListener[] successRef = new ClientSocket.ResponseListener[1];
+        ClientSocket.ResponseListener[] failedRef  = new ClientSocket.ResponseListener[1];
+
+        successRef[0] = msg -> {
             javafx.application.Platform.runLater(() -> {
-            if (msg.getType() == MessageType.LOGIN_SUCCESS){
-                int id                 = Integer.parseInt(msg.getOrDefault("id", "0"));
-                String username        = msg.get("username");
-                String displayName     = msg.getOrDefault("displayName", username);
-                String role            = msg.get("role");
-                UserDTO loggedInUser   = new UserDTO(id, username, displayName, role);
+                // Dọn cả hai listener sau khi nhận kết quả
+                ClientSocket.getInstance().removeResponseListener(MessageType.LOGIN_SUCCESS, successRef[0]);
+                ClientSocket.getInstance().removeResponseListener(MessageType.LOGIN_FAILED,  failedRef[0]);
+
+                int id             = Integer.parseInt(msg.getOrDefault("id", "0"));
+                String username    = msg.get("username");
+                String displayName = msg.getOrDefault("displayName", username);
+                String role        = msg.get("role");
+                UserDTO loggedInUser = new UserDTO(id, username, displayName, role);
+
+                // Lưu username vào AppContext để các màn hình sau dùng
+                AppContext.setLoggedInUsername(username);
+
                 showSuccess("Đăng nhập thành công!");
-                openDashboard(loggedInUser);   // truyền userDTO vào
-            }
-            else {
+                openDashboard(loggedInUser);
+            });
+        };
+
+        failedRef[0] = msg -> {
+            javafx.application.Platform.runLater(() -> {
+                ClientSocket.getInstance().removeResponseListener(MessageType.LOGIN_SUCCESS, successRef[0]);
+                ClientSocket.getInstance().removeResponseListener(MessageType.LOGIN_FAILED,  failedRef[0]);
+
                 String reason = msg.getOrDefault("reason", "Sai tài khoản hoặc mật khẩu.");
                 showError(reason);
-            }
             });
-        });
+        };
+
+        ClientSocket.getInstance().addResponseListener(MessageType.LOGIN_SUCCESS, successRef[0]);
+        ClientSocket.getInstance().addResponseListener(MessageType.LOGIN_FAILED,  failedRef[0]);
+
         ClientSocket.getInstance().sendLogin(tenDangNhap, matKhau);
         messageLabel.setText("Đang đăng nhập...");
     }
 
     private void openDashboard(UserDTO userDTO) {
         try {
-            // Lấy role của user hiện tại
             String role = userDTO.getRole();
 
             String fxmlPath;
@@ -105,22 +124,18 @@ public class LoginControllerMoi implements Initializable {
                     title    = "Abstract Auction — Admin Dashboard";
                 }
                 default -> {
-                    // BIDDER hoặc role khác → vào AuctionView
                     fxmlPath = "/fxml/AuctionView.fxml";
                     title    = "Abstract Auction — Danh sách đấu giá";
                 }
             }
 
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(fxmlPath)
-            );
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
 
-            // Truyền authController sang controller tương ứng
             switch (role) {
                 case "SELLER" -> {
                     SellerController sellerController = loader.getController();
-                    sellerController.setCurrentUser(userDTO);   // ← đổi từ setAuthController
+                    sellerController.setCurrentUser(userDTO);
                 }
                 case "ADMIN" -> {
                     AdminController adminController = loader.getController();
@@ -128,7 +143,7 @@ public class LoginControllerMoi implements Initializable {
                 }
                 default -> {
                     AuctionListController dashboardController = loader.getController();
-                    dashboardController.setCurrentUser(userDTO); // ← đổi từ setAuthenticationController
+                    dashboardController.setCurrentUser(userDTO);
                 }
             }
 
@@ -151,7 +166,6 @@ public class LoginControllerMoi implements Initializable {
         switchScene("/fxml/RegisterViewMoi.fxml");
     }
 
-
     private void showError(String msg) {
         messageLabel.setStyle("-fx-text-fill: #fa5656;");
         messageLabel.setText(msg);
@@ -168,7 +182,6 @@ public class LoginControllerMoi implements Initializable {
             Parent root = loader.load();
             Stage stage = (Stage) userName.getScene().getWindow();
             stage.getScene().setRoot(root);
-
         } catch (IOException e) {
             e.printStackTrace();
             showError("Lỗi: Không thể tải màn hình");
