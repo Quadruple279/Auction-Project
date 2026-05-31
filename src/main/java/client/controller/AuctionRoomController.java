@@ -338,6 +338,10 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
             log("Vui lòng nhập số tiền muốn đặt.");
             return;
         }
+        if (currentUsername != null && currentUsername.equals(leaderLabel.getText())) {
+            log("Bạn đang là người đặt giá cao nhất!");
+            return;
+        }
 
         long soTien;
         try {
@@ -352,9 +356,9 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
             return;
         }
 
-        if (soTien <= (long) currentAuction.getCurrentPrice()) {
+        if (soTien <= parseCurrentPrice()) {
             log("Số tiền phải cao hơn giá hiện tại: "
-                    + String.format("%,.0f ₫", currentAuction.getCurrentPrice()));
+                    + String.format("%,.0f ₫", (double) parseCurrentPrice()));
             return;
         }
 

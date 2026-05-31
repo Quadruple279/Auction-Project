@@ -135,6 +135,9 @@ public class Auction implements AuctionSubject {
             throw new AuctionClosedException(
                     "Phiên đấu giá cho " + item.getName() + " đã bị hủy!");
         }
+        if (bidderName.equals(leadingBidder)) {
+            throw new InvalidBidException("Bạn đang là người đặt giá cao nhất");
+        }
 
         if (bidAmount > currentPrice) {
             this.currentPrice = bidAmount;
