@@ -111,6 +111,12 @@
           <includes>
             <include>**/*Test.java</include>
           </includes>
+          <!-- Headless mode: disable JavaFX/AWT toolkit in CI -->
+          <argLine>-Djava.awt.headless=true -Dtestfx.robot=glass -Dtestfx.headless=true -Dprism.order=sw -Dprism.verbose=true</argLine>
+          <!-- Exclude DBTest from normal test run (requires DB setup) if needed -->
+          <systemPropertyVariables>
+            <java.awt.headless>true</java.awt.headless>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
 

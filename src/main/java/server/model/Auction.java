@@ -14,7 +14,6 @@ import java.util.List;
 import java.time.temporal.ChronoUnit;
 import java.util.PriorityQueue;
 
-import javafx.application.Platform;
 
 public class Auction implements AuctionSubject {
     private ArrayList<BidTransaction> transactionHistory = new ArrayList<>();

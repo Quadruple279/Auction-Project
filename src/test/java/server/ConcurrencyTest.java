@@ -13,6 +13,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Kiểm tra tính thread-safety của Auction.placeBid() khi nhiều thread
+ * đặt giá đồng thời.
+ */
 class ConcurrencyTest {
 
     private Auction auction;
@@ -28,8 +32,12 @@ class ConcurrencyTest {
         );
     }
 
+    /**
+     * 100 thread bid tuần tự tăng dần (2010, 2020, … 3000).
+     * Kết quả cuối phải là 3000 và số transaction hợp lệ ∈ [1, 100].
+     */
     @Test
-    void testConcurrentBidsDoNotCorruptState() throws InterruptedException {
+    void testConcurrentBids_finalPriceIsHighest() throws InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(NUM_BIDDERS);
         CountDownLatch startGate = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(NUM_BIDDERS);
@@ -41,7 +49,7 @@ class ConcurrencyTest {
                     startGate.await();
                     auction.placeBid("User", bidAmount);
                 } catch (Exception ignored) {
-                    // Expected: lower bids rejected
+                    // Lower bids expected to be rejected
                 } finally {
                     doneLatch.countDown();
                 }
@@ -49,24 +57,27 @@ class ConcurrencyTest {
         }
 
         startGate.countDown();
-        assertTrue(doneLatch.await(10, TimeUnit.SECONDS), "All threads should finish within timeout");
+        assertTrue(doneLatch.await(10, TimeUnit.SECONDS), "Tất cả thread phải hoàn thành trong 10s");
         executor.shutdown();
 
-        // Final price must equal the highest valid bid (100 * 10 + 2000 = 3000)
-        double expectedMax = 2000.0 + (NUM_BIDDERS * 10);
+        double expectedMax = 2000.0 + (NUM_BIDDERS * 10); // = 3000
         assertEquals(expectedMax, auction.getCurrentPrice(),
-                "Final price phải bằng mức bid cao nhất sau khi tất cả thread chạy xong");
+                "Giá cuối phải bằng mức bid cao nhất");
 
         // Transaction history should have only valid (strictly increasing) bids
         int txCount = auction.getTransactionHistory().size();
         assertTrue(txCount >= 1 && txCount <= NUM_BIDDERS,
-                "Số lượng transaction hợp lệ phải nằm trong khoảng [1, " + NUM_BIDDERS + "]");
+                "Số transaction hợp lệ phải trong [1, " + NUM_BIDDERS + "]");
     }
 
+    /**
+     * 20 thread cùng bid một mức giá giống nhau.
+     * Chỉ đúng 1 thread được chấp nhận.
+     */
     @Test
-    void testConcurrentBidsWithSameAmountOnlyAcceptsOnce() throws InterruptedException {
+    void testConcurrentBids_sameAmountAcceptedOnce() throws InterruptedException {
         int threads = 20;
-        double sameAmount = 5000.0;
+        double sameAmount = 5_000.0;
         ExecutorService executor = Executors.newFixedThreadPool(threads);
         CountDownLatch startGate = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(threads);
@@ -91,5 +102,39 @@ class ConcurrencyTest {
         assertEquals(1, auction.getTransactionHistory().size(),
                 "Chỉ 1 thread được chấp nhận khi tất cả bid cùng một mức giá");
         assertEquals(sameAmount, auction.getCurrentPrice());
+    }
+
+    /**
+     * Trạng thái auction không bị corrupt sau khi nhiều thread truy cập đồng thời.
+     * currentPrice không bao giờ thấp hơn giá ban đầu.
+     */
+    @Test
+    void testConcurrentBids_stateNotCorrupted() throws InterruptedException {
+        double basePrice = auction.getCurrentPrice(); // = 34
+        int threads = 50;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        CountDownLatch latch = new CountDownLatch(threads);
+
+        for (int i = 1; i <= threads; i++) {
+            final double amount = basePrice + i * 5;
+            final String bidder = "Bidder" + i;
+            executor.submit(() -> {
+                try {
+                    auction.placeBid(bidder, amount);
+                } catch (Exception ignored) {
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executor.shutdown();
+
+        double finalPrice = auction.getCurrentPrice();
+        assertTrue(finalPrice >= basePrice,
+                "Giá cuối không được thấp hơn giá khởi điểm");
+        assertNotNull(auction.getLeadingBidder(),
+                "Leading bidder không được null sau khi bid");
     }
 }
