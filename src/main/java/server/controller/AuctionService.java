@@ -9,6 +9,7 @@ import server.model.BidTransaction;
 import server.model.item.Item;
 import java.time.LocalDateTime;
 import java.sql.SQLException;
+import java.util.List;
 
 import server.model.Auction;
 import server.model.user.User;
@@ -38,11 +39,17 @@ public class AuctionService {
             throw new RuntimeException("Không tìm thấy phiên đấu giá");
         }
         try {
+            int historyBefore = auction.getTransactionHistory().size();
+
             // 3. gọi Auction (TRUYỀN TÊN, không phải object)
             auction.placeBid(currentUser.getName(), amount);
-            auctionDAO.updateAfterBid(auctionId,auction.getCurrentPrice(),auction.getLeadingBidder());
-            BidTransaction lastBid = auction.getTransactionHistory().get(auction.getTransactionHistory().size()-1);
-            bidTransactionDAO.save(lastBid);
+
+            // Lưu tất cả transaction mới (bao gồm auto-bid được trigger bên trong)
+            List<BidTransaction> history = auction.getTransactionHistory();
+            for (int i = historyBefore; i < history.size(); i++) {
+                bidTransactionDAO.save(history.get(i));
+            }
+            auctionDAO.updateAfterBid(auctionId, auction.getCurrentPrice(), auction.getLeadingBidder());
 
         } catch (AuctionClosedException | InvalidBidException e) {
             throw new RuntimeException(e.getMessage());
@@ -106,6 +113,7 @@ public class AuctionService {
         auction.getItem().setName(newName);
         auction.getItem().setDescription(newDescription);
         auction.getItem().setPrice(newPrice);
+        auction.setPrice(newPrice);
         try {
             new ItemDAO().update(auction.getItem());
         } catch (SQLException e) {

@@ -1,5 +1,6 @@
 package client.controller;
 
+import client.AppContext;
 import client.ClientSocket;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
@@ -14,8 +15,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
-import server.controller.AuthenticationController;
 import shared.dto.AuctionDTO;
+import shared.dto.UserDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
 import shared.protocol.MessageType;
@@ -40,9 +41,12 @@ public class AuctionListController implements Initializable, AuctionObserver {
     @FXML private MenuItem openProfile;
     @FXML private MenuItem openSellerView;
 
-    private AuthenticationController authenticationController = new AuthenticationController();
+    private UserDTO currentUser;
 
     private ObservableList<AuctionDTO> danhSach = FXCollections.observableArrayList();
+
+    // Listener riêng để có thể remove trước khi add lại
+    private ClientSocket.ResponseListener auctionListListener;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -75,8 +79,11 @@ public class AuctionListController implements Initializable, AuctionObserver {
 
             AuctionRoomController roomController = loader.getController();
             roomController.setAuction(auction);
+            roomController.setCurrentUsername(AppContext.getLoggedInUsername());
+            roomController.setCurrentUser(currentUser);
 
             Stage stage = (Stage) tableView.getScene().getWindow();
+            ClientSocket.getInstance().removeObserver(this);
             stage.setScene(new Scene(root));
             stage.show();
 
@@ -95,7 +102,7 @@ public class AuctionListController implements Initializable, AuctionObserver {
         auction.setCellValueFactory(new PropertyValueFactory<>("auctionId"));
         itemName.setCellValueFactory(new PropertyValueFactory<>("itemName"));
         description.setCellValueFactory(new PropertyValueFactory<>("description"));
-        owner.setCellValueFactory(new PropertyValueFactory<>("leadingBidder"));
+        owner.setCellValueFactory(new PropertyValueFactory<>("owner"));
 
         price.setCellValueFactory(new PropertyValueFactory<>("price"));
         price.setCellFactory(col -> new TableCell<AuctionDTO, Double>() {
@@ -122,19 +129,22 @@ public class AuctionListController implements Initializable, AuctionObserver {
 
     public void loadDuLieu() {
         log("Đang tải dữ liệu phiên đấu giá...");
-        ClientSocket.getInstance().setResponseListener(msg -> {
+
+        // Xóa listener cũ trước khi add mới — tránh duplicate
+        if (auctionListListener != null) {
+            ClientSocket.getInstance().removeResponseListener(MessageType.AUCTION_LIST, auctionListListener);
+        }
+
+        auctionListListener = msg -> {
             if (msg.getType() == MessageType.AUCTION_LIST) {
                 try {
                     String jsonData = msg.get("data");
-                    // Deserialize chuỗi JSON → List<AuctionDTO>
-                    // TypeReference cần thiết vì Java xóa generic type lúc runtime
                     ObjectMapper mapper = new ObjectMapper();
                     List<AuctionDTO> list = mapper.readValue(
                             jsonData,
                             new com.fasterxml.jackson.core.type.TypeReference<List<AuctionDTO>>() {}
                     );
 
-                    // Cập nhật UI phải chạy trên JavaFX Thread
                     Platform.runLater(() -> {
                         danhSach.setAll(list);
                         log("Đã tải " + list.size() + " phiên đấu giá.");
@@ -144,7 +154,9 @@ public class AuctionListController implements Initializable, AuctionObserver {
                     Platform.runLater(() -> log("Lỗi parse dữ liệu: " + e.getMessage()));
                 }
             }
-        });
+        };
+
+        ClientSocket.getInstance().addResponseListener(MessageType.AUCTION_LIST, auctionListListener);
         ClientSocket.getInstance().sendGetAuctions();
     }
 
@@ -158,7 +170,6 @@ public class AuctionListController implements Initializable, AuctionObserver {
                     log(event.getBidderName() + " vừa đặt "
                             + String.format("%,.0f ₫", event.getBidAmount())
                             + " cho phiên " + event.getAuctionId());
-                    // Cập nhật currentPrice trong danhSach để bảng hiển thị đúng
                     for (AuctionDTO dto : danhSach) {
                         if (dto.getAuctionId().equals(event.getAuctionId())) {
                             dto.setCurrentPrice(event.getCurrentPrice());
@@ -207,14 +218,13 @@ public class AuctionListController implements Initializable, AuctionObserver {
         }
     }
 
-    public void setAuthenticationController(AuthenticationController auth) {
-        this.authenticationController = auth;
+    public void setCurrentUser(UserDTO user) {
+        this.currentUser = user;
     }
 
     @FXML
     public void openProfile(ActionEvent actionEvent) {
-        if (authenticationController == null ||
-                authenticationController.getCurrentUser() == null) {
+        if (currentUser == null) {
             log("Lỗi: Không có thông tin user.");
             return;
         }
@@ -226,9 +236,10 @@ public class AuctionListController implements Initializable, AuctionObserver {
             Parent root = loader.load();
 
             ProfileController profileController = loader.getController();
-            profileController.setAuthController(authenticationController);
+            profileController.setCurrentUser(currentUser);
 
             Stage stage = (Stage) tableView.getScene().getWindow();
+            ClientSocket.getInstance().removeObserver(this);
             stage.getScene().setRoot(root);
         } catch (IOException e) {
             e.printStackTrace();
@@ -236,16 +247,13 @@ public class AuctionListController implements Initializable, AuctionObserver {
         }
     }
 
-
     @FXML
     public void openSellerView(ActionEvent actionEvent) {
-        if (authenticationController == null ||
-                authenticationController.getCurrentUser() == null) {
+        if (currentUser == null) {
             log("Lỗi: Không có thông tin user.");
             return;
         }
-
-        String role = authenticationController.getCurrentUser().getRole();
+        String role = currentUser.getRole();
 
         if (!"SELLER".equals(role)) {
             log("Bạn không có quyền truy cập Seller Dashboard.");
@@ -259,9 +267,10 @@ public class AuctionListController implements Initializable, AuctionObserver {
             Parent root = loader.load();
 
             SellerController sellerController = loader.getController();
-            sellerController.setAuthController(authenticationController);
+            sellerController.setCurrentUser(currentUser);
 
             Stage stage = (Stage) tableView.getScene().getWindow();
+            ClientSocket.getInstance().removeObserver(this);
             stage.getScene().setRoot(root);
 
         } catch (IOException e) {

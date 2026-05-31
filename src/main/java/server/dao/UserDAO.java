@@ -16,12 +16,18 @@ public class UserDAO {
     public void save(User user) throws SQLException {
         String sql = "INSERT INTO users (name,tenHienThi,password,role) VALUES (?,?,?,?)";
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql,java.sql.Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, user.getName());
             pstmt.setString(2, user.getDisplayName());
             pstmt.setString(3,user.getPassword());
             pstmt.setString(4, user.getRole());
             pstmt.executeUpdate();
+            // Lấy id vừa được DB sinh ra, gán lại vào object
+            try (ResultSet keys = pstmt.getGeneratedKeys()) {
+                if (keys.next()) {
+                    user.setId(keys.getInt(1));
+                }
+            }
         }
     }
 

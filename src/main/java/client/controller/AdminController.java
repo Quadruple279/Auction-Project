@@ -1,6 +1,7 @@
 package client.controller;
 
 import client.ClientSocket;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -15,10 +16,12 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
-import server.controller.AuthenticationController;
 
-import server.model.user.User;
+
+
 import shared.dto.AuctionDTO;
+import shared.dto.SystemLogDTO;
+import shared.dto.UserDTO;
 import shared.protocol.AuctionEvent;
 import shared.protocol.AuctionObserver;
 import shared.protocol.MessageType;
@@ -37,9 +40,9 @@ public class AdminController implements Initializable, AuctionObserver {
     @FXML private VBox pageDashboard, pageUsers, pageAuctions, pageStats;
 
     // ===== FXML – Bảng User (trang Users) =====
-    @FXML private TableView<User> userTable;
-    @FXML private TableColumn<User, String> colUserId, colUserName, colUserRole;
-    @FXML private TableColumn<User, Void> colUserAction;
+    @FXML private TableView<UserDTO> userTable;
+    @FXML private TableColumn<UserDTO, String> colUserId, colUserName, colUserRole;
+    @FXML private TableColumn<UserDTO, Void> colUserAction;
     @FXML private TextField userSearchField;
     @FXML private ComboBox<String> userRoleFilter;
     @FXML private Label userCountLabel;   // Bổ sung
@@ -54,8 +57,8 @@ public class AdminController implements Initializable, AuctionObserver {
     @FXML private Label auctionCountLabel; // Bổ sung
 
     // ===== FXML – Dashboard preview =====
-    @FXML private TableView<User> dashUserTable;
-    @FXML private TableColumn<User, String> dashColUserName, dashColUserRole, dashColUserId;
+    @FXML private TableView<UserDTO> dashUserTable;
+    @FXML private TableColumn<UserDTO, String> dashColUserName, dashColUserRole, dashColUserId;
     @FXML private TableView<AuctionDTO> dashAuctionTable;
     @FXML private TableColumn<AuctionDTO, String> dashColAuctionId, dashColAuctionItem, dashColAuctionStatus;
 
@@ -67,12 +70,11 @@ public class AdminController implements Initializable, AuctionObserver {
     @FXML private Label statUserSub;
 
     // ===== DATA =====
-    private AuthenticationController authController;
-    private AdminService adminService;
+    private UserDTO currentAdmin;
+    private ObservableList<UserDTO> userList = FXCollections.observableArrayList();
 
-    private ObservableList<User>    userList    = FXCollections.observableArrayList();
     private ObservableList<AuctionDTO> auctionList = FXCollections.observableArrayList();
-    private FilteredList<User>    filteredUsers;
+    private FilteredList<UserDTO>    filteredUsers;
     private FilteredList<AuctionDTO> filteredAuctions;
 
     // ===== INIT =====
@@ -84,46 +86,72 @@ public class AdminController implements Initializable, AuctionObserver {
         showDashboard();
     }
 
-    /** Gọi từ LoginController sau khi xác thực ADMIN thành công */
-    public void setAuthController(AuthenticationController auth) {
-        this.authController = auth;
-        this.adminService   = new AdminService(auth);
-        adminNameLabel.setText(auth.getCurrentUser().getName());
+
+    public void setCurrentAdmin(UserDTO admin) {
+        this.currentAdmin = admin;
+        adminNameLabel.setText(admin.getDisplayName());
         loadData();
         registerEventBusListener();
     }
 
+
     // ===== LOAD DATA =====
     private void loadData() {
-        userList.setAll(authController.getAllUsers());
-        filteredUsers     = new FilteredList<>(userList,    p -> true);
-        userTable.setItems(filteredUsers);
-        ClientSocket.getInstance().setResponseListener(msg -> {
-            if (msg.getType() == MessageType.AUCTION_LIST){
-                try{
-                    String jsonData = msg.get("data");
-                    ObjectMapper mapper = new ObjectMapper();
-                    List<AuctionDTO> list = mapper.readValue(
-                            jsonData,
-                            new com.fasterxml.jackson.core.type.TypeReference<List<AuctionDTO>>() {}
-                    );
+        // Bước 1: load danh sách phiên đấu giá
+        // Bước 1: load phiên đấu giá
+        ClientSocket.ResponseListener[] auctionListRef = new ClientSocket.ResponseListener[1];
+        auctionListRef[0] = msg -> {
+            if (msg.getType() != MessageType.AUCTION_LIST) return;
+            ClientSocket.getInstance().removeResponseListener(MessageType.AUCTION_LIST, auctionListRef[0]);
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                List<AuctionDTO> list = mapper.readValue(
+                        msg.get("data"),
+                        new com.fasterxml.jackson.core.type.TypeReference<List<AuctionDTO>>() {});
+                Platform.runLater(() -> {
+                    auctionList.setAll(list);
+                    filteredAuctions = new FilteredList<>(auctionList, p -> true);
+                    auctionTable.setItems(filteredAuctions);
+                    refreshDashboardTables();
+                    updateStats();
+                    updateCountLabels();
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    if (systemLog != null)
+                        systemLog.appendText("Lỗi tải phiên: " + e.getMessage() + "\n");
+                });
+            }
+
+            // Bước 2: sau khi nhận AUCTION_LIST xong, mới gửi GET_USERS
+            ClientSocket.ResponseListener[] userListRef = new ClientSocket.ResponseListener[1];
+            userListRef[0] = msg2 -> {
+                if (msg2.getType() != MessageType.USER_LIST) return;
+                ClientSocket.getInstance().removeResponseListener(MessageType.USER_LIST, userListRef[0]);
+                try {
+                    ObjectMapper mapper2 = new ObjectMapper();
+                    List<UserDTO> list2 = mapper2.readValue(
+                            msg2.get("data"),
+                            new com.fasterxml.jackson.core.type.TypeReference<List<UserDTO>>() {});
                     Platform.runLater(() -> {
-                        auctionList.setAll(list);
-                        filteredAuctions = new FilteredList<>(auctionList, p -> true);
-                        auctionTable.setItems(filteredAuctions);
+                        userList.setAll(list2);
+                        filteredUsers = new FilteredList<>(userList, p -> true);
+                        userTable.setItems(filteredUsers);
                         refreshDashboardTables();
                         updateStats();
                         updateCountLabels();
                     });
-                }
-                catch (Exception e){
+                } catch (Exception e) {
                     Platform.runLater(() -> {
                         if (systemLog != null)
-                            systemLog.appendText("Lỗi tải phiên: " + e.getMessage() + "\n");
+                            systemLog.appendText("Lỗi tải users: " + e.getMessage() + "\n");
                     });
                 }
-            }
-        });
+            };
+            ClientSocket.getInstance().addResponseListener(MessageType.USER_LIST, userListRef[0]);
+            ClientSocket.getInstance().sendGetUsers();
+        };
+        ClientSocket.getInstance().addResponseListener(MessageType.AUCTION_LIST, auctionListRef[0]);
         ClientSocket.getInstance().sendGetAuctions();
     }
     private void refreshDashboardTables() {
@@ -154,6 +182,14 @@ public class AdminController implements Initializable, AuctionObserver {
                                 + " — Người thắng: " + event.getLeadingBidder() + "\n");
                     loadData();
                 }
+                case USER_DELETED -> {
+                    String deletedName = event.getAuctionId(); // dùng auctionId field để truyền username
+                    userList.removeIf(u -> u.getName().equals(deletedName));
+                    systemLog.appendText("[Xóa user] " + deletedName + "\n");
+                    refreshDashboardTables();
+                    updateStats();
+                    updateCountLabels();
+                }
                 default -> {}
             }
         });
@@ -163,7 +199,7 @@ public class AdminController implements Initializable, AuctionObserver {
 
     private void setupTables() {
         // ----- USER TABLE -----
-        colUserId.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getId())));  // Đã sửa: getId() thay vì getName()
+        colUserId.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getId())));
         colUserName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getName()));
         colUserRole.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getRole()));
         setupUserActionColumn();
@@ -255,16 +291,15 @@ public class AdminController implements Initializable, AuctionObserver {
                         " -fx-background-radius: 4; -fx-font-size: 10; -fx-padding: 3 8;");
 
                 editBtn.setOnAction(e -> {
-                    User u = getTableView().getItems().get(getIndex());
+                    UserDTO u = getTableView().getItems().get(getIndex());
                     showEditUserDialog(u);
                 });
                 deleteBtn.setOnAction(e -> {
-                    User u = getTableView().getItems().get(getIndex());
+                    UserDTO u = getTableView().getItems().get(getIndex());
                     if (u.getRole().equals("ADMIN")) return;
-                    authController.removeUser(u);
-                    userList.remove(u);
-                    updateStats();
-                    updateCountLabels();
+                    if (confirmAction("Xác nhận xóa", "Xóa user \"" + u.getName() + "\"?")) {
+                        ClientSocket.getInstance().sendDeleteUser(u.getName());
+                    }
                 });
             }
 
@@ -272,7 +307,7 @@ public class AdminController implements Initializable, AuctionObserver {
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty) { setGraphic(null); return; }
-                User u = getTableView().getItems().get(getIndex());
+                UserDTO u = getTableView().getItems().get(getIndex());
                 // Ẩn nút Xóa với Admin
                 deleteBtn.setDisable(u.getRole().equals("ADMIN"));
                 setGraphic(box);
@@ -301,13 +336,21 @@ public class AdminController implements Initializable, AuctionObserver {
                         showError("Phiên đã kết thúc hoặc đã bị hủy."); return;
                     }
                     if (confirmAction("Xác nhận hủy", "Hủy phiên \"" + a.getAuctionId() + "\"?")) {
-                        ClientSocket.getInstance().setResponseListener(msg -> {
-                            if (msg.getType() == MessageType.CANCEL_AUCTION_SUCCESS) {
-                                Platform.runLater(() -> loadData());
-                            } else if (msg.getType() == MessageType.ERROR) {
-                                Platform.runLater(() -> showError(msg.get("reason")));
+                        ClientSocket.ResponseListener[] cancelRef = new ClientSocket.ResponseListener[1];
+                        cancelRef[0] = msg2 -> {
+                            ClientSocket.getInstance().removeResponseListener(MessageType.CANCEL_AUCTION_SUCCESS, cancelRef[0]);
+                            ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, cancelRef[0]);
+                            if (msg2.getType() == MessageType.CANCEL_AUCTION_SUCCESS) {
+                                Platform.runLater(() -> {
+                                    systemLog.appendText("[Hủy phiên] " + a.getAuctionId() + "\n");
+                                    loadData();
+                                });
+                            } else if (msg2.getType() == MessageType.ERROR) {
+                                Platform.runLater(() -> showError(msg2.get("reason")));
                             }
-                        });
+                        };
+                        ClientSocket.getInstance().addResponseListener(MessageType.CANCEL_AUCTION_SUCCESS, cancelRef[0]);
+                        ClientSocket.getInstance().addResponseListener(MessageType.ERROR, cancelRef[0]);
                         ClientSocket.getInstance().sendCancelAuction(a.getAuctionId());
                     }
                 });
@@ -318,13 +361,21 @@ public class AdminController implements Initializable, AuctionObserver {
                         showError("Hãy hủy phiên trước khi xóa."); return;
                     }
                     if (confirmAction("Xác nhận xóa", "Xóa hoàn toàn phiên \"" + a.getAuctionId() + "\"?")) {
-                        ClientSocket.getInstance().setResponseListener(msg -> {
-                            if (msg.getType() == MessageType.DELETE_AUCTION_SUCCESS) {
-                                Platform.runLater(() -> loadData());
-                            } else if (msg.getType() == MessageType.ERROR) {
-                                Platform.runLater(() -> showError(msg.get("reason")));
+                        ClientSocket.ResponseListener[] deleteRef = new ClientSocket.ResponseListener[1];
+                        deleteRef[0] = msg2 -> {
+                            ClientSocket.getInstance().removeResponseListener(MessageType.DELETE_AUCTION_SUCCESS, deleteRef[0]);
+                            ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, deleteRef[0]);
+                            if (msg2.getType() == MessageType.DELETE_AUCTION_SUCCESS) {
+                                Platform.runLater(() -> {
+                                    systemLog.appendText("[Xóa phiên] " + a.getAuctionId() + "\n");
+                                    loadData();
+                                });
+                            } else if (msg2.getType() == MessageType.ERROR) {
+                                Platform.runLater(() -> showError(msg2.get("reason")));
                             }
-                        });
+                        };
+                        ClientSocket.getInstance().addResponseListener(MessageType.DELETE_AUCTION_SUCCESS, deleteRef[0]);
+                        ClientSocket.getInstance().addResponseListener(MessageType.ERROR, deleteRef[0]);
                         ClientSocket.getInstance().sendDeleteAuction(a.getAuctionId());
                     }
                 });
@@ -398,7 +449,23 @@ public class AdminController implements Initializable, AuctionObserver {
         Optional<ButtonType> result = dialog.showAndWait();
         if (result.isPresent() && result.get() == addBtn) {
             try {
-                adminService.addUser(nameField.getText().trim(),
+                ClientSocket.ResponseListener[] addUserRef = new ClientSocket.ResponseListener[1];
+                addUserRef[0] = msg2 -> {
+                    ClientSocket.getInstance().removeResponseListener(MessageType.ADD_USER_SUCCESS, addUserRef[0]);
+                    ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, addUserRef[0]);
+                    if (msg2.getType() == MessageType.ADD_USER_SUCCESS) {
+                        Platform.runLater(() -> {
+                            systemLog.appendText("[Thêm user] " + nameField.getText().trim() + "\n");
+                            loadData();
+                        });
+                    } else if (msg2.getType() == MessageType.ERROR) {
+                        Platform.runLater(() -> showError(msg2.get("reason")));
+                    }
+                };
+                ClientSocket.getInstance().addResponseListener(MessageType.ADD_USER_SUCCESS, addUserRef[0]);
+                ClientSocket.getInstance().addResponseListener(MessageType.ERROR, addUserRef[0]);
+                ClientSocket.getInstance().sendAddUser(
+                        nameField.getText().trim(),
                         pwdField.getText(),
                         roleBox.getValue());
             } catch (Exception ex) {
@@ -408,7 +475,7 @@ public class AdminController implements Initializable, AuctionObserver {
     }
 
     /** Dialog sửa tên / mật khẩu user */
-    private void showEditUserDialog(User user) {
+    private void showEditUserDialog(UserDTO user) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Sửa User: " + user.getName());
         dialog.setHeaderText(null);
@@ -442,7 +509,21 @@ public class AdminController implements Initializable, AuctionObserver {
             String newPwd  = pwdField.getText();
             if (newDisplayName.isBlank()) { showError("Tên hiển thị không được để trống"); return; }
             try {
-                adminService.updateUser(user.getName(), newDisplayName,
+                ClientSocket.ResponseListener[] editUserRef = new ClientSocket.ResponseListener[1];
+                editUserRef[0] = msg2 -> {
+                    ClientSocket.getInstance().removeResponseListener(MessageType.UPDATE_USER_ADMIN_SUCCESS, editUserRef[0]);
+                    ClientSocket.getInstance().removeResponseListener(MessageType.ERROR, editUserRef[0]);
+                    if (msg2.getType() == MessageType.UPDATE_USER_ADMIN_SUCCESS) {
+                        Platform.runLater(() -> loadData());
+                    } else if (msg2.getType() == MessageType.ERROR) {
+                        Platform.runLater(() -> showError(msg2.get("reason")));
+                    }
+                };
+                ClientSocket.getInstance().addResponseListener(MessageType.UPDATE_USER_ADMIN_SUCCESS, editUserRef[0]);
+                ClientSocket.getInstance().addResponseListener(MessageType.ERROR, editUserRef[0]);
+                ClientSocket.getInstance().sendUpdateUserAdmin(
+                        user.getName(),
+                        newDisplayName,
                         newPwd.isBlank() ? null : newPwd);
             } catch (Exception ex) {
                 showError(ex.getMessage());
@@ -483,12 +564,11 @@ public class AdminController implements Initializable, AuctionObserver {
     @FXML private void showDashboard() { setActivePage(pageDashboard); setActiveNav(navDashboard); pageTitle.setText("Dashboard"); }
     @FXML private void showUsers()     { setActivePage(pageUsers);     setActiveNav(navUsers);     pageTitle.setText("Quản lý User"); }
     @FXML private void showAuctions()  { setActivePage(pageAuctions);  setActiveNav(navAuctions);  pageTitle.setText("Quản lý Phiên đấu giá"); }
-    @FXML private void showStats()     { setActivePage(pageStats);     setActiveNav(navStats);     pageTitle.setText("Thống kê hệ thống"); }
+    @FXML private void showStats()     { setActivePage(pageStats);     setActiveNav(navStats);     pageTitle.setText("Thống kê hệ thống");       loadSystemLog();   }
 
     @FXML
     private void handleLogout() {
         ClientSocket.getInstance().removeObserver(this);
-        if (authController != null) authController.logout();
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/LoginViewMoi.fxml"));
             Parent root = loader.load();
@@ -519,6 +599,29 @@ public class AdminController implements Initializable, AuctionObserver {
         for (Button btn : new Button[]{navDashboard, navUsers, navAuctions, navStats}) {
             btn.setStyle(btn == activeBtn ? activeStyle : defaultStyle);
         }
+    }
+    private void loadSystemLog() {
+        ClientSocket.ResponseListener[] logRef = new ClientSocket.ResponseListener[1];
+        logRef[0] = msg -> {
+            if (msg.getType() != MessageType.GET_SYSTEM_LOG_SUCCESS) return;
+            ClientSocket.getInstance().removeResponseListener(MessageType.GET_SYSTEM_LOG_SUCCESS, logRef[0]);
+            try {
+                List<SystemLogDTO> logs = new ObjectMapper().readValue(
+                        msg.get("data"), new TypeReference<List<SystemLogDTO>>() {});
+                Platform.runLater(() -> {
+                    systemLog.clear();
+                    for (SystemLogDTO log : logs) {
+                        systemLog.appendText(
+                                "[" + log.getCreatedAt() + "] [" + log.getAdminName() + "] "
+                                        + log.getAction() + " — " + log.getDetail() + "\n");
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> systemLog.appendText("Lỗi tải log: " + e.getMessage() + "\n"));
+            }
+        };
+        ClientSocket.getInstance().addResponseListener(MessageType.GET_SYSTEM_LOG_SUCCESS, logRef[0]);
+        ClientSocket.getInstance().sendGetSystemLog();
     }
 
     // ───────────────────────────── HELPERS ─────────────────────────────

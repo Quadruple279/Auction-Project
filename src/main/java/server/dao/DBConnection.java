@@ -20,8 +20,9 @@ public class DBConnection {
             config.setJdbcUrl(props.getProperty("db.url"));
             config.setUsername(props.getProperty("db.user"));
             config.setPassword(props.getProperty("db.password"));
-            config.setMaximumPoolSize(10);
-            config.setConnectionTimeout(3000);
+            config.setMaximumPoolSize(20);
+            config.setMinimumIdle(5);
+            config.setConnectionTimeout(5000);
             pool = new HikariDataSource(config);
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);

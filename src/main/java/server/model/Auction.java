@@ -14,7 +14,6 @@ import java.util.List;
 import java.time.temporal.ChronoUnit;
 import java.util.PriorityQueue;
 
-import javafx.application.Platform;
 
 public class Auction implements AuctionSubject {
     private ArrayList<BidTransaction> transactionHistory = new ArrayList<>();
@@ -124,16 +123,19 @@ public class Auction implements AuctionSubject {
                 this.status = AuctionStatus.FINISHED;
             }
             throw new AuctionClosedException(
-                    "Lỗi: Phiên đấu giá cho " + item.getName() + " đã hết thời gian!");
+                    "Phiên đấu giá cho " + item.getName() + " đã hết thời gian!");
         }
 
         if (status == AuctionStatus.FINISHED || status == AuctionStatus.PAID) {
             throw new AuctionClosedException(
-                    "Lỗi: Phiên đấu giá cho " + item.getName() + " đã kết thúc!");
+                    "Phiên đấu giá cho " + item.getName() + " đã kết thúc!");
         }
-        if (status == AuctionStatus.CANCELLED) {
+        if (status == AuctionStatus.CANCELED) {
             throw new AuctionClosedException(
-                    "Lỗi: Phiên đấu giá cho " + item.getName() + " đã bị hủy!");
+                    "Phiên đấu giá cho " + item.getName() + " đã bị hủy!");
+        }
+        if (bidderName.equals(leadingBidder)) {
+            throw new InvalidBidException("Bạn đang là người đặt giá cao nhất");
         }
 
         if (bidAmount > currentPrice) {
@@ -154,16 +156,25 @@ public class Auction implements AuctionSubject {
             notifyObservers(event); // thay thế cho displayTransaction (để đảm bảo Auction chỉ thực hiện 1 task placeBid( SRP ))
 
             // ===== AUTO BIDDING với PriorityQueue =====
-            // Lấy người đứng đầu queue mà không phải người vừa bid
+            // FIX: PriorityQueue iterator không đảm bảo thứ tự heap — phải poll() để lấy đúng top entry
+            // Lấy entry cao nhất mà không phải người vừa bid
             AutoBidEntry top = null;
-            for (AutoBidEntry e : autoBidQueue) {
-                if (!e.bidderName.equals(bidderName)) { top = e; break; }
+            List<AutoBidEntry> skipped = new ArrayList<>();
+            while (!autoBidQueue.isEmpty()) {
+                AutoBidEntry candidate = autoBidQueue.poll();
+                if (!candidate.bidderName.equals(bidderName)) {
+                    top = candidate;
+                    autoBidQueue.add(candidate); // đưa lại vào queue
+                    break;
+                }
+                skipped.add(candidate);
             }
+            autoBidQueue.addAll(skipped); // đưa lại các entry đã skip
 
             if (top != null
                     && currentPrice + top.increment <= top.maxBid
                     && status != AuctionStatus.FINISHED
-                    && status != AuctionStatus.CANCELLED) {
+                    && status != AuctionStatus.CANCELED) {
 
                 double autoBidPrice = currentPrice + top.increment;
                 currentPrice  = autoBidPrice;
@@ -181,7 +192,7 @@ public class Auction implements AuctionSubject {
                 System.out.println("Auto-bid by " + top.bidderName + ": " + autoBidPrice);
             }
 
-            if (getRemainingSeconds() <= 5) {
+            if (getRemainingSeconds() <= 30) {
                 extendAuctionTime();
             }
         }
@@ -199,7 +210,7 @@ public class Auction implements AuctionSubject {
     // Kết thúc phiên: OPEN/RUNNING -> FINISHED
     public synchronized void finishAuction() {
         if (status == AuctionStatus.FINISHED || status == AuctionStatus.PAID
-                || status == AuctionStatus.CANCELLED) return;
+                || status == AuctionStatus.CANCELED) return;
 
         this.status = AuctionStatus.FINISHED;
 
@@ -214,7 +225,7 @@ public class Auction implements AuctionSubject {
     // Hủy phiên: OPEN/RUNNING -> CANCELED
     public synchronized boolean cancelAuction() {
         if (status == AuctionStatus.OPEN || status == AuctionStatus.RUNNING) {
-            this.status = AuctionStatus.CANCELLED;
+            this.status = AuctionStatus.CANCELED;
             autoBidQueue.clear();
 
             AuctionEvent event = new AuctionEvent(
@@ -271,7 +282,7 @@ public class Auction implements AuctionSubject {
 
     // return true nếu trạng thái là CANCELED
     public boolean isCancelled() {
-        return status == AuctionStatus.CANCELLED;
+        return status == AuctionStatus.CANCELED;
     }
 
     // return true nếu phiên vẫn đang nhận bid mới
@@ -300,12 +311,36 @@ public class Auction implements AuctionSubject {
         AuctionManager.getInstance().rescheduleFinish(this); // ← THÊM DÒNG NÀY
     }
 
-    public void enableAutoBid(String bidderName, double maxAmount, double increment) {
+    public synchronized void enableAutoBid(String bidderName, double maxAmount, double increment) {
         // Nếu người này đã đăng ký trước thì xóa entry cũ trước khi thêm mới
         autoBidQueue.removeIf(e -> e.bidderName.equals(bidderName));
         autoBidQueue.add(new AutoBidEntry(bidderName, maxAmount, increment));
         System.out.println("Auto-bid enabled for " + bidderName
                 + " max: " + maxAmount + " increment: " + increment);
+        // Nếu người khác đang dẫn đầu → bid ngay lập tức không cần chờ bid thủ công
+        if (!bidderName.equals(leadingBidder)
+                && currentPrice + increment <= maxAmount
+                && status != AuctionStatus.FINISHED
+                && status != AuctionStatus.CANCELED) {
+
+            double autoBidPrice = currentPrice + increment;
+            currentPrice  = autoBidPrice;
+            leadingBidder = bidderName;
+
+            transactionHistory.add(new BidTransaction(auctionId, bidderName, autoBidPrice));
+
+            notifyObservers(new AuctionEvent(
+                    AuctionEvent.Type.BID_PLACED,
+                    auctionId, bidderName, bidderName,
+                    autoBidPrice, currentPrice));
+
+            System.out.println("Auto-bid immediate by " + bidderName + ": " + autoBidPrice);
+        }
+    }
+
+    public void disableAutoBid(String bidderName) {
+        autoBidQueue.removeIf(e -> e.bidderName.equals(bidderName));
+        System.out.println("Auto-bid disabled for " + bidderName);
     }
 
     public void setPrice(double price) {
@@ -315,7 +350,7 @@ public class Auction implements AuctionSubject {
     // Dùng cancelAuction() thay thế
     @Deprecated
     public void setCancelled(boolean cancelled) {
-        if (cancelled) this.status = AuctionStatus.CANCELLED;
+        if (cancelled) this.status = AuctionStatus.CANCELED;
     }
     public double getAutoBidIncrement() {
         AutoBidEntry top = autoBidQueue.peek();

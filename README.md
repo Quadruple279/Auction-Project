@@ -11,6 +11,13 @@ Dự án áp dụng các nguyên lý lập trình hướng đối tượng (OOP)
 
 ---
 
+## Báo cáo PDF - Video Demo
+
+ - **Báo cáo PDF:** [PDF](https://drive.google.com/file/d/1oQxCvGkq9cOyMwrsstBLRNooGxpAjl11/view?usp=sharing)
+ - **Video demo:** [VIDEO](https://drive.google.com/file/d/1y-JK6F-vw8JvBRipwVZQ9HPekk2z7vPO/view?usp=sharing)
+
+---
+
 ## 👥 Thành viên nhóm
 
 | Họ và tên | Vai trò | Tài khoản |
@@ -112,26 +119,72 @@ auction-big-project/
 
 ## 🚀 Hướng dẫn chạy
 
-**1. Clone repository**
+### Yêu cầu
+
+- **Java 21+**
+- **Maven 3.8+**
+- ****
+- Kết nối Internet (Server dùng MySQL trên Aiven Cloud – đã cấu hình sẵn)
+
+---
+
+**Bước 1 – Clone repository**
 ```bash
-git clone https://github.com/<your-org>/auction-big-project.git
-cd auction-big-project
+git clone https://github.com/Quadruple279/Auction-Project.git
+cd Auction-Project
 ```
 
-**2. Build dự án**
+**Bước 2 – Cấu hình database**
+
 ```bash
-mvn clean install
+File cấu hình kết nối DB nằm tại `src/main/resources/db.properties`.  
+Database đã được host sẵn trên cloud
 ```
 
-**3. Khởi động Server**
+**Tải file db.properties ở đây:** [db.properties](https://drive.google.com/file/d/1H2eJBcBMle1fMWkZ7jzk55aaElfBkTWf/view?usp=sharing)
+
+**Bước 3 – Build dự án**
+
+```bash
+mvn clean install -DskipTests
+```
+
+> Dùng `-DskipTests` để bỏ qua bước test (các unit test yêu cầu môi trường CI riêng).
+
+**Bước 4 – Khởi động Server**
+
+Mở **terminal thứ nhất**, chạy:
+
 ```bash
 mvn exec:java -Dexec.mainClass="server.ServerApp"
 ```
 
-**4. Khởi động Client**
-```bash
-mvn exec:java -Dexec.mainClass="client.AppLauncher"
+Server sẽ lắng nghe kết nối tại cổng **8080**. Khi thấy dòng sau là thành công:
 ```
+[O] Server đã sẵn sàng tại cổng 8080!
+```
+
+**Bước 5 – Khởi động Client**
+
+Mở **terminal thứ hai** (giữ nguyên terminal Server), chạy:
+
+```bash
+mvn javafx:run -Djavafx.mainClass="client.AppLauncher"
+```
+
+Giao diện đăng nhập sẽ xuất hiện. Có thể mở nhiều cửa sổ Client cùng lúc để mô phỏng nhiều người dùng.
+
+---
+
+### Tài khoản có sẵn để test
+
+| Vai trò | Username | Password |
+|---|----------|---|
+| Admin | `Admin`  | `admin123` |
+| Seller | `Seller` | `123456` |
+| Bidder | `Bidder` | `123456` |
+
+> Các tài khoản trên đã có sẵn trong database. Nếu muốn tạo tài khoản mới, sử dụng chức năng **Đăng ký** trên giao diện Client.
 
 ---
 

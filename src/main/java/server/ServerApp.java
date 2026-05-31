@@ -7,12 +7,16 @@ import server.network.ClientHandler;
 import shared.protocol.Message;
 import shared.protocol.MessageType;
 
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class ServerApp {
-    public static void main (String[]args){
+    public static void main(String[] args) {
+        System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
+        System.setErr(new PrintStream(System.err, true, StandardCharsets.UTF_8));
         System.out.println("=========================================");
         System.out.println("   HỆ THỐNG ĐẤU GIÁ TRỰC TUYẾN - SERVER  ");
         System.out.println("   Đang khởi động...                     ");
