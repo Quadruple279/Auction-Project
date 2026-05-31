@@ -37,6 +37,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
-/.idea/material_theme_project_new.xmls r c / m a i n / r e s o u r c e s / d b . p r o p e r t i e s  
- ### db.properties ###
+/.idea/material_theme_project_new.xml
+
+### db.properties ###
 src/main/resources/db.properties

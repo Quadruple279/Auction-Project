@@ -7,8 +7,11 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -20,6 +23,9 @@ public class AuctionManager {
     // Scheduler tự động kết thúc phiên khi hết giờ
     private final ScheduledExecutorService scheduler =
             Executors.newScheduledThreadPool(5);
+
+    // Lưu task đang chờ của từng phiên để có thể cancel khi gia hạn
+    private final Map<String, ScheduledFuture<?>> scheduledTasks = new HashMap<>();
 
     // Callback để broadcast AUCTION_ENDED đến tất cả client
     // Được ClientHandler đăng ký sau khi server khởi động
@@ -96,15 +102,25 @@ public class AuctionManager {
     private void scheduleFinish(Auction auction) {
         if (auction.isFinished() || auction.isCancelled()) return;
 
+        // Hủy task cũ (nếu có) trước khi lên lịch mới — quan trọng với anti-snipe
+        ScheduledFuture<?> oldTask = scheduledTasks.remove(auction.getAuctionId());
+        if (oldTask != null && !oldTask.isDone()) {
+            oldTask.cancel(false);
+            System.out.println("[Scheduler] Da huy task cu cua phien " + auction.getAuctionId());
+        }
+
         long delay = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
         if (delay <= 0) {
             finishAndSave(auction);
             return;
         }
-        scheduler.schedule(() -> finishAndSave(auction), delay, TimeUnit.MILLISECONDS);
+        ScheduledFuture<?> newTask = scheduler.schedule(
+                () -> finishAndSave(auction), delay, TimeUnit.MILLISECONDS);
+        scheduledTasks.put(auction.getAuctionId(), newTask);
         System.out.println("[Scheduler] Da len lich ket thuc phien " + auction.getAuctionId()
                 + " sau " + delay + " ms");
     }
+
     public void rescheduleFinish(Auction auction) {
         scheduleFinish(auction);
     }

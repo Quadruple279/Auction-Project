@@ -3,6 +3,7 @@ package client;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 
@@ -10,6 +11,8 @@ import javafx.stage.Stage;
 public class ClientApp extends Application {
     @Override
     public void start(Stage stage) throws Exception {
+        Image icon = new Image(getClass().getResourceAsStream("/image/LogoApp.png"));
+        stage.getIcons().add(icon);
         ClientSocket.getInstance().connect();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/LoginViewMoi.fxml"));
         Scene scene = new Scene(loader.load());

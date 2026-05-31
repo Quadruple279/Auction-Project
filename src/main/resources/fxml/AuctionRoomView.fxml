@@ -51,103 +51,119 @@
                <children>
                   <AnchorPane prefWidth="470.0" style="-fx-background-color: #2b2b2b; -fx-background-radius: 8;" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label fx:id="itemNameLabel" layoutX="16.0" layoutY="20.0" text="Tên Sản Phẩm" textFill="WHITE">
-                           <font>
-                              <Font size="18.0" />
-                           </font>
-                        </Label>
-                        <Label fx:id="descriptionLabel" layoutX="16.0" layoutY="52.0" text="Mô tả sản phẩm" textFill="#aaaaaa">
-                           <font>
-                              <Font size="13.0" />
-                           </font>
-                        </Label>
-                        <AnchorPane layoutX="16.0" layoutY="90.0" prefHeight="60.0" prefWidth="200.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
+                        <VBox spacing="16.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
                            <children>
-                              <Label alignment="CENTER" layoutX="0" layoutY="8" prefWidth="200" text="Giá khởi điểm" textFill="#888888">
+                              <Label fx:id="itemNameLabel" text="Tên Sản Phẩm" textFill="WHITE">
                                  <font>
-                                    <Font size="11.0" />
+                                    <Font size="18.0" />
                                  </font>
                               </Label>
-                              <Label fx:id="basePriceLabel" alignment="CENTER" layoutX="0" layoutY="28" prefWidth="200" text="20.000.000 ₫" textFill="#006aff">
-                                 <font>
-                                    <Font size="16.0" />
-                                 </font>
-                              </Label>
-                           </children>
-                        </AnchorPane>
-                        <AnchorPane layoutX="240.0" layoutY="90.0" prefHeight="60.0" prefWidth="200.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
-                           <children>
-                              <Label alignment="CENTER" layoutX="0" layoutY="8" prefWidth="200" text="Giá cao nhất" textFill="#888888">
-                                 <font>
-                                    <Font size="11.0" />
-                                 </font>
-                              </Label>
-                              <Label fx:id="currentPriceLabel" alignment="CENTER" layoutX="0" layoutY="28" prefWidth="200" text="23.500.000 ₫" textFill="#4caf50">
-                                 <font>
-                                    <Font size="16.0" />
-                                 </font>
-                              </Label>
-                           </children>
-                        </AnchorPane>
-                        <AnchorPane layoutX="16.0" layoutY="170.0" prefHeight="50.0" prefWidth="424.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
-                           <children>
-                              <Label layoutX="16" layoutY="16.0" text="Người dẫn đầu" textFill="#888888" />
-                              <Label fx:id="leaderLabel" alignment="CENTER_RIGHT" layoutX="4.0" layoutY="16.0" prefWidth="414.0" text="Tên khách hàng" textFill="GOLD">
+                              <Label fx:id="descriptionLabel" text="Mô tả sản phẩm" textFill="#aaaaaa">
                                  <font>
                                     <Font size="13.0" />
                                  </font>
+                                 <padding>
+                                    <Insets bottom="10.0" />
+                                 </padding>
                               </Label>
+                              <HBox spacing="24.0" VBox.vgrow="ALWAYS">
+                                 <children>
+                                    <AnchorPane prefHeight="60.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
+                                       <children>
+                                          <Label alignment="CENTER" layoutX="0" layoutY="8" prefWidth="200" text="Giá khởi điểm" textFill="#888888">
+                                             <font>
+                                                <Font size="11.0" />
+                                             </font>
+                                          </Label>
+                                          <Label fx:id="basePriceLabel" alignment="CENTER" layoutX="0" layoutY="28" prefWidth="220.0" text="20.000.000 ₫" textFill="#006aff">
+                                             <font>
+                                                <Font size="16.0" />
+                                             </font>
+                                          </Label>
+                                       </children>
+                                    </AnchorPane>
+                                    <AnchorPane prefHeight="60.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
+                                       <children>
+                                          <Label alignment="CENTER" layoutX="0" layoutY="8" prefWidth="200" text="Giá cao nhất" textFill="#888888">
+                                             <font>
+                                                <Font size="11.0" />
+                                             </font>
+                                          </Label>
+                                          <Label fx:id="currentPriceLabel" alignment="CENTER" layoutX="0" layoutY="28" prefWidth="220.0" text="23.500.000 ₫" textFill="#4caf50">
+                                             <font>
+                                                <Font size="16.0" />
+                                             </font>
+                                          </Label>
+                                       </children>
+                                    </AnchorPane>
+                                 </children>
+                                 <VBox.margin>
+                                    <Insets />
+                                 </VBox.margin>
+                              </HBox>
+                              <AnchorPane prefHeight="50.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
+                                 <children>
+                                    <Label layoutX="16" layoutY="16.0" text="Người dẫn đầu" textFill="#888888" AnchorPane.leftAnchor="10.0" />
+                                    <Label fx:id="leaderLabel" alignment="CENTER_RIGHT" layoutX="4.0" layoutY="16.0" prefWidth="414.0" text="Tên khách hàng" textFill="GOLD" AnchorPane.rightAnchor="10.0">
+                                       <font>
+                                          <Font size="13.0" />
+                                       </font>
+                                    </Label>
+                                 </children>
+                              </AnchorPane>
+                              <AnchorPane prefHeight="50.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
+                                 <children>
+                                    <Label layoutX="16" layoutY="16.0" text="Thời gian còn lại" textFill="#888888" AnchorPane.leftAnchor="10.0" />
+                                    <Label fx:id="timeLabel" alignment="CENTER_RIGHT" layoutY="16.0" prefWidth="414.0" text="Thời gian còn lại" textFill="#ff6b6b" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="10.0">
+                                       <font>
+                                          <Font size="13.0" />
+                                       </font>
+                                    </Label>
+                                 </children>
+                              </AnchorPane>
+                              <!-- BIỂU ĐỒ GIÁ REALTIME -->
+                              <AnchorPane prefHeight="180.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
+                                 <children>
+                                    <Label layoutX="16" layoutY="8.0" text="BIỂU ĐỒ GIÁ REALTIME" textFill="#888888" AnchorPane.leftAnchor="10.0">
+                                       <font>
+                                          <Font size="11.0" />
+                                       </font>
+                                    </Label>
+                                    <LineChart fx:id="priceChart" animated="false" layoutX="0" layoutY="24.0" legendVisible="false" prefHeight="150.0" style="-fx-background-color: transparent;" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0">
+                                       <xAxis>
+                                          <CategoryAxis fx:id="chartXAxis" style="-fx-tick-label-fill: #555555;" tickLabelsVisible="false" tickMarkVisible="false" />
+                                       </xAxis>
+                                       <yAxis>
+                                          <NumberAxis fx:id="chartYAxis" autoRanging="true" style="-fx-tick-label-fill: #888888;" />
+                                       </yAxis>
+                                    </LineChart>
+                                 </children>
+                              </AnchorPane>
                            </children>
-                        </AnchorPane>
-                        <AnchorPane layoutX="16.0" layoutY="232.0" prefHeight="50.0" prefWidth="424.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
-                           <children>
-                              <Label layoutX="16" layoutY="16.0" text="Thời gian còn lại" textFill="#888888" />
-                              <Label fx:id="timeLabel" alignment="CENTER_RIGHT" layoutY="16.0" prefWidth="414.0" text="Thời gian còn lại" textFill="#ff6b6b">
-                                 <font>
-                                    <Font size="13.0" />
-                                 </font>
-                              </Label>
-                           </children>
-                        </AnchorPane>
-                        <!-- BIỂU ĐỒ GIÁ REALTIME -->
-                        <AnchorPane layoutX="16.0" layoutY="295.0" prefHeight="180.0" prefWidth="424.0" style="-fx-background-color: #1d1d1d; -fx-background-radius: 6;">
-                           <children>
-                              <Label layoutX="16" layoutY="8.0" text="BIỂU ĐỒ GIÁ REALTIME" textFill="#888888">
-                                 <font><Font size="11.0" /></font>
-                              </Label>
-                              <LineChart fx:id="priceChart" animated="false" layoutX="0" layoutY="24.0" legendVisible="false" prefHeight="150.0" prefWidth="424.0" style="-fx-background-color: transparent;">
-                                 <xAxis>
-                                    <CategoryAxis fx:id="chartXAxis" style="-fx-tick-label-fill: #555555;" tickLabelsVisible="false" tickMarkVisible="false" />
-                                 </xAxis>
-                                 <yAxis>
-                                    <NumberAxis fx:id="chartYAxis" autoRanging="true" style="-fx-tick-label-fill: #888888;" />
-                                 </yAxis>
-                              </LineChart>
-                           </children>
-                        </AnchorPane>
+                        </VBox>
 
                      </children>
                   </AnchorPane>
                   <VBox prefWidth="100.0" spacing="16.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <AnchorPane prefHeight="150.0" prefWidth="480.0" style="-fx-background-color: #2b2b2b; -fx-background-radius: 8;" VBox.vgrow="ALWAYS">
+                        <AnchorPane prefHeight="155.0" prefWidth="480.0" style="-fx-background-color: #2b2b2b; -fx-background-radius: 8;" VBox.vgrow="ALWAYS">
                            <children>
-                              <TextField fx:id="bidAmountField" layoutX="16.0" layoutY="35.0" maxWidth="320.0" prefWidth="320.0" promptText="Nhập số tiền..." style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-text-fill: #ffffff; -fx-border-radius: 6; -fx-background-radius: 6;">
+                              <TextField fx:id="bidAmountField" layoutX="16.0" layoutY="33.0" maxWidth="320.0" prefWidth="320.0" promptText="Nhập số tiền..." style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-text-fill: #ffffff; -fx-border-radius: 6; -fx-background-radius: 6;">
                                  <font>
                                     <Font size="14.0" />
                                  </font>
                               </TextField>
-                              <Button fx:id="placeBidButton" layoutX="345.0" layoutY="35.0" mnemonicParsing="false" onAction="#handlePlaceBid" style="-fx-background-color: #006aff; -fx-background-radius: 6;" text="Đặt giá " textFill="WHITE">
+                              <Button fx:id="placeBidButton" layoutX="345.0" layoutY="33.0" mnemonicParsing="false" onAction="#handlePlaceBid" style="-fx-background-color: #006aff; -fx-background-radius: 6;" text="Đặt giá " textFill="WHITE">
                                  <font>
                                     <Font size="14.0" />
                                  </font>
                               </Button>
-                              <Label layoutX="16.0" layoutY="130.0" text="Giá tiền đặt phải cao hơn giá hiện tại" textFill="#888888" />
-                              <Text fill="#888888" layoutX="16.0" layoutY="27.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Đặt giá " />
+                              <Label layoutX="16.0" layoutY="128.0" text="Giá tiền đặt phải cao hơn giá hiện tại" textFill="#888888" AnchorPane.bottomAnchor="2.8000000000000043" />
+                              <Text fill="#888888" layoutX="16.0" layoutY="23.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Đặt giá " />
 
-                              <Label layoutX="16.0" layoutY="80.0" style="-fx-text-fill: #f0a500; -fx-font-weight: bold;" text="⚡ Auto Bid" />
+                              <Label layoutX="16.0" layoutY="78.0" style="-fx-text-fill: #f0a500; -fx-font-weight: bold;" text="⚡ Auto Bid" />
 
-                              <HBox alignment="CENTER_LEFT" layoutX="16.0" layoutY="100.0" spacing="8">
+                              <HBox alignment="CENTER_LEFT" layoutX="16.0" layoutY="98.0" spacing="8">
                                  <children>
                                     <TextField fx:id="maxAutoBidField" prefWidth="155.0" promptText="Giá tối đa..." style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-text-fill: #ffffff; -fx-border-radius: 6; -fx-background-radius: 6;" HBox.hgrow="ALWAYS" />
                                     <TextField fx:id="incrementField" prefWidth="155.0" promptText="Bước tăng..." style="-fx-background-color: #1d1d1d; -fx-border-color: #555555; -fx-text-fill: #ffffff; -fx-border-radius: 6; -fx-background-radius: 6;" />
@@ -155,13 +171,13 @@
                                  </children>
                               </HBox>
 
-                              <Label fx:id="autoBidStatusLabel" style="-fx-text-fill: #4caf50; -fx-font-size: 11px;" text="" />
+                              <Label fx:id="autoBidStatusLabel" layoutX="90.0" layoutY="78.0" style="-fx-text-fill: #4caf50; -fx-font-size: 11px;" text="" />
                            </children>
                         </AnchorPane>
-                        <AnchorPane prefWidth="480.0" style="-fx-background-color: #2b2b2b; -fx-background-radius: 8;" VBox.vgrow="ALWAYS">
+                        <AnchorPane style="-fx-background-color: #2b2b2b; -fx-background-radius: 8;" VBox.vgrow="ALWAYS">
                            <children>
                               <Label layoutX="16.0" layoutY="12.0" text="LỊCH SỬ ĐẶT GIÁ" textFill="#888888" />
-                              <ListView fx:id="bidHistoryList" layoutX="16.0" layoutY="35.0" prefWidth="448.0" style="-fx-background-color: #1d1d1d;                  -fx-border-color: transparent;                  -fx-background-radius: 6;                  -fx-control-inner-background: #1d1d1d;" AnchorPane.bottomAnchor="6.0" AnchorPane.topAnchor="30.0" />
+                              <ListView fx:id="bidHistoryList" layoutX="16.0" layoutY="35.0" style="-fx-background-color: #1d1d1d;                  -fx-border-color: transparent;                  -fx-background-radius: 6;                  -fx-control-inner-background: #1d1d1d;" AnchorPane.bottomAnchor="6.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="30.0" />
                            </children>
                         </AnchorPane>
                      </children>
@@ -174,7 +190,7 @@
             <AnchorPane prefHeight="130.0" prefWidth="966.0" style="-fx-background-color: #2b2b2b;" VBox.vgrow="ALWAYS">
                <children>
                   <Label layoutX="16.0" layoutY="12.0" text="NOTIFICATIONS" textFill="#888888" />
-                  <TextArea fx:id="console" editable="false" layoutX="16.0" layoutY="30.0" prefHeight="88.0" prefWidth="970.0" style="-fx-background-color: #1d1d1d; -fx-control-inner-background: #1d1d1d; -fx-text-fill: #ffffff; -fx-border-color: transparent; -fx-background-radius: 6; -fx-highlight-fill: #444444;" />
+                  <TextArea fx:id="console" editable="false" layoutX="16.0" layoutY="30.0" prefHeight="88.0" prefWidth="970.0" style="-fx-background-color: #1d1d1d; -fx-control-inner-background: #1d1d1d; -fx-text-fill: #ffffff; -fx-border-color: transparent; -fx-background-radius: 6; -fx-highlight-fill: #444444;" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" />
                </children>
                <padding>
                   <Insets left="6.0" right="6.0" />

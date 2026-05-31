@@ -124,6 +124,84 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
             }
             return change;
         }));
+        maxAutoBidField.setTextFormatter(new TextFormatter<>(change -> {
+            String newText = change.getControlNewText();
+            if (!newText.matches("[\\d,]*")) return null;
+
+            String digits = newText.replace(",", "");
+            if (digits.isEmpty()) {
+                change.setText("");
+                change.setRange(0, change.getControlText().length());
+                change.setCaretPosition(0);
+                change.setAnchor(0);
+                return change;
+            }
+            if (digits.length() > 15) return null;
+//hhhh
+            try {
+                long value = Long.parseLong(digits);
+                String formatted = String.format(Locale.US, "%,d", value);
+
+                int oldCaretPos = change.getControlNewText().length();
+                int digitsBeforeCaret = change.getControlNewText()
+                        .substring(0, Math.min(oldCaretPos, newText.length()))
+                        .replace(",", "").length();
+
+                int newCaretPos = 0, digitCount = 0;
+                for (int i = 0; i < formatted.length(); i++) {
+                    if (Character.isDigit(formatted.charAt(i))) digitCount++;
+                    if (digitCount == digitsBeforeCaret) { newCaretPos = i + 1; break; }
+                }
+                if (digitsBeforeCaret == 0) newCaretPos = 0;
+
+                change.setText(formatted);
+                change.setRange(0, change.getControlText().length());
+                change.setCaretPosition(newCaretPos);
+                change.setAnchor(newCaretPos);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+            return change;
+        }));
+        incrementField.setTextFormatter(new TextFormatter<>(change -> {
+            String newText = change.getControlNewText();
+            if (!newText.matches("[\\d,]*")) return null;
+
+            String digits = newText.replace(",", "");
+            if (digits.isEmpty()) {
+                change.setText("");
+                change.setRange(0, change.getControlText().length());
+                change.setCaretPosition(0);
+                change.setAnchor(0);
+                return change;
+            }
+            if (digits.length() > 15) return null;
+//hhhh
+            try {
+                long value = Long.parseLong(digits);
+                String formatted = String.format(Locale.US, "%,d", value);
+
+                int oldCaretPos = change.getControlNewText().length();
+                int digitsBeforeCaret = change.getControlNewText()
+                        .substring(0, Math.min(oldCaretPos, newText.length()))
+                        .replace(",", "").length();
+
+                int newCaretPos = 0, digitCount = 0;
+                for (int i = 0; i < formatted.length(); i++) {
+                    if (Character.isDigit(formatted.charAt(i))) digitCount++;
+                    if (digitCount == digitsBeforeCaret) { newCaretPos = i + 1; break; }
+                }
+                if (digitsBeforeCaret == 0) newCaretPos = 0;
+
+                change.setText(formatted);
+                change.setRange(0, change.getControlText().length());
+                change.setCaretPosition(newCaretPos);
+                change.setAnchor(newCaretPos);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+            return change;
+        }));
     }
 
     /**
@@ -169,6 +247,8 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
     private void loadLichSuDauGia() {
         bidHistoryList.getItems().clear();
         bidHistoryList.getItems().add("Chưa có ai đặt giá.");
+        priceSeries.getData().clear();
+        bidCounter = 0;
         // Lịch sử sẽ được cập nhật realtime khi nhận BID_PLACED event
         ClientSocket.getInstance().setResponseListener(msg ->{
             if (msg.getType() == MessageType.GET_BID_HISTORY_SUCCESS){
@@ -182,8 +262,21 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                             bidHistoryList.getItems().add("Chưa có ai đặt giá.");
                         }
                         else {
-                            for (int i = history.size() -1 ; i>=0;i--){
-                                bidHistoryList.getItems().add(history.get(i));
+                            for (String entry : history) {
+                                bidHistoryList.getItems().add(0, entry);
+                                String[] parts = entry.split("\\|");
+                                if (parts.length >= 2) {
+                                    try {
+                                        String amountStr = parts[1].trim()
+                                                .replace("₫", "")
+                                                .replace(",", "")
+                                                .trim();
+                                        double amount = Double.parseDouble(amountStr);
+                                        updatePriceChart(amount);
+                                    } catch (NumberFormatException ignored) {
+                                        // format không đúng thì bỏ qua
+                                    }
+                                }
                             }
                         }
                     });
@@ -312,9 +405,10 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                 case TIME_EXTENDED -> {
                     // Cập nhật endTime nội bộ để countdown timer tự khớp
                     if (event.getNewEndTimeEpoch() > 0) {
+                        // Server lưu endTime bằng ZoneOffset.UTC — phải parse đúng UTC
                         java.time.LocalDateTime newEnd = java.time.LocalDateTime
                                 .ofEpochSecond(event.getNewEndTimeEpoch(), 0,
-                                        java.time.ZoneOffset.of("+07:00"));
+                                        java.time.ZoneOffset.UTC);
                         currentAuction = new shared.dto.AuctionDTO(
                                 currentAuction.getAuctionId(),
                                 currentAuction.getItemName(),
@@ -386,10 +480,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
         bidCounter++;
         String label = String.valueOf(bidCounter);
         priceSeries.getData().add(new XYChart.Data<>(label, price));
-        // Giữ tối đa 20 điểm để chart không quá dày
-        if (priceSeries.getData().size() > 20) {
-            priceSeries.getData().remove(0);
-        }
+        // Không giới hạn điểm để lưu được toàn bộ lịch sử
     }
 
     private void log(String msg) {
