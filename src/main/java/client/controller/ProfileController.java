@@ -131,6 +131,7 @@ public class ProfileController implements Initializable {
         ClientSocket.getInstance().setResponseListener(msg -> {
             if (msg.getType() == MessageType.UPDATE_USER_SUCCESS) {
                 javafx.application.Platform.runLater(() -> {
+                    currentUser.setDisplayName(newDisplayName);
                     displayNameLabel.setText(newDisplayName);
                     avatarLabel.setText(
                             String.valueOf(newDisplayName.charAt(0)).toUpperCase()

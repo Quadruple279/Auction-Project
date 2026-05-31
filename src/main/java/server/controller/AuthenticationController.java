@@ -30,8 +30,11 @@ public class AuthenticationController {
 
     private User currentUser;
 
-    public void register(String name, String password, String role) {
+    public void register(String name, String password, String role) throws Exception {
         User newUser = null;
+        if (users.containsKey(name)){
+            throw new Exception("Tài khoản đã tồn tại.");
+        }
 
         if (role.equalsIgnoreCase("BIDDER")) {
             newUser = new Bidder(0, name,name, password);
@@ -42,9 +45,9 @@ public class AuthenticationController {
         }
 
         if (newUser != null) {
-            users.put(name, newUser);              // lưu vào Map (runtime)
             try {
                 userDAO.save(newUser);
+                users.put(name, newUser);              // lưu vào Map (runtime)
             } catch (SQLException e) {
                 System.out.println("Lỗi lưu user vào DB : " + e.getMessage());
             }
