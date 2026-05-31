@@ -312,12 +312,36 @@ public class Auction implements AuctionSubject {
         AuctionManager.getInstance().rescheduleFinish(this); // ← THÊM DÒNG NÀY
     }
 
-    public void enableAutoBid(String bidderName, double maxAmount, double increment) {
+    public synchronized void enableAutoBid(String bidderName, double maxAmount, double increment) {
         // Nếu người này đã đăng ký trước thì xóa entry cũ trước khi thêm mới
         autoBidQueue.removeIf(e -> e.bidderName.equals(bidderName));
         autoBidQueue.add(new AutoBidEntry(bidderName, maxAmount, increment));
         System.out.println("Auto-bid enabled for " + bidderName
                 + " max: " + maxAmount + " increment: " + increment);
+        // Nếu người khác đang dẫn đầu → bid ngay lập tức không cần chờ bid thủ công
+        if (!bidderName.equals(leadingBidder)
+                && currentPrice + increment <= maxAmount
+                && status != AuctionStatus.FINISHED
+                && status != AuctionStatus.CANCELED) {
+
+            double autoBidPrice = currentPrice + increment;
+            currentPrice  = autoBidPrice;
+            leadingBidder = bidderName;
+
+            transactionHistory.add(new BidTransaction(auctionId, bidderName, autoBidPrice));
+
+            notifyObservers(new AuctionEvent(
+                    AuctionEvent.Type.BID_PLACED,
+                    auctionId, bidderName, bidderName,
+                    autoBidPrice, currentPrice));
+
+            System.out.println("Auto-bid immediate by " + bidderName + ": " + autoBidPrice);
+        }
+    }
+
+    public void disableAutoBid(String bidderName) {
+        autoBidQueue.removeIf(e -> e.bidderName.equals(bidderName));
+        System.out.println("Auto-bid disabled for " + bidderName);
     }
 
     public void setPrice(double price) {

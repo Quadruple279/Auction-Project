@@ -305,6 +305,9 @@ public class ClientSocket {
                 .put("maxBid", String.valueOf(maxBid))
                 .put("increment", String.valueOf(increment)));
     }
+    public void sendDisableAutoBid(String auctionId) {
+        send(Message.of(MessageType.DISABLE_AUTO_BID).put("auctionId", auctionId));
+    }
 
     public void sendGetUsers() {
         send(Message.of(MessageType.GET_USERS));

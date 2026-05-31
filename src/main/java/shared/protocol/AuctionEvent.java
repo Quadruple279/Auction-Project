@@ -7,7 +7,9 @@ public class AuctionEvent {
         BID_REJECTED, // từ chối lượt bid
         AUCTION_ENDED, // kết thúc phiên
         TIME_EXTENDED, NEW_AUCTION,
-        USER_DELETED
+        USER_DELETED,
+        AUTO_BID_ENABLED,
+        AUTO_BID_DISABLED
     }
     private final Type type;
     private final String auctionId, bidderName, leadingBidder;

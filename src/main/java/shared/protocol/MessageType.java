@@ -13,6 +13,7 @@ public enum MessageType {
     DELETE_AUCTION,   // payload: auctionId
     UPDATE_AUCTION,   // payload: auctionId, newName, newDescription, newPrice
     ENABLE_AUTO_BID,  // payload: auctionId, maxBid, increment
+    DISABLE_AUTO_BID,  // payload: auctionId
     UPDATE_USER,         // Client → Server: payload: newName, newPassword
     FINISH_AUCTION,      // payload: auctionId
     CANCEL_AUCTION,      // payload: auctionId

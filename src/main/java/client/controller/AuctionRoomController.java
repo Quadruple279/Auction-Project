@@ -1,5 +1,6 @@
 package client.controller;
 
+import client.AppContext;
 import client.ClientSocket;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -210,6 +211,16 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
      */
     public void setAuction(AuctionDTO auctionDTO) {
         this.currentAuction = auctionDTO;
+        // Khôi phục trạng thái autobid nếu đang active
+        if (AppContext.isAutoBidActive(auctionDTO.getAuctionId())) {
+            autoBidEnabled = true;
+            autoBidButton.setText("Tắt Auto-Bid");
+            autoBidButton.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold;");
+            maxAutoBidField.setDisable(true);
+            incrementField.setDisable(true);
+            autoBidStatusLabel.setText("⚡  Auto-Bid đang chạy");
+            autoBidStatusLabel.setStyle("-fx-text-fill: #4caf50; -fx-font-size: 11px;");
+        }
 
         hienThiThongTin();
         loadLichSuDauGia();
@@ -410,6 +421,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
                     statusLabel.setTextFill(javafx.scene.paint.Color.web("#ff6b6b"));
                     log("Phiên đấu giá đã kết thúc! Người thắng: " + event.getLeadingBidder());
                 }
+                case AUTO_BID_DISABLED -> Platform.runLater(this::resetAutoBidUI);
                 case TIME_EXTENDED -> {
                     // Cập nhật endTime thay vì tạo lại AuctionDTO mới
                     if (event.getNewEndTimeEpoch() > 0) {
@@ -470,6 +482,11 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
 
     @FXML
     private void handleEnableAutoBid() {
+        if (autoBidEnabled) {
+            ClientSocket.getInstance().sendDisableAutoBid(currentAuction.getAuctionId());
+            resetAutoBidUI();
+            return;
+        }
         String maxText = maxAutoBidField.getText().replace(",", "").trim();
         String incText = incrementField.getText().replace(",", "").trim();
 
@@ -507,6 +524,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
 
         // Cập nhật UI
         autoBidEnabled = true;
+        AppContext.setAutoBidActive(currentAuction.getAuctionId(), true); // thêm dòng này
         autoBidButton.setText("Tắt Auto-Bid");
         autoBidButton.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold;");
         maxAutoBidField.setDisable(true);
@@ -520,6 +538,7 @@ public class AuctionRoomController implements Initializable, AuctionObserver {
      */
     private void resetAutoBidUI() {
         autoBidEnabled = false;
+        AppContext.setAutoBidActive(currentAuction.getAuctionId(), false); // thêm dòng này
         autoBidButton.setText("Bật Auto-Bid");
         autoBidButton.setStyle("-fx-background-color: #f0a500; -fx-text-fill: black; -fx-font-weight: bold;");
         maxAutoBidField.setDisable(false);

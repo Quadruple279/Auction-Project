@@ -143,6 +143,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
             case MARK_PAID       -> handleMarkPaid(msg);
             case UPDATE_USER -> handleUpdateUser(msg);
             case ENABLE_AUTO_BID -> handleEnableAutoBid(msg);
+            case DISABLE_AUTO_BID -> handleDisableAutoBid(msg);
             case GET_BID_HISTORY -> handleGetBidHistory(msg);
             case DELETE_USER -> handleDeleteUser(msg);
             case GET_USERS              -> handleGetUsers();
@@ -547,6 +548,26 @@ public class ClientHandler implements Runnable, AuctionObserver {
             return Message.of(MessageType.ERROR).put("reason", e.getMessage());
         }
     }
+    private Message handleDisableAutoBid(Message msg) {
+        try {
+            String auctionId = msg.get("auctionId");
+            Auction auction = AuctionManager.getInstance().findById(auctionId);
+            if (auction == null)
+                return Message.of(MessageType.ERROR).put("reason", "Không tìm thấy phiên: " + auctionId);
+            User currentUser = authController.getCurrentUser();
+            if (currentUser == null)
+                return Message.of(MessageType.ERROR).put("reason", "Chưa đăng nhập");
+            auction.disableAutoBid(currentUser.getName());
+            return Message.of(MessageType.AUCTION_UPDATE)
+                    .put("auctionId", auctionId)
+                    .put("eventType", "AUTO_BID_DISABLED")
+                    .put("currentPrice", String.valueOf(auction.getCurrentPrice()))
+                    .put("leadingBidder", auction.getLeadingBidder());
+        } catch (RuntimeException e) {
+            return Message.of(MessageType.ERROR).put("reason", e.getMessage());
+        }
+    }
+
 
     /**
      * Broadcast AUCTION_ENDED tới tất cả các client đang kết nối
