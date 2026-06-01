@@ -184,6 +184,8 @@ Giao diện đăng nhập sẽ xuất hiện. Có thể mở nhiều cửa sổ 
 | Seller | `Seller` | `123456` |
 | Bidder | `Bidder` | `123456` |
 
+**ADMIN KEY**: ADMIN2024 (dùng để tạo tài khoản ADMIN)
+
 > Các tài khoản trên đã có sẵn trong database. Nếu muốn tạo tài khoản mới, sử dụng chức năng **Đăng ký** trên giao diện Client.
 
 ---
